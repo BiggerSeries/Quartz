@@ -1,0 +1,33 @@
+modLoader="javafml"
+loaderVersion="[${fml_version},)"
+license="LGPL v2.1"
+
+[[mods]]
+modId="quartz"
+version="${version}"
+displayName="Quartz"
+#updateJSONURL="https://change.me.example.invalid/updates.json"
+displayURL="https://biggerseries.net/"
+# logoFile="examplemod.png"
+authors="RogueLogix"
+description='''
+'''
+
+[[dependencies.quartz]]
+    modId="forge"
+    mandatory=true
+    versionRange="[${forge_version},)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.quartz]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[${mc_version}]"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.biggerreactors]]
+    modId="phosphophyllite"
+    mandatory=true
+    versionRange="${phos_version_range}"
+    ordering="NONE"
+    side="BOTH"

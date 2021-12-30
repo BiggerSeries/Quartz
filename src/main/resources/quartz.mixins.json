@@ -1,0 +1,19 @@
+{
+  "required": true,
+  "minVersion": "0.8.4",
+  "package": "net.roguelogix.quartz.internal.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "refmap": "quartz.refmap.json",
+  "mixins": [
+  ],
+  "client": [
+    "QuartzStartupMixin",
+    "NoVizFallbackMixin",
+    "LevelRendererMixin",
+    "MinecraftShutdownMixin",
+    "ResourceReloadListener"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

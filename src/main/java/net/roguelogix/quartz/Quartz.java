@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.eventbus.EventBus;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.fml.common.Mod;
+import net.roguelogix.phosphophyllite.registry.Registry;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -20,6 +21,10 @@ import java.util.function.Consumer;
 @MethodsReturnNonnullByDefault
 public final class Quartz {
     public static final String modid = "quartz";
+    
+    public Quartz(){
+        new Registry();
+    }
     
     public static EventBus EVENT_BUS = new EventBus(new BusBuilder().setTrackPhases(false));
     

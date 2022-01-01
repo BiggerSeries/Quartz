@@ -3,16 +3,14 @@ package net.roguelogix.quartz.internal.gl;
 import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
+import net.roguelogix.phosphophyllite.repack.org.joml.*;
+import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.DynamicLight;
 import net.roguelogix.quartz.DynamicMatrix;
 import net.roguelogix.quartz.StaticMesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
-import net.roguelogix.quartz.internal.common.*;
-import net.roguelogix.phosphophyllite.repack.org.joml.*;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
-import net.roguelogix.quartz.internal.common.*;
 import net.roguelogix.quartz.internal.common.*;
 import org.lwjgl.opengl.GL;
 
@@ -478,9 +476,9 @@ public class GLDrawBatch implements DrawBatch {
     private boolean rebuildIndirectBlocks = false;
     
     private AABBi cullAABB = null;
-    private final AABBi cullAABBi = new AABBi();
-    private final AABBf cullAABBf = new AABBf();
-    private static final AABBf clipAABB = new AABBf(-1, -1, -1, 1, 1, 1);
+    private Vector4f cullVector = new Vector4f();
+    private Vector4f cullVectorMin = new Vector4f();
+    private Vector4f cullVectorMax = new Vector4f();
     private boolean enabled = true;
     private boolean culled = false;
     
@@ -703,12 +701,19 @@ public class GLDrawBatch implements DrawBatch {
         dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
         
         if (cullAABB != null) {
-            cullAABB.translate(drawInfo.playerPositionNegative, cullAABBi);
-            cullAABBf.setMin(cullAABBi.minX, cullAABBi.minY, cullAABBi.minZ);
-            cullAABBf.setMax(cullAABBi.maxX, cullAABBi.maxY, cullAABBi.maxZ);
-            cullAABBf.translate(drawInfo.playerSubBlockNegative);
-            cullAABBf.transform(drawInfo.projectionMatrix);
-            culled = !cullAABBf.intersectsAABB(clipAABB);
+            cullVectorMin.set(2);
+            cullVectorMax.set(-2);
+            for (int i = 0; i < 8; i++) {
+                cullVector.set(((i & 1) == 0 ? cullAABB.maxX : cullAABB.minX) - drawInfo.playerPosition.x, ((i & 2) == 0 ? cullAABB.maxY : cullAABB.minY) - drawInfo.playerPosition.y, ((i & 4) == 0 ? cullAABB.maxZ : cullAABB.minZ) - drawInfo.playerPosition.z, 1);
+                cullVector.sub(drawInfo.playerSubBlock.x, drawInfo.playerSubBlock.y, drawInfo.playerSubBlock.z, 0);
+                cullVector.mul(drawInfo.projectionMatrix);
+                cullVector.div(cullVector.w);
+                cullVectorMin.min(cullVector);
+                cullVectorMax.max(cullVector);
+            }
+            culled = cullVectorMin.x > 1 ||  cullVectorMax.x < -1 || cullVectorMin.y > 1 ||  cullVectorMax.y < -1 || cullVectorMin.z > 1 ||  cullVectorMax.z < -1;
+        } else {
+            culled = false;
         }
         
         if (culled) {

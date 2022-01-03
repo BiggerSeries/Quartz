@@ -8,7 +8,7 @@ import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.DynamicLight;
 import net.roguelogix.quartz.DynamicMatrix;
-import net.roguelogix.quartz.StaticMesh;
+import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.*;
@@ -53,7 +53,7 @@ public class GLDrawBatch implements DrawBatch {
             private final boolean BASE_INSTANCE = GLDrawBatch.this.BASE_INSTANCE;
             private final boolean ATTRIB_BINDING = GLDrawBatch.this.ATTRIB_BINDING;
             
-            private DrawComponent(RenderType renderType, Mesh.Manager.TrackedMesh.Component component) {
+            private DrawComponent(RenderType renderType, InternalMesh.Manager.TrackedMesh.Component component) {
                 renderPass = GLRenderPass.renderPassForRenderType(renderType);
                 QUAD = renderPass.QUAD;
                 GL_MODE = renderPass.GL_MODE;
@@ -120,9 +120,9 @@ public class GLDrawBatch implements DrawBatch {
         }
         
         private final boolean autoDelete;
-        private Mesh staticMesh;
-        private Mesh.Manager.TrackedMesh trackedMesh;
-        private final Consumer<Mesh.Manager.TrackedMesh> meshBuildCallback;
+        private InternalMesh staticMesh;
+        private InternalMesh.Manager.TrackedMesh trackedMesh;
+        private final Consumer<InternalMesh.Manager.TrackedMesh> meshBuildCallback;
         private final ObjectArrayList<DrawComponent> components = new ObjectArrayList<>();
         private Buffer.Allocation instanceDataAlloc;
         private int instanceDataOffset;
@@ -130,7 +130,7 @@ public class GLDrawBatch implements DrawBatch {
         private final ObjectArrayList<Instance.Location> liveInstances = new ObjectArrayList<>();
         private int instanceCount = 0;
         
-        private MeshInstanceManager(Mesh mesh, boolean autoDelete) {
+        private MeshInstanceManager(InternalMesh mesh, boolean autoDelete) {
             this.autoDelete = autoDelete;
             final var ref = new WeakReference<>(this);
             meshBuildCallback = ignored -> {
@@ -149,8 +149,8 @@ public class GLDrawBatch implements DrawBatch {
             updateMesh(mesh);
         }
         
-        public void updateMesh(StaticMesh quartzMesh) {
-            if (!(quartzMesh instanceof Mesh mesh)) {
+        public void updateMesh(Mesh quartzMesh) {
+            if (!(quartzMesh instanceof InternalMesh mesh)) {
                 return;
             }
             if (trackedMesh != null) {
@@ -384,7 +384,7 @@ public class GLDrawBatch implements DrawBatch {
             }
             
             @Override
-            public void updateMesh(StaticMesh mesh) {
+            public void updateMesh(Mesh mesh) {
                 instanceManager.updateMesh(mesh);
             }
             
@@ -464,7 +464,7 @@ public class GLDrawBatch implements DrawBatch {
     private final boolean DRAW_INDIRECT = GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_DRAW_INDIRECT;
     private final boolean MULTIDRAW_INDIRECT = DRAW_INDIRECT && GL.getCapabilities().GL_ARB_multi_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
     
-    private final Object2ObjectMap<Mesh, MeshInstanceManager> instanceManagers = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectMap<InternalMesh, MeshInstanceManager> instanceManagers = new Object2ObjectOpenHashMap<>();
     private final ObjectOpenHashSet<MeshInstanceManager> instanceBatches = new ObjectOpenHashSet<>();
     private final Object2ObjectMap<GLRenderPass, ObjectArrayList<MeshInstanceManager.DrawComponent>> opaqueDrawComponents = new Object2ObjectArrayMap<>();
     private final Object2ObjectMap<GLRenderPass, ObjectArrayList<MeshInstanceManager.DrawComponent>> cutoutDrawComponents = new Object2ObjectArrayMap<>();
@@ -633,8 +633,8 @@ public class GLDrawBatch implements DrawBatch {
     
     @Override
     @Nullable
-    public InstanceBatch createInstanceBatch(StaticMesh quartzMesh) {
-        if (!(quartzMesh instanceof Mesh mesh)) {
+    public InstanceBatch createInstanceBatch(Mesh quartzMesh) {
+        if (!(quartzMesh instanceof InternalMesh mesh)) {
             return null;
         }
         var instanceManager = new MeshInstanceManager(mesh, false);
@@ -645,8 +645,8 @@ public class GLDrawBatch implements DrawBatch {
     
     @Nullable
     @Override
-    public Instance createInstance(Vector3ic position, StaticMesh quartzMesh, @Nullable DynamicMatrix quartzDynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight quartzLight, @Nullable DynamicLight.Type lightType) {
-        if (!(quartzMesh instanceof Mesh mesh)) {
+    public Instance createInstance(Vector3ic position, Mesh quartzMesh, @Nullable DynamicMatrix quartzDynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight quartzLight, @Nullable DynamicLight.Type lightType) {
+        if (!(quartzMesh instanceof InternalMesh mesh)) {
             return null;
         }
         if (quartzDynamicMatrix == null) {
@@ -664,7 +664,7 @@ public class GLDrawBatch implements DrawBatch {
         if (!(quartzLight instanceof DynamicLightManager.Light light) || !lightManager.owns(light)) {
             return null;
         }
-        var instanceManager = instanceManagers.computeIfAbsent(mesh, (Mesh m) -> new MeshInstanceManager(m, true));
+        var instanceManager = instanceManagers.computeIfAbsent(mesh, (InternalMesh m) -> new MeshInstanceManager(m, true));
         if (staticMatrix == null) {
             staticMatrix = IDENTITY_MATRIX;
         }

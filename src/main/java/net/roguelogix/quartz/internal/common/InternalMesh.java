@@ -8,7 +8,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.roguelogix.quartz.StaticMesh;
+import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
@@ -29,11 +29,11 @@ import static net.roguelogix.quartz.internal.MagicNumbers.VERTEX_BYTE_SIZE;
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-public class Mesh implements StaticMesh {
+public class InternalMesh implements Mesh {
     
-    public Consumer<StaticMesh.Builder> buildFunc;
+    public Consumer<Mesh.Builder> buildFunc;
     
-    public Mesh(Consumer<StaticMesh.Builder> buildFunc) {
+    public InternalMesh(Consumer<Mesh.Builder> buildFunc) {
         this.buildFunc = buildFunc;
     }
     
@@ -44,7 +44,12 @@ public class Mesh implements StaticMesh {
         return builder.build(buffer);
     }
     
-    private static class Builder implements StaticMesh.Builder, MultiBufferSource {
+    @Override
+    public void rebuild() {
+        QuartzCore.INSTANCE.meshManager.buildMesh(this);
+    }
+    
+    private static class Builder implements Mesh.Builder, MultiBufferSource {
         private static class Vertex {
             
             Vertex() {
@@ -316,13 +321,13 @@ public class Mesh implements StaticMesh {
             public record Component(int vertexOffset, int vertexCount) {
             }
             
-            public final WeakReference<Mesh> meshRef;
+            public final WeakReference<InternalMesh> meshRef;
             private final Buffer vertexBuffer;
             private Buffer.Allocation vertexAllocation;
             private final Object2ObjectArrayMap<RenderType, Component> drawInfo = new Object2ObjectArrayMap<>();
             private final ObjectArrayList<Consumer<TrackedMesh>> buildCallbacks = new ObjectArrayList<>();
             
-            public TrackedMesh(WeakReference<Mesh> meshRef, Buffer vertexBuffer) {
+            public TrackedMesh(WeakReference<InternalMesh> meshRef, Buffer vertexBuffer) {
                 this.meshRef = meshRef;
                 this.vertexBuffer = vertexBuffer;
             }
@@ -388,8 +393,8 @@ public class Mesh implements StaticMesh {
             this.vertexBuffer = vertexBuffer;
         }
         
-        public Mesh createMesh(Consumer<StaticMesh.Builder> buildFunc) {
-            final var staticMesh = new Mesh(buildFunc);
+        public InternalMesh createMesh(Consumer<Mesh.Builder> buildFunc) {
+            final var staticMesh = new InternalMesh(buildFunc);
             final var trackedMesh = new TrackedMesh(new WeakReference<>(staticMesh), vertexBuffer);
             synchronized (trackedMeshes) {
                 trackedMeshes.add(trackedMesh);
@@ -403,7 +408,7 @@ public class Mesh implements StaticMesh {
         }
         
         @Nullable
-        public TrackedMesh getMeshInfo(StaticMesh mesh) {
+        public TrackedMesh getMeshInfo(Mesh mesh) {
             for (int i = 0; i < trackedMeshes.size(); i++) {
                 var trackedMesh = trackedMeshes.get(i);
                 if (trackedMesh.meshRef.get() == mesh) {
@@ -419,7 +424,7 @@ public class Mesh implements StaticMesh {
             }
         }
         
-        public void buildMesh(StaticMesh mesh) {
+        public void buildMesh(Mesh mesh) {
             var trackedMesh = getMeshInfo(mesh);
             if (trackedMesh != null) {
                 buildTrackedMesh(trackedMesh);

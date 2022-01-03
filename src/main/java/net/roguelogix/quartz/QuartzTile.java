@@ -20,7 +20,7 @@ import javax.annotation.ParametersAreNonnullByDefault;
 public interface QuartzTile extends IModularTile {
     
     @Nullable
-    default DrawBatch.Instance createInstance(StaticMesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix) {
+    default DrawBatch.Instance createInstance(Mesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix) {
         return module(QuartzTile.class, Module.class).createInstance(mesh, dynamicMatrix, staticMatrix);
     }
     
@@ -57,7 +57,7 @@ public interface QuartzTile extends IModularTile {
         }
         
         @Nullable
-        private DrawBatch.Instance createInstance(StaticMesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix) {
+        private DrawBatch.Instance createInstance(Mesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix) {
             return getDrawBatch().createInstance(position, mesh, dynamicMatrix, staticMatrix, null, null);
         }
         

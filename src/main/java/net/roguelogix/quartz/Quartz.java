@@ -28,13 +28,13 @@ public final class Quartz {
     
     public static EventBus EVENT_BUS = new EventBus(new BusBuilder().setTrackPhases(false));
     
-    public static StaticMesh createStaticMesh(BlockState blockState) {
+    public static Mesh createStaticMesh(BlockState blockState) {
         return createStaticMesh(builder -> {
             Minecraft.getInstance().getBlockRenderer().renderSingleBlock(blockState, builder.matrixStack(), builder.bufferSource(), 0, 0x00000, net.minecraftforge.client.model.data.EmptyModelData.INSTANCE);
         });
     }
     
-    public static StaticMesh createStaticMesh(Consumer<StaticMesh.Builder> buildFunc) {
+    public static Mesh createStaticMesh(Consumer<Mesh.Builder> buildFunc) {
         return QuartzCore.INSTANCE.meshManager.createMesh(buildFunc);
     }
     

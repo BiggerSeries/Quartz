@@ -6,7 +6,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.roguelogix.quartz.internal.common.LightEngine;
-import net.roguelogix.quartz.internal.common.Mesh;
+import net.roguelogix.quartz.internal.common.InternalMesh;
 import net.roguelogix.quartz.internal.gl.GLCore;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.Quartz;
@@ -105,7 +105,7 @@ public abstract class QuartzCore {
     
     public final WorldEngine worldEngine = new WorldEngine();
     public final LightEngine lightEngine = new LightEngine();
-    public final Mesh.Manager meshManager = new Mesh.Manager(allocBuffer());
+    public final InternalMesh.Manager meshManager = new InternalMesh.Manager(allocBuffer());
     
     public WorldEngine getWorldEngine() {
         return worldEngine;

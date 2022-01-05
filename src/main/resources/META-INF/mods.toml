@@ -25,7 +25,7 @@ description='''
     versionRange="[${mc_version}]"
     ordering="NONE"
     side="BOTH"
-[[dependencies.biggerreactors]]
+[[dependencies.quartz]]
     modId="phosphophyllite"
     mandatory=true
     versionRange="${phos_version_range}"

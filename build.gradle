@@ -133,6 +133,7 @@ mixin {
 
 dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     compileOnly project(':Phosphophyllite')
     library "org.lwjgl:lwjgl-vulkan:3.2.2"
 }

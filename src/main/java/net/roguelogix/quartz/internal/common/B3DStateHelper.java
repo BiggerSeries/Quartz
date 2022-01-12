@@ -31,11 +31,23 @@ public class B3DStateHelper {
             lastVertexArrayObjectField1 = BufferUploader.class.getDeclaredField("lastVertexArrayObject");
             lastFormatField1 = BufferUploader.class.getDeclaredField("lastFormat");
         } catch (NoSuchFieldException e) {
-            lastVertexBufferObjectField1 = null;
-            lastIndexBufferObjectField1 = null;
-            lastVertexArrayObjectField1 = null;
-            lastFormatField1 = null;
-            e.printStackTrace();
+            try{
+                // try srg names too
+                //noinspection JavaReflectionMemberAccess
+                lastVertexBufferObjectField1 = BufferUploader.class.getDeclaredField("f_166831_");
+                //noinspection JavaReflectionMemberAccess
+                lastIndexBufferObjectField1 = BufferUploader.class.getDeclaredField("f_166832_");
+                //noinspection JavaReflectionMemberAccess
+                lastVertexArrayObjectField1 = BufferUploader.class.getDeclaredField("f_166830_");
+                //noinspection JavaReflectionMemberAccess
+                lastFormatField1 = BufferUploader.class.getDeclaredField("f_166833_");
+            }catch (NoSuchFieldException e1) {
+                lastVertexBufferObjectField1 = null;
+                lastIndexBufferObjectField1 = null;
+                lastVertexArrayObjectField1 = null;
+                lastFormatField1 = null;
+                e1.printStackTrace();
+            }
         }
         lastVertexBufferObjectField = lastVertexBufferObjectField1;
         lastIndexBufferObjectField = lastIndexBufferObjectField1;

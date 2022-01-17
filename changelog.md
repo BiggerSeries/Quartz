@@ -1,3 +1,6 @@
+# 1.18.1-0.0.0-beta.0.1
+ - use srg names as backup for AT reflection backups
+
 # 1.18.1-0.0.0-beta
  - First seperated release
  - Indirect drawing used if available

@@ -519,7 +519,7 @@ public class GLDrawBatch implements DrawBatch {
             glVertexAttribIFormat(LIGHTINFO_LOCATION, 2, GL_INT, 24);
             
             // when base instance is unavailable, this must be setup per draw
-            if (BASE_INSTANCE) {
+            if (BASE_INSTANCE || DRAW_INDIRECT) {
                 glBindVertexBuffer(1, instanceDataBuffer.handle(), 0, INSTANCE_DATA_BYTE_SIZE);
             }
             glVertexBindingDivisor(1, 1);
@@ -581,7 +581,7 @@ public class GLDrawBatch implements DrawBatch {
             glVertexAttribDivisorARB(STATIC_NORMAL_MATRIX_LOCATION + 3, 1);
             
             // when base instance is unavailable, this must be setup per draw
-            if (BASE_INSTANCE) {
+            if (BASE_INSTANCE || DRAW_INDIRECT) {
                 B3DStateHelper.bindArrayBuffer(instanceDataBuffer.handle());
                 int offset = 0;
                 glVertexAttribIPointer(WORLD_POSITION_LOCATION, 3, GL_INT, INSTANCE_DATA_BYTE_SIZE, offset);

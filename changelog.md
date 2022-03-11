@@ -1,3 +1,6 @@
+# 1.18.1-0.0.0-beta.0.2
+ - fix rendering when draw indirect is available but base instance is not (Mac)
+
 # 1.18.1-0.0.0-beta.0.1
  - use srg names as backup for AT reflection backups
 

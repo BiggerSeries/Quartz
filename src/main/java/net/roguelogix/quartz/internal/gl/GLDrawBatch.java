@@ -12,7 +12,6 @@ import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.*;
-import org.lwjgl.opengl.GL;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -21,6 +20,7 @@ import java.util.function.Consumer;
 
 import static net.roguelogix.quartz.internal.MagicNumbers.GL.*;
 import static net.roguelogix.quartz.internal.MagicNumbers.*;
+import static net.roguelogix.quartz.internal.gl.GLCore.*;
 import static org.lwjgl.opengl.ARBBaseInstance.glDrawArraysInstancedBaseInstance;
 import static org.lwjgl.opengl.ARBBaseInstance.glDrawElementsInstancedBaseVertexBaseInstance;
 import static org.lwjgl.opengl.ARBDrawIndirect.*;
@@ -49,9 +49,6 @@ public class GLDrawBatch implements DrawBatch {
                                             int baseVertex,
                                             int baseInstance) {
             }
-            
-            private final boolean BASE_INSTANCE = GLDrawBatch.this.BASE_INSTANCE;
-            private final boolean ATTRIB_BINDING = GLDrawBatch.this.ATTRIB_BINDING;
             
             private DrawComponent(RenderType renderType, InternalMesh.Manager.TrackedMesh.Component component) {
                 renderPass = GLRenderPass.renderPassForRenderType(renderType);
@@ -459,11 +456,6 @@ public class GLDrawBatch implements DrawBatch {
     private final int dynamicMatrixTexture;
     private final int dynamicLightTexture;
     
-    private final boolean BASE_INSTANCE = GL.getCapabilities().GL_ARB_base_instance && GLConfig.INSTANCE.ALLOW_BASE_INSTANCE;
-    private final boolean ATTRIB_BINDING = GL.getCapabilities().GL_ARB_vertex_attrib_binding && GLConfig.INSTANCE.ALLOW_ATTRIB_BINDING;
-    private final boolean DRAW_INDIRECT = GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_DRAW_INDIRECT;
-    private final boolean MULTIDRAW_INDIRECT = DRAW_INDIRECT && GL.getCapabilities().GL_ARB_multi_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
-    
     private final Object2ObjectMap<InternalMesh, MeshInstanceManager> instanceManagers = new Object2ObjectOpenHashMap<>();
     private final ObjectOpenHashSet<MeshInstanceManager> instanceBatches = new ObjectOpenHashSet<>();
     private final Object2ObjectMap<GLRenderPass, ObjectArrayList<MeshInstanceManager.DrawComponent>> opaqueDrawComponents = new Object2ObjectArrayMap<>();
@@ -711,7 +703,7 @@ public class GLDrawBatch implements DrawBatch {
                 cullVectorMin.min(cullVector);
                 cullVectorMax.max(cullVector);
             }
-            culled = cullVectorMin.x > 1 ||  cullVectorMax.x < -1 || cullVectorMin.y > 1 ||  cullVectorMax.y < -1 || cullVectorMin.z > 1 ||  cullVectorMax.z < -1;
+            culled = cullVectorMin.x > 1 || cullVectorMax.x < -1 || cullVectorMin.y > 1 || cullVectorMax.y < -1 || cullVectorMin.z > 1 || cullVectorMax.z < -1;
         } else {
             culled = false;
         }

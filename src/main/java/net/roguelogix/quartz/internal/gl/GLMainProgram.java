@@ -63,6 +63,7 @@ public class GLMainProgram {
                             "#define DYNAMIC_LIGHT_ID_LOCATION " + MagicNumbers.GL.DYNAMIC_LIGHT_ID_LOCATION + "\n" +
                             "#define STATIC_MATRIX_LOCATION " + MagicNumbers.GL.STATIC_MATRIX_LOCATION + "\n" +
                             "#define STATIC_NORMAL_MATRIX_LOCATION " + MagicNumbers.GL.STATIC_NORMAL_MATRIX_LOCATION + "\n" +
+                            (GLCore.SSBO ? "#define USE_SSBO\n" : "") +
                             "";
             vertexShaderCode = new StringBuilder(vertexShaderCode).insert(vertexShaderCode.indexOf('\n') + 1, vertPrepend).toString();
             var cutoutFragShaderCode = new StringBuilder(opaqueFragShaderCode).insert(vertexShaderCode.indexOf('\n') + 1, "#define ALPHA_DISCARD\n").toString();
@@ -149,8 +150,10 @@ public class GLMainProgram {
         PROJECTION_MATRIX_UNIFORM_LOCATION = glGetUniformLocation(info.vertexShader, "projectionMatrix");
         VERT_QUAD_UNIFORM_LOCATION = glGetUniformLocation(info.vertexShader, "QUAD");
         VERT_LIGHTING_UNIFORM_LOCATION = glGetUniformLocation(info.vertexShader, "LIGHTING");
-        DYNAMIC_MATRICES_UNIFORM_LOCATION = glGetUniformLocation(info.vertexShader, "dynamicMatrices");
-        DYNAMIC_LIGHTS_UNIFORM_LOCATION = glGetUniformLocation(info.vertexShader, "dynamicLights");
+        if (!GLCore.SSBO) {
+            DYNAMIC_MATRICES_UNIFORM_LOCATION = glGetUniformLocation(info.vertexShader, "dynamicMatrices");
+            DYNAMIC_LIGHTS_UNIFORM_LOCATION = glGetUniformLocation(info.vertexShader, "dynamicLights");
+        }
         
         OPAQUE_FOG_START_END_UNIFORM_LOCATION = glGetUniformLocation(info.opaqueFragmentShader, "fogStartEnd");
         OPAQUE_FOG_COLOR_UNIFORM_LOCATION = glGetUniformLocation(info.opaqueFragmentShader, "fogColor");
@@ -168,8 +171,10 @@ public class GLMainProgram {
         CUTOUT_ATLAS_TEXTURE_UNIFORM_LOCATION = glGetUniformLocation(info.cutoutFragmentShader, "atlasTexture");
         CUTOUT_LIGHTMAP_TEXTURE_UNIFORM_LOCATION = glGetUniformLocation(info.cutoutFragmentShader, "lightmapTexture");
         
-        glProgramUniform1i(info.vertexShader, DYNAMIC_MATRICES_UNIFORM_LOCATION, MagicNumbers.GL.DYNAMIC_MATRIX_TEXTURE_UNIT);
-        glProgramUniform1i(info.vertexShader, DYNAMIC_LIGHTS_UNIFORM_LOCATION, MagicNumbers.GL.DYNAMIC_LIGHT_TEXTURE_UNIT);
+        if(!GLCore.SSBO) {
+            glProgramUniform1i(info.vertexShader, DYNAMIC_MATRICES_UNIFORM_LOCATION, MagicNumbers.GL.DYNAMIC_MATRIX_TEXTURE_UNIT);
+            glProgramUniform1i(info.vertexShader, DYNAMIC_LIGHTS_UNIFORM_LOCATION, MagicNumbers.GL.DYNAMIC_LIGHT_TEXTURE_UNIT);
+        }
         
         glProgramUniform1i(info.opaqueFragmentShader, OPAQUE_ATLAS_TEXTURE_UNIFORM_LOCATION, MagicNumbers.GL.ATLAS_TEXTURE_UNIT);
         glProgramUniform1i(info.opaqueFragmentShader, OPAQUE_LIGHTMAP_TEXTURE_UNIFORM_LOCATION, MagicNumbers.GL.LIGHTMAP_TEXTURE_UNIT);

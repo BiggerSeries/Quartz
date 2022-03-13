@@ -13,11 +13,20 @@ public class GLConfig {
     public final boolean ALLOW_DRAW_INDIRECT;
     @ConfigValue
     public final boolean ALLOW_MULTIDRAW_INDIRECT;
+    @ConfigValue
+    public final boolean ALLOW_SSBO;
+    @ConfigValue
+    public final boolean ALLOW_MULTI_BIND;
+    @ConfigValue
+    public final boolean ALLOW_DSA;
     
     {
         ALLOW_BASE_INSTANCE = true;
         ALLOW_ATTRIB_BINDING = true;
         ALLOW_DRAW_INDIRECT = true;
         ALLOW_MULTIDRAW_INDIRECT = true;
+        ALLOW_SSBO = true;
+        ALLOW_MULTI_BIND = true;
+        ALLOW_DSA = true;
     }
 }

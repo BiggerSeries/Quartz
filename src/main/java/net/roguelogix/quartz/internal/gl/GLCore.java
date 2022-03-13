@@ -74,6 +74,9 @@ public class GLCore extends QuartzCore {
     public static final boolean ATTRIB_BINDING = GL.getCapabilities().GL_ARB_vertex_attrib_binding && GLConfig.INSTANCE.ALLOW_ATTRIB_BINDING;
     public static final boolean DRAW_INDIRECT = GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_DRAW_INDIRECT;
     public static final boolean MULTIDRAW_INDIRECT = DRAW_INDIRECT && GL.getCapabilities().GL_ARB_multi_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
+    public static final boolean SSBO = GL.getCapabilities().GL_ARB_shader_storage_buffer_object && GLConfig.INSTANCE.ALLOW_SSBO;
+    public static final boolean MULTI_BIND = GL.getCapabilities().GL_ARB_multi_bind && GLConfig.INSTANCE.ALLOW_SSBO;
+    public static final boolean DSA = GL.getCapabilities().GL_ARB_direct_state_access && GLConfig.INSTANCE.ALLOW_DSA;
     
     public static final WorkQueue deletionQueue = new WorkQueue();
     

@@ -1,8 +1,11 @@
 #version 150 core
-#line 2 // shader loader inserts #defines between the version and this line
+#line 2// shader loader inserts #defines between the version and this line
 // gpuinfo says this is supported, so im using it
 #extension GL_ARB_separate_shader_objects : require
 #extension GL_ARB_explicit_attrib_location : require
+#ifdef USE_SSBO
+#extension GL_ARB_shader_storage_buffer_object : require
+#endif
 
 #ifndef POSITION_LOCATION
 #define POSITION_LOCATION 0
@@ -40,8 +43,30 @@ uniform mat4 projectionMatrix;
 uniform bool LIGHTING;
 uniform bool QUAD;
 
+#ifndef USE_SSBO
 uniform samplerBuffer dynamicMatrices;
 uniform usamplerBuffer dynamicLights;
+#else
+
+struct DynamicMatrixPair {
+    mat4 modelMatrix;
+    mat4 normalMatrix;
+};
+
+layout(std430, binding = 0) buffer dynamicMatrixBuffer {
+    DynamicMatrixPair dynamicMatrices[];
+};
+
+struct DynamicLightInfo {
+// opengl doesnt support smaller types than this, unfortunately
+    uint lightingInfo[32];
+};
+
+layout(std430, binding = 1) buffer dynamicLightBuffer {
+    DynamicLightInfo dynamicLights[];
+};
+
+#endif
 
 layout(location = 0) out float vertexDistance;
 layout(location = 1) out vec4 vertexColor;
@@ -72,13 +97,36 @@ int extractInt(uint packedint, uint pos, uint width);
 
 uint extractUInt(uint packedint, uint pos, uint width);
 
+#ifdef USE_SSBO
+
+struct SplitDynamicLightDirectionInfo {
+    vec2 directionLight;
+    float AO;
+};
+
+struct SplitDynamicLightVertexInfo {
+    SplitDynamicLightDirectionInfo[6] directionInfo;
+};
+
+struct SplitDynamicLightInfo {
+    SplitDynamicLightVertexInfo[8] vertexInfo;
+};
+
+SplitDynamicLightInfo getLightInfo(int lightID);
+
+#endif
+
 void main() {
 
     mat4 dynamicModelMatrix = mat4(0);
+    #ifndef USE_SSBO
     dynamicModelMatrix[0] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 0);
     dynamicModelMatrix[1] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 1);
     dynamicModelMatrix[2] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 2);
     dynamicModelMatrix[3] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 3);
+    #else
+    dynamicModelMatrix = dynamicMatrices[dynamicMatrixID].modelMatrix;
+    #endif
 
     vec3 floatWorldPosition = vec3(worldPosition - playerBlock) - playerSubBlock;
 
@@ -113,27 +161,43 @@ void main() {
         }
 
         mat3 dynamicNormalMatrix = mat3(0);
+        #ifndef USE_SSBO
         dynamicNormalMatrix[0] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 4).xyz;
         dynamicNormalMatrix[1] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 5).xyz;
         dynamicNormalMatrix[2] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 6).xyz;
+        #else
+        dynamicNormalMatrix = mat3(dynamicMatrices[dynamicMatrixID].normalMatrix);
+        #endif
         mat3 normalMatrix = dynamicNormalMatrix * mat3(staticNormalMatrix);
 
         vertexNormal = normalize(normalMatrix * vertexNormal);
         vertexModelPos.w = calcuateDiffuseMultiplier(vertexNormal);
 
         //            vec3 clampedPosition = clamp(position, vec3(0), vec3(1)); // maybe clamp it? its extrapolating right now instead
+        #ifdef USE_SSBO
+        SplitDynamicLightInfo lightingInfo = getLightInfo(dynamicLightID);
+        #endif
         for (int i = 0; i < 8; i++) {
             cornerLightLevels[i] = vec3(0);
+            #ifdef USE_SSBO
+            SplitDynamicLightVertexInfo vertexInfo = lightingInfo.vertexInfo[i];
+            #endif
             for (int j = 0; j < 6; j++){
                 vec3 lightDirection = lightDirections[j];
                 float multiplier = dot(lightDirection, vertexNormal);
                 multiplier *= float(multiplier > 0);
                 multiplier *= multiplier;
 
+                #ifndef USE_SSBO
                 uvec2 udirectionLight = texelFetch(dynamicLights, dynamicLightID * 64 + i * 6 + j).rg;
-                vec2 directionLight = udirectionLight & 0x3Fu;
+                vec2 directionLight = vec2(udirectionLight & 0x3Fu) * LIGHTMAP_MULTIPLIER;
                 float AO = udirectionLight.x >> 6 & 0x3u;
-                cornerLightLevels[i] += vec3(directionLight * LIGHTMAP_MULTIPLIER, AO) * multiplier;
+                #else
+                SplitDynamicLightDirectionInfo directionInfo = vertexInfo.directionInfo[j];
+                vec2 directionLight = directionInfo.directionLight;
+                float AO = directionInfo.AO;
+                #endif
+                cornerLightLevels[i] += vec3(directionLight, AO) * multiplier;
             }
         }
     }
@@ -165,3 +229,26 @@ uint extractUInt(uint packedint, uint pos, uint width) {
     uint bitMask = signBitMask - 1u;
     return packedint & bitMask;
 }
+
+#ifdef USE_SSBO
+SplitDynamicLightInfo getLightInfo(int lightID) {
+    DynamicLightInfo rawInfo = dynamicLights[lightID];
+    SplitDynamicLightInfo info;
+    for (int i = 0; i < 8; i++) {
+        SplitDynamicLightVertexInfo vertexInfo;
+        for (int j = 0; j < 6; j++){
+            // each int packs two, because its 16 bit info
+            uint lightInt = rawInfo.lightingInfo[((i * 6) + j) >> 1] >> ((~j & 1) << 4);
+            uvec2 udirectionLight = uvec2(lightInt & 0xFFu, (lightInt >> 8 & 0xFFu));
+            vec2 directionLight = vec2(udirectionLight & 0x3Fu) * LIGHTMAP_MULTIPLIER;
+            float AO = udirectionLight.x >> 6 & 0x3u;
+            SplitDynamicLightDirectionInfo directionInfo;
+            directionInfo.directionLight = directionLight;
+            directionInfo.AO = AO;
+            vertexInfo.directionInfo[j] = directionInfo;
+        }
+        info.vertexInfo[i] = vertexInfo;
+    }
+    return info;
+}
+#endif

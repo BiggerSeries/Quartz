@@ -12,6 +12,8 @@ import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.*;
+import org.lwjgl.opengl.ARBDirectStateAccess;
+import org.lwjgl.opengl.ARBMultiBind;
 
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
@@ -27,6 +29,7 @@ import static org.lwjgl.opengl.ARBDrawIndirect.*;
 import static org.lwjgl.opengl.ARBInstancedArrays.glVertexAttribDivisorARB;
 import static org.lwjgl.opengl.ARBMultiDrawIndirect.glMultiDrawArraysIndirect;
 import static org.lwjgl.opengl.ARBMultiDrawIndirect.glMultiDrawElementsIndirect;
+import static org.lwjgl.opengl.ARBShaderStorageBufferObject.*;
 import static org.lwjgl.opengl.ARBVertexAttribBinding.*;
 import static org.lwjgl.opengl.GL32C.*;
 
@@ -745,6 +748,16 @@ public class GLDrawBatch implements DrawBatch {
         if (!enabled || culled || opaqueDrawComponents.isEmpty()) {
             return;
         }
+    
+        if (!SSBO) {
+            glActiveTexture(DYNAMIC_MATRIX_TEXTURE_UNIT_GL);
+            glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);
+            glActiveTexture(DYNAMIC_LIGHT_TEXTURE_UNIT_GL);
+            glBindTexture(GL_TEXTURE_BUFFER, dynamicLightTexture);
+        } else {
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.handle());
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, dynamicLightBuffer.handle());
+        }
         
         if (!BASE_INSTANCE && !DRAW_INDIRECT) {
             B3DStateHelper.bindArrayBuffer(instanceDataBuffer.handle());
@@ -777,10 +790,15 @@ public class GLDrawBatch implements DrawBatch {
             return;
         }
         
-        glActiveTexture(DYNAMIC_MATRIX_TEXTURE_UNIT_GL);
-        glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);
-        glActiveTexture(DYNAMIC_LIGHT_TEXTURE_UNIT_GL);
-        glBindTexture(GL_TEXTURE_BUFFER, dynamicLightTexture);
+        if (!SSBO) {
+            glActiveTexture(DYNAMIC_MATRIX_TEXTURE_UNIT_GL);
+            glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);
+            glActiveTexture(DYNAMIC_LIGHT_TEXTURE_UNIT_GL);
+            glBindTexture(GL_TEXTURE_BUFFER, dynamicLightTexture);
+        } else {
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.handle());
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, dynamicLightBuffer.handle());
+        }
         
         if (!BASE_INSTANCE && !DRAW_INDIRECT) {
             B3DStateHelper.bindArrayBuffer(instanceDataBuffer.handle());

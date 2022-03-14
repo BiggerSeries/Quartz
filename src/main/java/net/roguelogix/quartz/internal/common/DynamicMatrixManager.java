@@ -77,7 +77,7 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
     public DynamicMatrix createMatrix(@Nullable DynamicMatrix.UpdateFunc updateFunc, @Nullable DynamicMatrix parent) {
         Matrix parentMatrix = null;
         if (parent != null) {
-            if (parent instanceof Matrix parentMat && owns(parentMatrix)) {
+            if (parent instanceof Matrix parentMat && owns(parentMat)) {
                 parentMatrix = parentMat;
             } else {
                 throw new IllegalArgumentException("Parent matrix must be from the same manager");

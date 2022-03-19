@@ -15,9 +15,13 @@ public class WorldEngine {
     private final Object2ObjectOpenHashMap<AABBi, WeakReference<DrawBatch>> customDrawBatchers = new Object2ObjectOpenHashMap<>();
     
     public synchronized DrawBatch getBatcherForAABB(final AABBi aabb) {
+        return getBatcherForAABB(aabb, false);
+    }
+    
+    public synchronized DrawBatch getBatcherForAABB(final AABBi aabb, boolean allowReuse) {
         if ((aabb.minX >> 4) == (aabb.maxX >> 4) &&
-                (aabb.minY >> 4) == (aabb.maxY >> 4) &&
-                (aabb.minZ >> 4) == (aabb.maxZ >> 4)) {
+                    (aabb.minY >> 4) == (aabb.maxY >> 4) &&
+                    (aabb.minZ >> 4) == (aabb.maxZ >> 4)) {
             // AABB is conained entirely  in a single section, just return the section's batcher
             return getBatcherForSection(SectionPos.asLong(aabb.minX >> 4, aabb.minY >> 4, aabb.minZ >> 4));
         }
@@ -27,11 +31,24 @@ public class WorldEngine {
             drawBatch = weakRef.get();
         }
         if (drawBatch == null) {
+            if (allowReuse) {
+                var iter = customDrawBatchers.object2ObjectEntrySet().fastIterator();
+                while (iter.hasNext()) {
+                    var entry = iter.next();
+                    var AABB = entry.getKey();
+                    if (AABB.containsAABB(aabb)) {
+                        drawBatch = entry.getValue().get();
+                        if (drawBatch != null) {
+                            return drawBatch;
+                        }
+                    }
+                }
+            }
             final var newDrawBatch = QuartzCore.INSTANCE.createDrawBatch();
             final var finalAABB = new AABBi(aabb);
             newDrawBatch.setCullAABB(finalAABB);
             QuartzCore.CLEANER.register(newDrawBatch, () -> {
-                synchronized (this){
+                synchronized (this) {
                     customDrawBatchers.remove(finalAABB);
                 }
             });

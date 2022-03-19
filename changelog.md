@@ -1,3 +1,9 @@
+# 1.18.2-0.0.0-beta.1
+ - 1.18.2
+ - use SSBOs when available
+ - correct check for dynamic matrix parents
+ - allow existing custom size draw batchers to be used for fully contained smaller AABBs
+
 # 1.18.1-0.0.0-beta.0.2
  - fix rendering when draw indirect is available but base instance is not (Mac)
 

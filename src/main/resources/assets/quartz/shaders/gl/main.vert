@@ -1,5 +1,6 @@
 #version 150 core
-#line 2// shader loader inserts #defines between the version and this line
+// shader loader inserts #defines between the version and this line
+#line 3
 // gpuinfo says this is supported, so im using it
 #extension GL_ARB_separate_shader_objects : require
 #extension GL_ARB_explicit_attrib_location : require

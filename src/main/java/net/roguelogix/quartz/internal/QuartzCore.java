@@ -2,7 +2,9 @@ package net.roguelogix.quartz.internal;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Matrix4f;
+import net.minecraft.CrashReport;
 import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.roguelogix.quartz.internal.common.LightEngine;
@@ -33,10 +35,21 @@ public abstract class QuartzCore {
             throw new IllegalStateException("Attempt to init quartz before it is ready");
         }
         LOGGER.info("Quartz Init");
-        var instance = createCore(QuartzConfig.INSTANCE.mode);
-        if (instance == null) {
-            throw new IllegalStateException();
+        QuartzCore instance = null;
+        try {
+            instance = createCore(QuartzConfig.INSTANCE.mode);
+            if (instance == null) {
+                throw new IllegalStateException();
+            }
+        } catch (NoClassDefFoundError e) {
+            if (!e.getMessage().contains("phosphophyllite")) {
+                throw e;
+            }
+            // Phosphophyllite isn't present, print but ignore
+            e.printStackTrace();
         }
+        // in the event this is null, phos isn't present
+        //noinspection ConstantConditions
         INSTANCE = instance;
     }
     

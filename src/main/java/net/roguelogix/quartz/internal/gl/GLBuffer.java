@@ -204,7 +204,7 @@ public class GLBuffer implements Buffer {
         for (int i = 0; i < freeAllocations.size(); i++) {
             var freeAlloc = freeAllocations.get(i);
             // bit trickery that works because I require alignment to be a power of 2
-            final int alignmentWaste = freeAlloc.offset & alignmentBitmask;
+            final int alignmentWaste = alignment - (freeAlloc.offset & alignmentBitmask);
             if (freeAlloc.size - alignmentWaste < size) {
                 // wont fit, *neeeeeeeeeeeext*
                 continue;

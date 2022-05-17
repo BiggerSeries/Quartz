@@ -1,3 +1,7 @@
+# 1.18.2-0.0.0-beta.1.2
+ - fix gpu memory alignment waste calculation
+ - gracefully handle Phosphophyllyte not being installed
+
 # 1.18.2-0.0.0-beta.1.1
  - fix shader compilation on nvidia cards
 

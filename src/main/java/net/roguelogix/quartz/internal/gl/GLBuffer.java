@@ -203,8 +203,9 @@ public class GLBuffer implements Buffer {
         collapseFreeAllocations();
         for (int i = 0; i < freeAllocations.size(); i++) {
             var freeAlloc = freeAllocations.get(i);
-            // bit trickery that works because I require alignment to be a power of 2
-            final int alignmentWaste = alignment - (freeAlloc.offset & alignmentBitmask);
+            // next value guaranteed to be at *most* one less than the next alignment, then bit magic because powers of two to round down without a divide
+            final int nextValidAlignment = (freeAlloc.offset + (alignment - 1)) & (-alignment);
+            final int alignmentWaste = nextValidAlignment - freeAlloc.offset;
             if (freeAlloc.size - alignmentWaste < size) {
                 // wont fit, *neeeeeeeeeeeext*
                 continue;
@@ -276,13 +277,12 @@ public class GLBuffer implements Buffer {
             // not an allocation from this buffer
             throw new IllegalArgumentException("Cannot realloc allocation from another buffer");
         }
-        final int alignmentBitmask = alignment - 1;
         
         var liveIndex = liveAllocations.indexOf(allocation.info);
         if (liveIndex == -1) {
             throw new IllegalArgumentException("Cannot realloc non-live allocation");
         }
-        if (newSize <= allocation.info.size && (allocation.info.offset & alignmentBitmask) == 0) {
+        if (newSize <= allocation.info.size && (allocation.info.offset & (alignment - 1)) == 0) {
             // this allocation already meets size and alignment requirements
             if (newSize == allocation.info.size) {
                 return allocation;
@@ -331,7 +331,8 @@ public class GLBuffer implements Buffer {
             }
         }
         int fullBlockOffset = precedingAlloc == null ? allocation.info.offset : precedingAlloc.offset;
-        int alignmentWaste = fullBlockOffset & alignmentBitmask;
+        final int nextValidAlignment = (fullBlockOffset + (alignment - 1)) & (-alignment);
+        final int alignmentWaste = nextValidAlignment - fullBlockOffset;
         int fullBlockSize = allocation.info.size;
         if (precedingAlloc != null) {
             fullBlockSize += precedingAlloc.size;
@@ -511,5 +512,4 @@ public class GLBuffer implements Buffer {
             }
         }
     }
-    
 }

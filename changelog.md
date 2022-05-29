@@ -1,3 +1,7 @@
+# 1.18.2-0.0.0-beta.1.3
+- fix gpu memory alignment waste calculation, again
+  - im bad at math apparently, the new one had a different bug from what i was trying to fix last time 
+
 # 1.18.2-0.0.0-beta.1.2
  - fix gpu memory alignment waste calculation
  - gracefully handle Phosphophyllyte not being installed

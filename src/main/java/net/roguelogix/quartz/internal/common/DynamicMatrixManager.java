@@ -1,22 +1,20 @@
 package net.roguelogix.quartz.internal.common;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.roguelogix.quartz.internal.QuartzCore;
-import net.roguelogix.quartz.DynamicMatrix;
-import net.roguelogix.quartz.internal.Buffer;
-import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import net.roguelogix.quartz.DynamicMatrix;
+import net.roguelogix.quartz.internal.Buffer;
+import net.roguelogix.quartz.internal.MagicNumbers;
+import net.roguelogix.quartz.internal.QuartzCore;
 
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
+@NonnullDefault
 public class DynamicMatrixManager implements DynamicMatrix.Manager {
     
     public static class Matrix implements DynamicMatrix {

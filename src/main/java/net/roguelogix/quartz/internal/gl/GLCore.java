@@ -9,17 +9,16 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.roguelogix.phosphophyllite.threading.WorkQueue;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
-import net.roguelogix.phosphophyllite.threading.WorkQueue;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 import org.lwjgl.opengl.GL;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
@@ -28,8 +27,7 @@ import static org.lwjgl.opengl.ARBDrawIndirect.GL_DRAW_INDIRECT_BUFFER;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.glBindProgramPipeline;
 import static org.lwjgl.opengl.GL32C.*;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public class GLCore extends QuartzCore {
     
     // its fine, in the event its null, nothing will need it to not be null

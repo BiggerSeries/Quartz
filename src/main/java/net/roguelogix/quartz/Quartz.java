@@ -4,21 +4,20 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.EventBus;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.fml.common.Mod;
 import net.roguelogix.phosphophyllite.registry.Registry;
-import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import net.roguelogix.quartz.internal.QuartzCore;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.util.function.Consumer;
 
 @Mod(Quartz.modid)
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public final class Quartz {
     public static final String modid = "quartz";
     
@@ -30,7 +29,8 @@ public final class Quartz {
     
     public static Mesh createStaticMesh(BlockState blockState) {
         return createStaticMesh(builder -> {
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(blockState, builder.matrixStack(), builder.bufferSource(), 0, 0x00000, net.minecraftforge.client.model.data.EmptyModelData.INSTANCE);
+            //noinspection ConstantConditions
+            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(blockState, builder.matrixStack(), builder.bufferSource(), 0, 0x00000, ModelData.EMPTY, null);
         });
     }
     

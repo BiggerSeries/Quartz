@@ -7,6 +7,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.common.LightEngine;
 import net.roguelogix.quartz.internal.common.InternalMesh;
 import net.roguelogix.quartz.internal.gl.GLCore;
@@ -22,6 +23,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
 
+@NonnullDefault
 public abstract class QuartzCore {
     
     public static final Logger LOGGER = LogManager.getLogger("Quartz");

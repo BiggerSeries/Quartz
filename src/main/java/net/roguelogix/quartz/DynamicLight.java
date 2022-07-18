@@ -1,9 +1,11 @@
 package net.roguelogix.quartz;
 
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nullable;
 
+@NonnullDefault
 public interface DynamicLight {
     
     enum Type {

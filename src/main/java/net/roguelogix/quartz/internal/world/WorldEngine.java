@@ -3,12 +3,14 @@ package net.roguelogix.quartz.internal.world;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.SectionPos;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
 
 import java.lang.ref.WeakReference;
 
+@NonnullDefault
 public class WorldEngine {
     
     private final Long2ObjectOpenHashMap<WeakReference<DrawBatch>> sectionDrawBatchers = new Long2ObjectOpenHashMap<>();

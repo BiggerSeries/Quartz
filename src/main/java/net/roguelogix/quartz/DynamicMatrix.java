@@ -3,9 +3,11 @@ package net.roguelogix.quartz;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nullable;
 
+@NonnullDefault
 public interface DynamicMatrix {
     void write(Matrix4fc matrixData);
     

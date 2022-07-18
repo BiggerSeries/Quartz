@@ -1,20 +1,18 @@
 package net.roguelogix.quartz.internal.common;
 
-import net.roguelogix.quartz.internal.QuartzCore;
-import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector4f;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import net.roguelogix.quartz.internal.MagicNumbers;
+import net.roguelogix.quartz.internal.QuartzCore;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public class DrawInfo {
     public long deltaNano;
     public float partialTicks;

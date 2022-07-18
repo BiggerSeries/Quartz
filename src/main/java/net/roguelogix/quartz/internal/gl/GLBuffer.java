@@ -2,16 +2,15 @@ package net.roguelogix.quartz.internal.gl;
 
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.roguelogix.quartz.internal.common.B3DStateHelper;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -21,8 +20,7 @@ import java.util.function.Consumer;
 import static org.lwjgl.opengl.GL33C.*;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public class GLBuffer implements Buffer {
     public class Allocation implements Buffer.Allocation {
         private record Info(int offset, int size) implements Comparable<Info> {

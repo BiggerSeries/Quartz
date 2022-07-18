@@ -2,6 +2,7 @@ package net.roguelogix.quartz.internal.gl;
 
 import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
@@ -11,6 +12,7 @@ import net.roguelogix.phosphophyllite.util.Util;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.*;
 import static org.lwjgl.opengl.GL32C.*;
 
+@NonnullDefault
 public class GLMainProgram {
     
     public final ResourceLocation baseResourceLocation = new ResourceLocation(Quartz.modid, "shaders/gl/main");

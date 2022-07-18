@@ -8,14 +8,13 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -27,8 +26,7 @@ import java.util.function.Function;
 
 import static net.roguelogix.quartz.internal.MagicNumbers.VERTEX_BYTE_SIZE;
 
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
+@NonnullDefault
 public class InternalMesh implements Mesh {
     
     public Consumer<Mesh.Builder> buildFunc;

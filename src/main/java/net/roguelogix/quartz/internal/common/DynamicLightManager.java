@@ -2,19 +2,17 @@ package net.roguelogix.quartz.internal.common;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.world.level.BlockAndTintGetter;
-import net.roguelogix.quartz.internal.QuartzCore;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DynamicLight;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.MagicNumbers;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.quartz.internal.QuartzCore;
 
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
+@NonnullDefault
 public class DynamicLightManager implements DynamicLight.Manager {
     public static class Light implements DynamicLight {
         final Buffer.Allocation allocation;

@@ -1,9 +1,8 @@
 package net.roguelogix.quartz.internal;
 
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
@@ -13,8 +12,7 @@ import java.util.function.Consumer;
  * GL implementation is NOT thread safe, and may alter GL state
  * VK is unimplemented
  */
-@MethodsReturnNonnullByDefault
-@ParametersAreNonnullByDefault
+@NonnullDefault
 public interface Buffer {
     
     interface Allocation {

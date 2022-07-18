@@ -4,7 +4,7 @@ import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.roguelogix.phosphophyllite.repack.org.joml.*;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.DynamicLight;
 import net.roguelogix.quartz.DynamicMatrix;
@@ -12,11 +12,8 @@ import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.*;
-import org.lwjgl.opengl.ARBDirectStateAccess;
-import org.lwjgl.opengl.ARBMultiBind;
 
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 import java.lang.ref.WeakReference;
 import java.util.function.Consumer;
 
@@ -29,12 +26,10 @@ import static org.lwjgl.opengl.ARBDrawIndirect.*;
 import static org.lwjgl.opengl.ARBInstancedArrays.glVertexAttribDivisorARB;
 import static org.lwjgl.opengl.ARBMultiDrawIndirect.glMultiDrawArraysIndirect;
 import static org.lwjgl.opengl.ARBMultiDrawIndirect.glMultiDrawElementsIndirect;
-import static org.lwjgl.opengl.ARBShaderStorageBufferObject.*;
+import static org.lwjgl.opengl.ARBShaderStorageBufferObject.GL_SHADER_STORAGE_BUFFER;
 import static org.lwjgl.opengl.ARBVertexAttribBinding.*;
 import static org.lwjgl.opengl.GL32C.*;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public class GLDrawBatch implements DrawBatch {
     
     private class MeshInstanceManager {

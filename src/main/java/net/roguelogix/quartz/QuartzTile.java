@@ -10,13 +10,10 @@ import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.serialization.PhosphophylliteCompound;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.ParametersAreNonnullByDefault;
-
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public interface QuartzTile extends IModularTile {
     
     @Nullable

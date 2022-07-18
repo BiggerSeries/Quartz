@@ -7,8 +7,10 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 @ClientOnly
+@NonnullDefault
 public class EventListener {
     @OnModLoad
     private static void onModLoad() {

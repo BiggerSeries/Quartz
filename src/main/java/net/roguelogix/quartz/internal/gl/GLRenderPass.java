@@ -7,17 +7,15 @@ import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.common.ShaderInfo;
-import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
 
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
 
 import static org.lwjgl.opengl.GL32C.GL_LINE;
 import static org.lwjgl.opengl.GL32C.GL_TRIANGLES;
 
-@ParametersAreNonnullByDefault
-@MethodsReturnNonnullByDefault
+@NonnullDefault
 public class GLRenderPass {
     
     public final boolean QUAD;

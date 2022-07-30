@@ -313,7 +313,7 @@ public class GLDrawBatch implements DrawBatch {
             private Instance(int initialLocation, DynamicMatrixManager.Matrix dynamicMatrix, DynamicLightManager.Light dynamicLight) {
                 final var manager = MeshInstanceManager.this;
                 final var location = new Location(initialLocation);
-                QuartzCore.CLEANER.register(this, () -> GLCore.deletionQueue.enqueue(() -> manager.removeInstance(location)));
+                QuartzCore.CLEANER.register(this, () -> QuartzCore.deletionQueue.enqueue(() -> manager.removeInstance(location)));
                 this.location = location;
                 this.dynamicMatrix = dynamicMatrix;
                 this.dynamicLight = dynamicLight;
@@ -610,7 +610,7 @@ public class GLDrawBatch implements DrawBatch {
         
         glBindTexture(GL_TEXTURE_BUFFER, 0);
         
-        QuartzCore.CLEANER.register(this, () -> GLCore.deletionQueue.enqueue(() -> {
+        QuartzCore.CLEANER.register(this, () -> QuartzCore.deletionQueue.enqueue(() -> {
             glDeleteTextures(dynamicLightTexture);
             glDeleteTextures(dynamicMatrixTexture);
             glDeleteVertexArrays(VAO);

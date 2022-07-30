@@ -7,6 +7,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.common.LightEngine;
 import net.roguelogix.quartz.internal.common.InternalMesh;
@@ -31,6 +32,7 @@ public abstract class QuartzCore {
     @Nonnull
     public static final QuartzCore INSTANCE;
     public static final Cleaner CLEANER = Cleaner.create();
+    public static final WorkQueue deletionQueue = new WorkQueue();
     
     static {
         if (!Thread.currentThread().getStackTrace()[2].getClassName().equals(EventListener.class.getName())) {

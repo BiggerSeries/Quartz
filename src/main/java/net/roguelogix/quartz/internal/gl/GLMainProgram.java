@@ -1,7 +1,6 @@
 package net.roguelogix.quartz.internal.gl;
 
 import net.minecraft.resources.ResourceLocation;
-import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.internal.MagicNumbers;
@@ -40,7 +39,7 @@ public class GLMainProgram {
     
     public GLMainProgram() {
         Info info = this.info;
-        QuartzCore.CLEANER.register(this, () -> GLCore.deletionQueue.enqueue(info::clean));
+        QuartzCore.CLEANER.register(this, () -> QuartzCore.deletionQueue.enqueue(info::clean));
     }
     
     public void reload() {

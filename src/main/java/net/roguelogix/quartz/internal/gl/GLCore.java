@@ -9,7 +9,6 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
-import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.internal.MagicNumbers;
@@ -75,9 +74,6 @@ public class GLCore extends QuartzCore {
     public static final boolean SSBO = GL.getCapabilities().GL_ARB_shader_storage_buffer_object && GLConfig.INSTANCE.ALLOW_SSBO;
     public static final boolean MULTI_BIND = GL.getCapabilities().GL_ARB_multi_bind && GLConfig.INSTANCE.ALLOW_SSBO;
     public static final boolean DSA = GL.getCapabilities().GL_ARB_direct_state_access && GLConfig.INSTANCE.ALLOW_DSA;
-    
-    public static final WorkQueue deletionQueue = new WorkQueue();
-    
     public GLMainProgram mainProgram = new GLMainProgram();
     public GLBuffer vertexBuffer = meshManager.vertexBuffer.as(GLBuffer.class);
     public GLBuffer elementBuffer = allocBuffer();

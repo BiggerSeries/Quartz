@@ -63,7 +63,7 @@ public class GLBuffer implements Buffer {
                     sliceCallbacks.get(i).accept(alloc);
                 }
             };
-            QuartzCore.CLEANER.register(this, () -> GLCore.deletionQueue.enqueue(() -> {
+            QuartzCore.CLEANER.register(this, () -> QuartzCore.deletionQueue.enqueue(() -> {
                 allocator.free(info);
                 allocator.slicers.remove(slicer);
             }));
@@ -180,7 +180,7 @@ public class GLBuffer implements Buffer {
         int buffer = this.buffer;
         QuartzCore.CLEANER.register(this, () -> {
             MemoryUtil.memFree(bufArray[0]);
-            GLCore.deletionQueue.enqueue(() -> glDeleteBuffers(buffer));
+            QuartzCore.deletionQueue.enqueue(() -> glDeleteBuffers(buffer));
         });
     }
     

@@ -5,8 +5,8 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.eventbus.EventBus;
 import net.minecraftforge.eventbus.api.BusBuilder;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.roguelogix.phosphophyllite.registry.Registry;
 import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
@@ -25,7 +25,7 @@ public final class Quartz {
         new Registry();
     }
     
-    public static EventBus EVENT_BUS = new EventBus(new BusBuilder().setTrackPhases(false));
+    public static IEventBus EVENT_BUS = BusBuilder.builder().setTrackPhases(false).build();
     
     public static Mesh createStaticMesh(BlockState blockState) {
         return createStaticMesh(builder -> {

@@ -1,3 +1,7 @@
+# 1.19.2-0.1.0-beta
+ - 1.19.2
+ - fix SSBO checking on some GPUs
+
 # 1.18.2-0.0.0-beta.1.3
 - fix gpu memory alignment waste calculation, again
   - im bad at math apparently, the new one had a different bug from what i was trying to fix last time 

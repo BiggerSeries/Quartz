@@ -160,6 +160,7 @@ gradle.projectsEvaluated {
     var phosMaxVersion = phosVersionRange[1].substring(1, phosVersionRange[1].length() - 1)
     var phosRequirementString = "Requires [Phosphophyllite](https://www.curseforge.com/minecraft/mc-mods/phosphophyllite) version of at least " + phosMinVersion + " but less than " + phosMaxVersion
 
+    print(phosRequirementString)
 
     def resource_targets = ["META-INF/mods.toml", "pack.mcmeta"]
     def into_targets = ["$rootDir/out/production/resources/", "$rootDir/out/production/${project.name}.main/", "$rootDir/bin/main/"]

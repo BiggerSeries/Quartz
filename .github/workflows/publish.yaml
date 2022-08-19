@@ -10,7 +10,7 @@ jobs:
     outputs:
       mc_version: ${{ steps.verinfo.outputs.mcver }}
       mc_major_version: ${{ steps.mverinfo.outputs.mcver }}
-      release_type: ${{ steps.mainbuild.outputs.reltype }}
+      release_type: ${{ steps.relinfo.outputs.reltype }}
       phos_version_range: ${{ steps.mainbuild.outputs.phos_version_range }}
     steps:
       - uses: actions/checkout@v2
@@ -52,6 +52,8 @@ jobs:
           game_versions: "Minecraft ${{ needs.build.outputs.mc_major_version }}:${{ needs.build.outputs.mc_version }},Java 17,Forge"
           release_type: "${{ needs.build.outputs.release_type }}"
           changelog: "https://github.com/BiggerSeries/Quartz/blob/${{ github.ref_name }}/changelog.md
+          
+          &nbsp;
           
           ${{ needs.build.outputs.phos_version_range }}"
 

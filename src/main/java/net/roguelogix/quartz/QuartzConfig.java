@@ -18,18 +18,11 @@ public class QuartzConfig {
     static {
         try {
             // this needs to be registered extra extra early, so it can be read at quartz init
-            ConfigManager.registerConfig(QuartzConfig.class.getField("INSTANCE"), Phosphophyllite.modid);
+            ConfigManager.registerConfig(INSTANCE, "quartz", QuartzConfig.class.getField("INSTANCE").getAnnotation(RegisterConfig.class));
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
             throw new IllegalStateException();
         }
-    }
-    
-    @ConfigValue(hidden = true, enableAdvanced = true)
-    public final boolean enableAdvanced;
-    
-    {
-        enableAdvanced = false;
     }
     
     public enum Mode {
@@ -46,8 +39,8 @@ public class QuartzConfig {
         mode = Mode.Automatic;
     }
     
-    @ConfigValue(advanced = true)
+    @ConfigValue(advanced = ConfigValue.BoolOption.True)
     public final GLConfig GL = GLConfig.INSTANCE;
-    @ConfigValue(advanced = true)
+    @ConfigValue(advanced = ConfigValue.BoolOption.True)
     public final VKConfig VK = VKConfig.INSTANCE;
 }

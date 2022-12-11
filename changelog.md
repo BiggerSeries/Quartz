@@ -1,3 +1,7 @@
+# 1.19.2-0.1.0-beta.1
+ - update phosphophyllite (breaking changes)
+ - check phos version before attempting to use any faetures of phos
+
 # 1.19.2-0.1.0-beta
  - 1.19.2
  - fix SSBO checking on some GPUs

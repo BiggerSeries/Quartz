@@ -1,5 +1,6 @@
 package net.roguelogix.quartz.internal.mixinhelpers;
 
+import net.roguelogix.quartz.QuartzConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.lwjgl.PointerBuffer;
@@ -96,6 +97,11 @@ public class OpenGLSelector {
 //        if (!doGlSearch) {
 //            return glfwCreateWindow(width, height, title, monitor, share);
 //        }
+        
+        // something failed or is going to fail, this is the safest option
+        if (!QuartzConfig.INIT_COMPLETED) {
+            return glfwCreateWindow(width, height, title, monitor, share);
+        }
         
         LOGGER.error("Quartz OpenGL version search enabled, this may potentially cause issues with some graphics cards, please report issues");
         // TODO: add this line when quartz supports GL 3.2

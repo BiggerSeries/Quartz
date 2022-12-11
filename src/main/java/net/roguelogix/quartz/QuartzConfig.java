@@ -1,5 +1,8 @@
 package net.roguelogix.quartz;
 
+import com.electronwill.nightconfig.core.AbstractCommentedConfig;
+import net.minecraftforge.fml.VersionChecker;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
 import net.roguelogix.phosphophyllite.config.ConfigType;
@@ -8,14 +11,46 @@ import net.roguelogix.quartz.internal.gl.GLConfig;
 import net.roguelogix.quartz.internal.vk.VKConfig;
 import net.roguelogix.phosphophyllite.registry.IgnoreRegistration;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
+import org.apache.maven.artifact.versioning.ComparableVersion;
+
+import java.util.ArrayList;
+import java.util.Map;
 
 public class QuartzConfig {
-
+    
     @IgnoreRegistration
     @RegisterConfig(folder = Phosphophyllite.modid, name = "quartz", type = ConfigType.CLIENT)
     public static final QuartzConfig INSTANCE = new QuartzConfig();
     
-    static {
+    public static final boolean INIT_COMPLETED;
+    
+    private static boolean isValidPhosLoaading() {
+        final var phosFileInfo = FMLLoader.getLoadingModList().getModFileById(Phosphophyllite.modid);
+        if (phosFileInfo == null) {
+            return false;
+        }
+        final var quartzFileInfo = FMLLoader.getLoadingModList().getModFileById(Quartz.modid);
+        if (quartzFileInfo == null) {
+            // this should always be false
+            throw new IllegalStateException("Quartz not loading");
+        }
+        final var phosContainer = phosFileInfo.getMods().get(0);
+        final var quartzContainer = quartzFileInfo.getMods().get(0);
+        
+        final var phosVersion = phosContainer.getVersion();
+        final var quartzPhosDep = quartzContainer.getDependencies().stream().filter(dep -> dep.getModId().equals(Phosphophyllite.modid)).findAny().orElse(null);
+        
+        if(quartzPhosDep == null){
+            return false;
+        }
+        return quartzPhosDep.getVersionRange().containsVersion(phosVersion);
+    }
+    
+    private static boolean setup() {
+        if(!isValidPhosLoaading()){
+            // in the event we have an invalid phos loading, we dont really care anymore
+            return false;
+        }
         try {
             // this needs to be registered extra extra early, so it can be read at quartz init
             ConfigManager.registerConfig(QuartzConfig.class.getField("INSTANCE"), Phosphophyllite.modid);
@@ -23,6 +58,11 @@ public class QuartzConfig {
             e.printStackTrace();
             throw new IllegalStateException();
         }
+        return true;
+    }
+    
+    static {
+        INIT_COMPLETED = setup();
     }
     
     @ConfigValue(hidden = true, enableAdvanced = true)

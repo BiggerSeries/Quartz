@@ -11,7 +11,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: git submodule update --init --recursive
-      - run: ./gradlew publish
+      - run: ./gradlew publishToMavenLocal
       - run: mkdir jars
       - run: mv build/libs/quartz-* jars/
       - uses: actions/upload-artifact@v2

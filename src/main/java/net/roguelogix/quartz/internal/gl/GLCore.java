@@ -177,6 +177,7 @@ public class GLCore extends QuartzCore {
         drawInfo.playerSubBlockNegative.set(drawInfo.playerSubBlockNegative).negate();
         
         drawInfo.projectionMatrix.set(pProjection);
+        drawInfo.projectionMatrix.mul(pMatrixStack.last().pose());
         drawInfo.projectionMatrix.get(drawInfo.projectionMatrixFloatBuffer);
         
         drawInfo.deltaNano = deltaNano;

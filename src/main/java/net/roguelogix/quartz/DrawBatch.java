@@ -1,8 +1,7 @@
 package net.roguelogix.quartz;
 
-import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
-import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import org.joml.Matrix4fc;
+import org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nullable;
@@ -44,7 +43,7 @@ public interface DrawBatch {
     
     DynamicLight createLight(Vector3ic lightPosition, DynamicLight.Type lightType);
     
-    void setCullAABB(AABBi aabb);
+    void setCullAABB(AABB aabb);
     
     void setEnabled(boolean enabled);
     

@@ -3,15 +3,15 @@ package net.roguelogix.quartz.internal.gl;
 import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
-import net.roguelogix.phosphophyllite.repack.org.joml.*;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
-import net.roguelogix.quartz.DrawBatch;
-import net.roguelogix.quartz.DynamicLight;
-import net.roguelogix.quartz.DynamicMatrix;
-import net.roguelogix.quartz.Mesh;
+import net.roguelogix.quartz.*;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.*;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
+import org.joml.Vector3ic;
+import org.joml.Vector4f;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
@@ -30,6 +30,7 @@ import static org.lwjgl.opengl.ARBMultiDrawIndirect.glMultiDrawElementsIndirect;
 import static org.lwjgl.opengl.ARBShaderStorageBufferObject.GL_SHADER_STORAGE_BUFFER;
 import static org.lwjgl.opengl.ARBVertexAttribBinding.*;
 import static org.lwjgl.opengl.GL32C.*;
+
 @NonnullDefault
 public class GLDrawBatch implements DrawBatch {
     
@@ -116,7 +117,9 @@ public class GLDrawBatch implements DrawBatch {
         }
         
         private final boolean autoDelete;
+        @Nullable
         private InternalMesh staticMesh;
+        @Nullable
         private InternalMesh.Manager.TrackedMesh trackedMesh;
         private final Consumer<InternalMesh.Manager.TrackedMesh> meshBuildCallback;
         private final ObjectArrayList<DrawComponent> components = new ObjectArrayList<>();
@@ -307,6 +310,7 @@ public class GLDrawBatch implements DrawBatch {
             }
             
             private final Location location;
+            @Nullable
             private MeshInstanceManager.InstanceBatch batch;
             private DynamicMatrixManager.Matrix dynamicMatrix;
             private DynamicLightManager.Light dynamicLight;
@@ -466,10 +470,11 @@ public class GLDrawBatch implements DrawBatch {
     private boolean indirectDrawInfoDirty = false;
     private boolean rebuildIndirectBlocks = false;
     
-    private AABBi cullAABB = null;
-    private Vector4f cullVector = new Vector4f();
-    private Vector4f cullVectorMin = new Vector4f();
-    private Vector4f cullVectorMax = new Vector4f();
+    @Nullable
+    private AABB cullAABB = null;
+    private final Vector4f cullVector = new Vector4f();
+    private final Vector4f cullVectorMin = new Vector4f();
+    private final Vector4f cullVectorMax = new Vector4f();
     private boolean enabled = true;
     private boolean culled = false;
     
@@ -673,7 +678,7 @@ public class GLDrawBatch implements DrawBatch {
     }
     
     @Override
-    public void setCullAABB(AABBi aabb) {
+    public void setCullAABB(AABB aabb) {
         this.cullAABB = aabb;
     }
     
@@ -695,7 +700,7 @@ public class GLDrawBatch implements DrawBatch {
             cullVectorMin.set(2);
             cullVectorMax.set(-2);
             for (int i = 0; i < 8; i++) {
-                cullVector.set(((i & 1) == 0 ? cullAABB.maxX : cullAABB.minX) - drawInfo.playerPosition.x, ((i & 2) == 0 ? cullAABB.maxY : cullAABB.minY) - drawInfo.playerPosition.y, ((i & 4) == 0 ? cullAABB.maxZ : cullAABB.minZ) - drawInfo.playerPosition.z, 1);
+                cullVector.set(((i & 1) == 0 ? cullAABB.maxX() : cullAABB.minX()) - drawInfo.playerPosition.x, ((i & 2) == 0 ? cullAABB.maxY() : cullAABB.minY()) - drawInfo.playerPosition.y, ((i & 4) == 0 ? cullAABB.maxZ() : cullAABB.minZ()) - drawInfo.playerPosition.z, 1);
                 cullVector.sub(drawInfo.playerSubBlock.x, drawInfo.playerSubBlock.y, drawInfo.playerSubBlock.z, 0);
                 cullVector.mul(drawInfo.projectionMatrix);
                 cullVector.div(cullVector.w);
@@ -744,7 +749,7 @@ public class GLDrawBatch implements DrawBatch {
         if (!enabled || culled || opaqueDrawComponents.isEmpty()) {
             return;
         }
-    
+        
         if (!SSBO) {
             glActiveTexture(DYNAMIC_MATRIX_TEXTURE_UNIT_GL);
             glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);

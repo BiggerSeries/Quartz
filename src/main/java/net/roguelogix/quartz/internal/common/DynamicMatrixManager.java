@@ -1,10 +1,10 @@
 package net.roguelogix.quartz.internal.common;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
-import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
+import org.joml.Matrix4f;
+import org.joml.Matrix4fc;
+import org.joml.Vector3f;
+import org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DynamicMatrix;
 import net.roguelogix.quartz.internal.Buffer;

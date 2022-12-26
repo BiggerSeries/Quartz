@@ -6,9 +6,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.roguelogix.phosphophyllite.modular.api.IModularTile;
 import net.roguelogix.phosphophyllite.modular.api.TileModule;
-import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
-import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
+import org.joml.Matrix4fc;
+import org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.serialization.PhosphophylliteCompound;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import org.jetbrains.annotations.Nullable;
@@ -38,7 +37,7 @@ public interface QuartzTile extends IModularTile {
     void modelDataUpdate(PhosphophylliteCompound updateData);
     
     @Nullable
-    default AABBi getAABB() {
+    default AABB getAABB() {
         return null;
     }
     

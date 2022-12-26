@@ -2,7 +2,6 @@ package net.roguelogix.quartz.internal.gl;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Matrix4f;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.CrashReport;
 import net.minecraft.client.Camera;
@@ -14,6 +13,7 @@ import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
+import org.joml.Matrix4f;
 import org.lwjgl.opengl.ARBShaderStorageBufferObject;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
@@ -175,11 +175,12 @@ public class GLCore extends QuartzCore {
         drawInfo.playerPositionNegative.set(drawInfo.playerPosition).negate();
         drawInfo.playerSubBlock.set(playerPosition.x - (int) playerPosition.x, playerPosition.y - (int) playerPosition.y, playerPosition.z - (int) playerPosition.z);
         drawInfo.playerSubBlockNegative.set(drawInfo.playerSubBlockNegative).negate();
-        pProjection.store(drawInfo.projectionMatrixFloatBuffer);
-        drawInfo.projectionMatrix.set(drawInfo.projectionMatrixFloatBuffer);
-        pMatrixStack.last().pose().store(drawInfo.projectionMatrixFloatBuffer);
-        drawInfo.projectionMatrix.mul(new net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f().set(drawInfo.projectionMatrixFloatBuffer));
+        
+        drawInfo.projectionMatrix.set(pProjection);
+        pMatrixStack.last().pose().set(pProjection);
+        drawInfo.projectionMatrix.mul(new org.joml.Matrix4f().set(drawInfo.projectionMatrixFloatBuffer));
         drawInfo.projectionMatrix.get(drawInfo.projectionMatrixFloatBuffer);
+        
         drawInfo.deltaNano = deltaNano;
         drawInfo.partialTicks = pPartialTicks;
     }

@@ -8,7 +8,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3f;
+import org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;

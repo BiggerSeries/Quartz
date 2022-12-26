@@ -9,8 +9,7 @@ import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
 import net.roguelogix.phosphophyllite.registry.Registry;
-import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.QuartzCore;
 
@@ -50,7 +49,7 @@ public final class Quartz {
         return QuartzCore.INSTANCE.getWorldEngine().getBatcherForSection(sectionPos);
     }
     
-    public static DrawBatch getDrawBatcherForAABB(AABBi aabb) {
+    public static DrawBatch getDrawBatcherForAABB(AABB aabb) {
         return QuartzCore.INSTANCE.getWorldEngine().getBatcherForAABB(aabb);
     }
 }

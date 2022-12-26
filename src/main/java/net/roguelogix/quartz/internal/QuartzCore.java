@@ -1,10 +1,7 @@
 package net.roguelogix.quartz.internal;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Matrix4f;
-import net.minecraft.CrashReport;
 import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
@@ -19,6 +16,7 @@ import net.roguelogix.quartz.QuartzEvent;
 import net.roguelogix.quartz.internal.world.WorldEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.joml.Matrix4f;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

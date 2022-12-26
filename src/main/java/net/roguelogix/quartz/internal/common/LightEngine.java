@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.LightLayer;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.threading.Queues;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DynamicLight;
@@ -18,7 +18,7 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.LongConsumer;
 
-import static net.roguelogix.phosphophyllite.repack.org.joml.Math.abs;
+import static org.joml.Math.abs;
 
 @NonnullDefault
 public class LightEngine {

@@ -1,3 +1,8 @@
+# 1.18.2-0.0.0-beta.1.4
+ - backport fixes from 1.19
+   - fix SSBO checking on some GPUs
+   - check phos version before attempting to use any faetures of phos
+
 # 1.18.2-0.0.0-beta.1.3
 - fix gpu memory alignment waste calculation, again
   - im bad at math apparently, the new one had a different bug from what i was trying to fix last time 

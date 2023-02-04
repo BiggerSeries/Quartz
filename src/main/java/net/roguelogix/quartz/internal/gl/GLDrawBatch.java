@@ -23,6 +23,7 @@ import java.util.function.Consumer;
 import static net.roguelogix.quartz.internal.MagicNumbers.GL.*;
 import static net.roguelogix.quartz.internal.MagicNumbers.*;
 import static net.roguelogix.quartz.internal.gl.GLCore.*;
+import static net.roguelogix.quartz.internal.gl.GLMainProgram.SSBO;
 import static org.lwjgl.opengl.ARBBaseInstance.glDrawArraysInstancedBaseInstance;
 import static org.lwjgl.opengl.ARBBaseInstance.glDrawElementsInstancedBaseVertexBaseInstance;
 import static org.lwjgl.opengl.ARBDrawIndirect.*;

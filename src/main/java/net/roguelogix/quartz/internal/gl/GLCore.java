@@ -15,7 +15,9 @@ import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.MethodsReturnNonnullByDefault;
+import org.lwjgl.opengl.ARBShaderStorageBufferObject;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,6 +77,8 @@ public class GLCore extends QuartzCore {
     public static final boolean DRAW_INDIRECT = GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_DRAW_INDIRECT;
     public static final boolean MULTIDRAW_INDIRECT = DRAW_INDIRECT && GL.getCapabilities().GL_ARB_multi_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
     public static final boolean SSBO = GL.getCapabilities().GL_ARB_shader_storage_buffer_object && GLConfig.INSTANCE.ALLOW_SSBO;
+    public static final int SSBO_VERTEX_BLOCK_LIMIT = GL11.glGetInteger(ARBShaderStorageBufferObject.GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS);
+    public static final int SSBO_FRAGMENT_BLOCK_LIMIT = GL11.glGetInteger(ARBShaderStorageBufferObject.GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS);
     public static final boolean MULTI_BIND = GL.getCapabilities().GL_ARB_multi_bind && GLConfig.INSTANCE.ALLOW_SSBO;
     public static final boolean DSA = GL.getCapabilities().GL_ARB_direct_state_access && GLConfig.INSTANCE.ALLOW_DSA;
     

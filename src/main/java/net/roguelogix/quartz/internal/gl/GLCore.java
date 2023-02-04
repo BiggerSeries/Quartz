@@ -43,8 +43,7 @@ public class GLCore extends QuartzCore {
     public static GLCore attemptCreate() {
         var capabilities = GL.getCapabilities();
         if (!capabilities.OpenGL32) {
-            LOGGER.error("Unable to initialize Quartz GLCore due to missing GL 3.2 capabilities, this shouldn't be possible");
-            return null;
+            throw  new IllegalStateException("Unable to initialize Quartz GLCore due to missing GL 3.2 capabilities, this shouldn't be possible");
         }
         if (!capabilities.GL_ARB_separate_shader_objects || !capabilities.GL_ARB_explicit_attrib_location || !capabilities.GL_ARB_instanced_arrays) {
             final var builder = new StringBuilder();

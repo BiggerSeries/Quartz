@@ -39,7 +39,7 @@ public abstract class QuartzCore {
         try {
             instance = createCore(QuartzConfig.INSTANCE.mode);
             if (instance == null) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("Failed to create Quartz core, full log should contain more details on failure");
             }
         } catch (NoClassDefFoundError e) {
             if (!e.getMessage().contains("phosphophyllite")) {

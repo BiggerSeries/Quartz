@@ -1,3 +1,6 @@
+# 1.19.2-0.1.0-beta.2
+ - update phosphophyllite (breaking changes)
+
 # 1.19.2-0.1.0-beta.1
  - update phosphophyllite (breaking changes)
  - check phos version before attempting to use any faetures of phos

@@ -1,6 +1,7 @@
 package net.roguelogix.quartz.internal.gl;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Matrix4f;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -209,7 +210,8 @@ public class GLCore extends QuartzCore {
     public void preOpaque() {
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
-        
+    
+        BufferUploader.invalidate();
         glUseProgram(0);
         
         glActiveTexture(MagicNumbers.GL.LIGHTMAP_TEXTURE_UNIT_GL);

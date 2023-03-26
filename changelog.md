@@ -1,3 +1,6 @@
+# 1.19.2-0.1.0-beta.2.1
+ - ensure b3d state cache is always cleared, fixes interaction bug
+
 # 1.19.2-0.1.0-beta.2
  - update phosphophyllite (breaking changes)
 

@@ -33,6 +33,16 @@ import static org.lwjgl.opengl.GL32C.*;
 @NonnullDefault
 public class GLCore extends QuartzCore {
     
+    public static final boolean BASE_INSTANCE = GL.getCapabilities().GL_ARB_base_instance && GLConfig.INSTANCE.ALLOW_BASE_INSTANCE;
+    public static final boolean ATTRIB_BINDING = GL.getCapabilities().GL_ARB_vertex_attrib_binding && GLConfig.INSTANCE.ALLOW_ATTRIB_BINDING;
+    public static final boolean DRAW_INDIRECT = GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_DRAW_INDIRECT;
+    public static final boolean MULTIDRAW_INDIRECT = DRAW_INDIRECT && GL.getCapabilities().GL_ARB_multi_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
+    public static final boolean SSBO = GL.getCapabilities().GL_ARB_shader_storage_buffer_object && GLConfig.INSTANCE.ALLOW_SSBO;
+    public static final int SSBO_VERTEX_BLOCK_LIMIT = GL11.glGetInteger(ARBShaderStorageBufferObject.GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS);
+    public static final int SSBO_FRAGMENT_BLOCK_LIMIT = GL11.glGetInteger(ARBShaderStorageBufferObject.GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS);
+    public static final boolean MULTI_BIND = GL.getCapabilities().GL_ARB_multi_bind && GLConfig.INSTANCE.ALLOW_SSBO;
+    public static final boolean DSA = GL.getCapabilities().GL_ARB_direct_state_access && GLConfig.INSTANCE.ALLOW_DSA;
+    
     // its fine, in the event its null, nothing will need it to not be null
     @SuppressWarnings("ConstantConditions")
     @Nonnull
@@ -71,15 +81,6 @@ public class GLCore extends QuartzCore {
         return new GLCore();
     }
     
-    public static final boolean BASE_INSTANCE = GL.getCapabilities().GL_ARB_base_instance && GLConfig.INSTANCE.ALLOW_BASE_INSTANCE;
-    public static final boolean ATTRIB_BINDING = GL.getCapabilities().GL_ARB_vertex_attrib_binding && GLConfig.INSTANCE.ALLOW_ATTRIB_BINDING;
-    public static final boolean DRAW_INDIRECT = GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_DRAW_INDIRECT;
-    public static final boolean MULTIDRAW_INDIRECT = DRAW_INDIRECT && GL.getCapabilities().GL_ARB_multi_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
-    public static final boolean SSBO = GL.getCapabilities().GL_ARB_shader_storage_buffer_object && GLConfig.INSTANCE.ALLOW_SSBO;
-    public static final int SSBO_VERTEX_BLOCK_LIMIT = GL11.glGetInteger(ARBShaderStorageBufferObject.GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS);
-    public static final int SSBO_FRAGMENT_BLOCK_LIMIT = GL11.glGetInteger(ARBShaderStorageBufferObject.GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS);
-    public static final boolean MULTI_BIND = GL.getCapabilities().GL_ARB_multi_bind && GLConfig.INSTANCE.ALLOW_SSBO;
-    public static final boolean DSA = GL.getCapabilities().GL_ARB_direct_state_access && GLConfig.INSTANCE.ALLOW_DSA;
     public GLMainProgram mainProgram = new GLMainProgram();
     public GLBuffer vertexBuffer = meshManager.vertexBuffer.as(GLBuffer.class);
     public GLBuffer elementBuffer = allocBuffer();
@@ -116,7 +117,11 @@ public class GLCore extends QuartzCore {
     
     @Override
     protected void resourcesReloadedInternal() {
-        mainProgram.reload();
+        try {
+            mainProgram.reload();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
         GLRenderPass.resourcesReloaded();
     }
     

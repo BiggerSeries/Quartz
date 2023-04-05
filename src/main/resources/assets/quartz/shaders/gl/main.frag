@@ -5,14 +5,14 @@
 #extension GL_ARB_separate_shader_objects : require
 #extension GL_ARB_explicit_attrib_location : require
 
-layout(location = 0) in float fragmentDistance;
+//layout(location = 0) in float fragmentDistance;
 layout(location = 1) in vec4 vertexColor;
+layout(location = 2) in vec4 worldPosition;
 
-layout(location = 2) in vec2 texCoord;
 
 layout(location = 3) flat in vec3 fragmentNormal;
 #define LIGHTMAP_MULTIPLIER 0.015625 /* 1 / 64 (6 bit) */
-layout(location = 4) in vec2 lightmapCoord;
+layout(location = 4) in vec4 texLghtmapCoord;
 layout(location = 5) in vec4 lightmapCoords[2];// locations 5 6
 
 layout(location = 7) in vec4 fragmentModelPos;
@@ -29,6 +29,11 @@ uniform sampler2D atlasTexture;
 uniform sampler2D lightmapTexture;
 
 layout(location = 0) out vec4 color;
+#ifdef COMPLEMENTARY_SHADERS_LOADED
+layout(location = 1) out vec4 extra;
+layout(location = 2) out vec4 normal;
+layout(location = 3) out vec4 rawColor;
+#endif
 
 void main(){
     color = vec4(vec3(fragmentModelPos.w), 1);
@@ -36,11 +41,13 @@ void main(){
     color *= vertexColor;
 
     if (TEXTURE) {
+        vec2 texCoord = texLghtmapCoord.xy;
         color *= texture(atlasTexture, texCoord);
     }
 
+    vec2 lightmapCoord = texLghtmapCoord.zw;
+    vec2 lightPos = lightmapCoord;
     if (LIGHTING){
-        vec2 lightPos = lightmapCoord;
         if (QUAD) {
             vec2 vert01Avg = lightmapCoords[0].xy * lightmapCoord.x + lightmapCoords[0].zw * (1 - lightmapCoord.x);
             vec2 vert23Avg = lightmapCoords[1].xy * lightmapCoord.x + lightmapCoords[1].zw * (1 - lightmapCoord.x);
@@ -64,7 +71,7 @@ void main(){
         color = vec4(color.rgb * AOMultiplier, color.a);
     }
 
-    float fogValue = clamp(smoothstep(fogStartEnd.x, fogStartEnd.y, fragmentDistance) * fogColor.a, 0.0, 1.0);
+    float fogValue = clamp(smoothstep(fogStartEnd.x, fogStartEnd.y, worldPosition.w) * fogColor.a, 0.0, 1.0);
     color = vec4(mix(color.rgb, fogColor.rgb, fogValue), color.a);
 
     #ifdef ALPHA_DISCARD
@@ -74,5 +81,15 @@ void main(){
         if (color.a < MIN_ALPHA){
             discard;
         }
+    #endif
+
+    #ifdef COMPLEMENTARY_SHADERS_LOADED
+    extra = vec4(0, 0, lightPos.y * 0.1, 0);
+    normal = vec4(fragmentNormal, 0);
+    rawColor = color;
+    // "GI"
+    // actually trying to implement the GI would be a massive pain
+    // and more shader pack specific work, so *meh*
+    color *= 0.1;
     #endif
 }

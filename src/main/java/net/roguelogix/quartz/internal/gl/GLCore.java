@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
+import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
@@ -24,7 +25,6 @@ import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.util.function.IntSupplier;
 
 import static org.lwjgl.opengl.ARBDrawIndirect.GL_DRAW_INDIRECT_BUFFER;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.glBindProgramPipeline;
@@ -118,8 +118,12 @@ public class GLCore extends QuartzCore {
     @Override
     protected void resourcesReloadedInternal() {
         try {
-            mainProgram.reload();
+            mainProgram.reload(false);
         } catch (IllegalStateException e) {
+            if (!mainProgram.loaded()) {
+                // rethrowing because this is a crash at launch
+                throw e;
+            }
             e.printStackTrace();
         }
         GLRenderPass.resourcesReloaded();
@@ -165,6 +169,14 @@ public class GLCore extends QuartzCore {
     public void frameStart(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection) {
 //        GLFW.glfwSetInputMode(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         
+        if (IrisDetection.isComplementaryLoaded() != mainProgram.complementaryEnabled()) {
+            try {
+                mainProgram.reload(IrisDetection.isComplementaryLoaded());
+            } catch (IllegalStateException e) {
+                e.printStackTrace();
+            }
+        }
+        
         deletionQueue.runAll();
         
         long timeNanos = System.nanoTime();
@@ -192,11 +204,19 @@ public class GLCore extends QuartzCore {
     
     @Override
     public void lightUpdated() {
+        // early out if we have nothing to do
+        if (batchers.size() == 0) {
+            return;
+        }
         lightEngine.update(Minecraft.getInstance().level);
     }
     
     @Override
     public void preTerrainSetup() {
+        // early out if we have nothing to do
+        if (batchers.size() == 0) {
+            return;
+        }
         drawInfo.fogStart = RenderSystem.getShaderFogStart();
         drawInfo.fogEnd = drawInfo.fogStart == Float.MAX_VALUE ? Float.MAX_VALUE : RenderSystem.getShaderFogEnd();
         drawInfo.fogColor.set(RenderSystem.getShaderFogColor());
@@ -213,11 +233,18 @@ public class GLCore extends QuartzCore {
     
     @Override
     public void preOpaque() {
+        // early out if we have nothing to do
+        if (batchers.size() == 0) {
+            return;
+        }
+        
         glEnable(GL_DEPTH_TEST);
         glDepthFunc(GL_LEQUAL);
-    
+        
         BufferUploader.invalidate();
         glUseProgram(0);
+        
+        IrisDetection.bindIrisFramebuffer();
         
         glActiveTexture(MagicNumbers.GL.LIGHTMAP_TEXTURE_UNIT_GL);
         glBindTexture(GL_TEXTURE_2D, Minecraft.getInstance().gameRenderer.lightTexture().lightTexture.getId());

@@ -92,14 +92,13 @@ layout(std430, binding = 1) buffer dynamicLightBuffer {
 
 #endif
 
-layout(location = 0) out float vertexDistance;
+//layout(location = 0) out float vertexDistance;
 layout(location = 1) out vec4 vertexColor;
-
-layout(location = 2) out vec2 texCoordOut;
+layout(location = 2) out vec4 worldPositionOut;
 
 layout(location = 3) flat out vec3 vertexNormal;
 #define LIGHTMAP_MULTIPLIER 0.015625 /* 1 / 64 (6 bit) */
-layout(location = 4) out vec2 vertexLightmapCoord;
+layout(location = 4) out vec4 textureLightmapOut;
 layout(location = 5) out vec4 lightmapCoords[2];// locations 5 6
 
 layout(location = 7) out vec4 vertexModelPos;
@@ -144,7 +143,7 @@ void main() {
     vec4 vertexPosition = modelMatrix * vec4(position, 1.0);
     vertexModelPos.xyz = vertexPosition.xyz;
     vertexPosition += vec4(floatWorldPosition, 0);
-    vertexDistance = cylindrical_distance(vertexPosition.xyz);
+    worldPositionOut = vec4(vertexPosition.xyz, cylindrical_distance(vertexPosition.xyz));
     gl_Position = projectionMatrix * vertexPosition;
 
     int r = (colorIn >> 24) & 0xFF;
@@ -154,15 +153,15 @@ void main() {
 
     vertexColor = vec4(r, g, b, a) / 255;
 
-    texCoordOut = texCoordIn;
+    textureLightmapOut.xy = texCoordIn;
 
     if (LIGHTING){
         if (!QUAD) {
             vertexNormal = normalize(vec3(extractInt(lightingInfo.x, 0u, 16u), extractInt(lightingInfo.y, 16u, 16u), extractInt(lightingInfo.y, 0u, 16u)));
-            vertexLightmapCoord = vec2((lightingInfo.x >> 24) & 0xFFu, (lightingInfo.x >> 16) & 0xFFu) * LIGHTMAP_MULTIPLIER;
+            textureLightmapOut.zw = vec2((lightingInfo.x >> 24) & 0xFFu, (lightingInfo.x >> 16) & 0xFFu) * LIGHTMAP_MULTIPLIER;
         } else {
             vertexNormal = normalize(vec3(extractInt(lightingInfo.x, 24u, 4u), extractInt(lightingInfo.x, 28u, 4u), extractInt(lightingInfo.y, 24u, 4u)));
-            vertexLightmapCoord = vec2((lightingInfo.y >> 28) & 0x1u, (lightingInfo.y >> 29) & 0x1u);
+            textureLightmapOut.zw = vec2((lightingInfo.y >> 28) & 0x1u, (lightingInfo.y >> 29) & 0x1u);
             lightmapCoords[0].xy = vec2((lightingInfo.x >> 00) & 0x3Fu, (lightingInfo.x >> 06) & 0x3Fu) * LIGHTMAP_MULTIPLIER;
             lightmapCoords[0].zw = vec2((lightingInfo.x >> 12) & 0x3Fu, (lightingInfo.x >> 18) & 0x3Fu) * LIGHTMAP_MULTIPLIER;
             lightmapCoords[1].xy = vec2((lightingInfo.y >> 00) & 0x3Fu, (lightingInfo.y >> 06) & 0x3Fu) * LIGHTMAP_MULTIPLIER;

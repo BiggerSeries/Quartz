@@ -44,15 +44,18 @@ public class GLMainProgram {
         QuartzCore.CLEANER.register(this, () -> QuartzCore.deletionQueue.enqueue(info::clean));
     }
     
-    public void reload() {
+    public void reload(boolean complementaryEnabled) {
         int vertexProgram = 0;
         int opaqueFragmentProgram = 0;
         int cutoutFragmentProgram = 0;
         
+        // put first to avoid continually trying to recompile because of an error in this section
+        this.complementaryEnabled = complementaryEnabled;
+        
         try {
             var vertexShaderCode = Util.readResourceLocation(vertexShaderLocation);
-            var opaqueFragShaderCode = Util.readResourceLocation(fragmentShaderLocation);
-            if (vertexShaderCode == null || opaqueFragShaderCode == null) {
+            var fragShaderCode = Util.readResourceLocation(fragmentShaderLocation);
+            if (vertexShaderCode == null || fragShaderCode == null) {
                 throw new IllegalStateException("Failed to load shader code for " + baseResourceLocation);
             }
             
@@ -68,7 +71,9 @@ public class GLMainProgram {
                             "#define STATIC_NORMAL_MATRIX_LOCATION " + MagicNumbers.GL.STATIC_NORMAL_MATRIX_LOCATION + "\n" +
                             (SSBO ? "#define USE_SSBO\n" : "") +
                             "";
+            String fragPrepend = complementaryEnabled ? "#define COMPLEMENTARY_SHADERS_LOADED\n" : "";
             vertexShaderCode = new StringBuilder(vertexShaderCode).insert(vertexShaderCode.indexOf('\n') + 1, vertPrepend).toString();
+            var opaqueFragShaderCode = new StringBuilder(fragShaderCode).insert(vertexShaderCode.indexOf('\n') + 1, fragPrepend).toString();
             var cutoutFragShaderCode = new StringBuilder(opaqueFragShaderCode).insert(vertexShaderCode.indexOf('\n') + 1, "#define ALPHA_DISCARD\n").toString();
             
             vertexProgram = glCreateShaderProgramv(GL_VERTEX_SHADER, vertexShaderCode);
@@ -116,11 +121,23 @@ public class GLMainProgram {
             info.cutoutFragmentShader ^= cutoutFragmentProgram;
             
             onReloaded();
+            loaded = true;
         } finally {
             glDeleteProgram(vertexProgram);
             glDeleteProgram(opaqueFragmentProgram);
             glDeleteProgram(cutoutFragmentProgram);
         }
+    }
+    
+    private boolean loaded = false;
+    private boolean complementaryEnabled = false;
+    
+    public boolean complementaryEnabled() {
+        return complementaryEnabled;
+    }
+    
+    public boolean loaded() {
+        return loaded;
     }
     
     private int PLAYER_BLOCK_UNIFORM_LOCATION;

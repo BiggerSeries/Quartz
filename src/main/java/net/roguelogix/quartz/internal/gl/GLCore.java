@@ -12,6 +12,7 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
+import net.roguelogix.quartz.internal.DrawBatchInternal;
 import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
@@ -82,11 +83,12 @@ public class GLCore extends QuartzCore {
     }
     
     public GLMainProgram mainProgram = new GLMainProgram();
+    public GLTransformFeedbackProgram transformFeedbackProgram = new GLTransformFeedbackProgram();
     public GLBuffer vertexBuffer = meshManager.vertexBuffer.as(GLBuffer.class);
     public GLBuffer elementBuffer = allocBuffer();
     public GLBuffer.Allocation elementBufferAllocation = elementBuffer.alloc(1);
     
-    private final ObjectArrayList<WeakReference<GLDrawBatch>> batchers = new ObjectArrayList<>();
+    private final ObjectArrayList<WeakReference<DrawBatchInternal>> batchers = new ObjectArrayList<>();
     
     public static final DrawInfo drawInfo = new DrawInfo();
     private long lastTimeNano = 0;
@@ -108,6 +110,7 @@ public class GLCore extends QuartzCore {
                 }
             }
         }
+        GLRenderPass.shutdown();
         // clean everything up, hopefully
         do {
             System.gc();
@@ -119,8 +122,9 @@ public class GLCore extends QuartzCore {
     protected void resourcesReloadedInternal() {
         try {
             mainProgram.reload(false);
+            transformFeedbackProgram.reload();
         } catch (IllegalStateException e) {
-            if (!mainProgram.loaded()) {
+            if (!mainProgram.loaded() || !transformFeedbackProgram.loaded()) {
                 // rethrowing because this is a crash at launch
                 throw e;
             }
@@ -131,7 +135,7 @@ public class GLCore extends QuartzCore {
     
     @Override
     public DrawBatch createDrawBatch() {
-        var batcher = new GLDrawBatch();
+        var batcher = new GLSingleStageTransformFeedbackBatch();
         batchers.add(new WeakReference<>(batcher));
         return batcher;
     }
@@ -198,6 +202,7 @@ public class GLCore extends QuartzCore {
         pMatrixStack.last().pose().store(drawInfo.projectionMatrixFloatBuffer);
         drawInfo.projectionMatrix.mul(new net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f().set(drawInfo.projectionMatrixFloatBuffer));
         drawInfo.projectionMatrix.get(drawInfo.projectionMatrixFloatBuffer);
+        drawInfo.mojPose = pMatrixStack.last();
         drawInfo.deltaNano = deltaNano;
         drawInfo.partialTicks = pPartialTicks;
     }
@@ -221,7 +226,9 @@ public class GLCore extends QuartzCore {
         drawInfo.fogEnd = drawInfo.fogStart == Float.MAX_VALUE ? Float.MAX_VALUE : RenderSystem.getShaderFogEnd();
         drawInfo.fogColor.set(RenderSystem.getShaderFogColor());
         
+        GLStateTracker.reset();
         mainProgram.setupDrawInfo(drawInfo);
+        transformFeedbackProgram.setupDrawInfo(drawInfo);
         
         for (int i = 0; i < batchers.size(); i++) {
             var batch = batchers.get(i).get();
@@ -229,6 +236,17 @@ public class GLCore extends QuartzCore {
                 batch.updateAndCull(drawInfo);
             }
         }
+    }
+    
+    @Override
+    public void shadowPass(PoseStack modelView, Matrix4f projectionMatrix) {
+        final var lastProjection = RenderSystem.getProjectionMatrix();
+        final var lastPose = drawInfo.mojPose;
+        RenderSystem.setProjectionMatrix(projectionMatrix);
+        drawInfo.mojPose = modelView.last();
+        GLRenderPass.drawAll(true);
+        RenderSystem.setProjectionMatrix(lastProjection);
+        drawInfo.mojPose = lastPose;
     }
     
     @Override
@@ -252,6 +270,7 @@ public class GLCore extends QuartzCore {
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glActiveTexture(MagicNumbers.GL.ATLAS_TEXTURE_UNIT_GL);
         
         for (int i = 0; i < batchers.size(); i++) {
             var batch = batchers.get(i).get();
@@ -265,6 +284,8 @@ public class GLCore extends QuartzCore {
                 batch.drawCutout();
             }
         }
+        
+        GLRenderPass.drawAll(false);
         
         glBindVertexArray(0);
         glBindProgramPipeline(0);

@@ -2,9 +2,7 @@ package net.roguelogix.quartz.internal;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Matrix4f;
-import net.minecraft.CrashReport;
 import net.minecraft.client.Camera;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
@@ -140,6 +138,8 @@ public abstract class QuartzCore {
     public abstract void lightUpdated();
     
     public abstract void preTerrainSetup();
+    
+    public abstract void shadowPass(PoseStack modelView, Matrix4f projectionMatrix);
     
     public abstract void preOpaque();
     

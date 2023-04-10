@@ -280,9 +280,9 @@ public class InternalMesh implements Mesh {
                             tempNormalVec.set(vertex.normalX, vertex.normalY, vertex.normalZ);
                             tempNormalVec.normalize(7);
                             
-                            packedA |= packInt((int) tempNormalVec.x, 24, 4);
-                            packedA |= packInt((int) tempNormalVec.y, 28, 4);
-                            packedB |= packInt((int) tempNormalVec.z, 24, 4);
+                            packedA |= packInt(Math.round(tempNormalVec.x), 24, 4);
+                            packedA |= packInt(Math.round(tempNormalVec.y), 28, 4);
+                            packedB |= packInt(Math.round(tempNormalVec.z), 24, 4);
                             
                             packedB |= (i & 0x3) << 28;
                             

@@ -1,17 +1,24 @@
 package net.roguelogix.quartz.internal.gl;
 
+import com.mojang.blaze3d.platform.Window;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import it.unimi.dsi.fastutil.objects.*;
+import net.coderbot.iris.Iris;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.world.inventory.InventoryMenu;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.roguelogix.phosphophyllite.repack.org.joml.*;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.DynamicLight;
 import net.roguelogix.quartz.DynamicMatrix;
 import net.roguelogix.quartz.Mesh;
-import net.roguelogix.quartz.internal.Buffer;
-import net.roguelogix.quartz.internal.DrawBatchInternal;
-import net.roguelogix.quartz.internal.QuartzCore;
+import net.roguelogix.quartz.internal.*;
 import net.roguelogix.quartz.internal.common.*;
 
 import javax.annotation.Nullable;
@@ -31,8 +38,9 @@ import static org.lwjgl.opengl.ARBMultiDrawIndirect.glMultiDrawElementsIndirect;
 import static org.lwjgl.opengl.ARBShaderStorageBufferObject.GL_SHADER_STORAGE_BUFFER;
 import static org.lwjgl.opengl.ARBVertexAttribBinding.*;
 import static org.lwjgl.opengl.GL32C.*;
+
 @NonnullDefault
-public class GLDrawBatch implements DrawBatchInternal {
+public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
     
     private class MeshInstanceManager {
         private class DrawComponent {
@@ -113,6 +121,10 @@ public class GLDrawBatch implements DrawBatchInternal {
             
             private IndirectDrawInfo indirectInfo() {
                 return new IndirectDrawInfo(elementCount, instanceCount, baseVertex, instanceDataOffset / INSTANCE_DATA_BYTE_SIZE);
+            }
+            
+            public int vertexCount() {
+                return instanceCount * elementCount;
             }
         }
         
@@ -438,6 +450,14 @@ public class GLDrawBatch implements DrawBatchInternal {
                 drawInfo.put(i * 5 + 4, indirectInfo.baseInstance);
             }
         }
+        
+        public int vertexCount() {
+            int vertices = 0;
+            for (int i = 0; i < drawComponents.size(); i++) {
+                vertices += drawComponents.get(i).vertexCount();
+            }
+            return vertices;
+        }
     }
     
     private static final Matrix4fc IDENTITY_MATRIX = new Matrix4f();
@@ -474,7 +494,7 @@ public class GLDrawBatch implements DrawBatchInternal {
     private boolean enabled = true;
     private boolean culled = false;
     
-    public GLDrawBatch() {
+    public GLSingleStageTransformFeedbackBatch() {
         final int VAO = glGenVertexArrays();
         B3DStateHelper.bindVertexArray(VAO);
         
@@ -692,7 +712,7 @@ public class GLDrawBatch implements DrawBatchInternal {
         // matrices need to be updated anyway
         dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
         
-        if (cullAABB != null) {
+        if (cullAABB != null&& !IrisDetection.areShadersActive()) {
             cullVectorMin.set(2);
             cullVectorMax.set(-2);
             for (int i = 0; i < 8; i++) {
@@ -718,6 +738,9 @@ public class GLDrawBatch implements DrawBatchInternal {
         dynamicLightBuffer.flush();
         instanceDataBuffer.flush();
         updateIndirectInfo();
+
+        drawOpaqueFeedback();
+        drawCutoutFeedback();
     }
     
     private void updateIndirectInfo() {
@@ -741,11 +764,12 @@ public class GLDrawBatch implements DrawBatchInternal {
         indirectDrawBuffer.flush();
     }
     
-    public void drawOpaque() {
+    public void drawOpaqueFeedback() {
+        
         if (!enabled || culled || opaqueDrawComponents.isEmpty()) {
             return;
         }
-    
+        
         if (!SSBO) {
             glActiveTexture(DYNAMIC_MATRIX_TEXTURE_UNIT_GL);
             glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);
@@ -760,29 +784,46 @@ public class GLDrawBatch implements DrawBatchInternal {
             B3DStateHelper.bindArrayBuffer(instanceDataBuffer.handle());
         }
         
-        final var program = GLCore.INSTANCE.mainProgram;
+        final var program = INSTANCE.transformFeedbackProgram;
         
         glActiveTexture(ATLAS_TEXTURE_UNIT_GL);
         
         glBindVertexArray(VAO);
+        
         if (DRAW_INDIRECT) {
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawBuffer.handle());
             opaqueIndirectInfo.forEach((renderPass, drawBlock) -> {
                 program.setupRenderPass(renderPass);
+                renderPass.beginTransformFeedback(drawBlock.vertexCount());
                 drawBlock.draw();
+                renderPass.endTransformFeedback();
             });
         } else {
             for (var entry : opaqueDrawComponents.entrySet()) {
-                program.setupRenderPass(entry.getKey());
-                var drawComponents = entry.getValue();
+                final var renderPass = entry.getKey();
+                final var drawComponents = entry.getValue();
+                
+                program.setupRenderPass(renderPass);
+                
+                int vertexCount = 0;
+                for (int i = 0; i < drawComponents.size(); i++) {
+                    vertexCount += drawComponents.get(i).vertexCount();
+                }
+                renderPass.beginTransformFeedback(vertexCount);
                 for (int i = 0; i < drawComponents.size(); i++) {
                     drawComponents.get(i).draw();
                 }
+                renderPass.endTransformFeedback();
             }
         }
     }
     
-    public void drawCutout() {
+    @Override
+    public void drawOpaque() {
+    
+    }
+    
+    public void drawCutoutFeedback() {
         if (!enabled || culled || cutoutDrawComponents.isEmpty()) {
             return;
         }
@@ -801,25 +842,41 @@ public class GLDrawBatch implements DrawBatchInternal {
             B3DStateHelper.bindArrayBuffer(instanceDataBuffer.handle());
         }
         
-        final var program = GLCore.INSTANCE.mainProgram;
+        final var program = INSTANCE.transformFeedbackProgram;
         
         glActiveTexture(ATLAS_TEXTURE_UNIT_GL);
         
         glBindVertexArray(VAO);
+        
         if (DRAW_INDIRECT) {
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawBuffer.handle());
             cutoutIndirectInfo.forEach((renderPass, drawBlock) -> {
                 program.setupRenderPass(renderPass);
+                renderPass.beginTransformFeedback(drawBlock.vertexCount());
                 drawBlock.draw();
+                renderPass.endTransformFeedback();
             });
         } else {
             for (var entry : cutoutDrawComponents.entrySet()) {
-                program.setupRenderPass(entry.getKey());
-                var drawComponents = entry.getValue();
+                final var renderPass = entry.getKey();
+                final var drawComponents = entry.getValue();
+                
+                program.setupRenderPass(renderPass);
+                
+                int vertexCount = 0;
+                for (int i = 0; i < drawComponents.size(); i++) {
+                    vertexCount += drawComponents.get(i).vertexCount();
+                }
+                renderPass.beginTransformFeedback(vertexCount);
                 for (int i = 0; i < drawComponents.size(); i++) {
                     drawComponents.get(i).draw();
                 }
+                renderPass.endTransformFeedback();
             }
         }
+    }
+    
+    public void drawCutout() {
+    
     }
 }

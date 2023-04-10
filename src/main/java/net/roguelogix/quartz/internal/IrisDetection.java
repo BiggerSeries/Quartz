@@ -29,6 +29,13 @@ public final class IrisDetection {
         return false;
     }
     
+    public static boolean isRenderingShadows() {
+        if (areShadersActive()) {
+            return Detector.isComplementaryLoaded();
+        }
+        return false;
+    }
+    
     private static final class Detector {
         
         private static final IrisApi irisApi = IrisApi.getInstance();
@@ -61,6 +68,10 @@ public final class IrisDetection {
                 return lastResult;
             }
             return false;
+        }
+        
+        public static boolean isRenderingShadows() {
+            return irisApi.isRenderingShadowPass();
         }
     }
 }

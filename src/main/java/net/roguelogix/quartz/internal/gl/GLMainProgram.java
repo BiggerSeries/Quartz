@@ -204,7 +204,6 @@ public class GLMainProgram {
     }
     
     public void setupDrawInfo(DrawInfo drawInfo) {
-        resetBinds();
         glProgramUniformMatrix4fv(info.vertexShader, PROJECTION_MATRIX_UNIFORM_LOCATION, false, drawInfo.projectionMatrixFloatBuffer);
         glProgramUniform3i(info.vertexShader, PLAYER_BLOCK_UNIFORM_LOCATION, drawInfo.playerPosition.x, drawInfo.playerPosition.y, drawInfo.playerPosition.z);
         glProgramUniform3f(info.vertexShader, PLAYER_SUB_BLOCK_UNIFORM_LOCATION, drawInfo.playerSubBlock.x, drawInfo.playerSubBlock.y, drawInfo.playerSubBlock.z);
@@ -216,9 +215,6 @@ public class GLMainProgram {
         glProgramUniform4f(info.cutoutFragmentShader, CUTOUT_FOG_COLOR_UNIFORM_LOCATION, drawInfo.fogColor.x, drawInfo.fogColor.y, drawInfo.fogColor.z, 1);
     }
     
-    private int currentAtlas = 0;
-    private int currentPipeline = 0;
-    
     public void setupRenderPass(GLRenderPass renderPass) {
         glProgramUniform1i(info.vertexShader, VERT_QUAD_UNIFORM_LOCATION, renderPass.QUAD ? GL_TRUE : GL_FALSE);
         glProgramUniform1i(info.vertexShader, VERT_LIGHTING_UNIFORM_LOCATION, renderPass.LIGHTING ? GL_TRUE : GL_FALSE);
@@ -229,24 +225,12 @@ public class GLMainProgram {
         glProgramUniform1i(OPAQUE ? info.opaqueFragmentShader : info.cutoutFragmentShader, OPAQUE ? OPAQUE_TEXTURE_UNIFORM_LOCATION : CUTOUT_TEXTURE_UNIFORM_LOCATION, renderPass.TEXTURE ? GL_TRUE : GL_FALSE);
         
         final var pipeline = OPAQUE ? info.opaquePipeline : info.cutoutPipeline;
-        if (pipeline != currentPipeline) {
-            currentAtlas = 0;
-            glBindProgramPipeline(pipeline);
-            currentPipeline = pipeline;
-        }
+        GLStateTracker.bindPipeline(pipeline);
         
         var texture = renderPass.texture();
         if (texture != null) {
             int id = texture.getId();
-            if (id != currentAtlas) {
-                glBindTexture(GL_TEXTURE_2D, id);
-                currentAtlas = id;
-            }
+            GLStateTracker.bindAtlas(id);
         }
-    }
-    
-    public void resetBinds() {
-        currentPipeline = 0;
-        glBindProgramPipeline(0);
     }
 }

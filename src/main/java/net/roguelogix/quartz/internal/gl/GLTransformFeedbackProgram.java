@@ -1,11 +1,10 @@
 package net.roguelogix.quartz.internal.gl;
 
-import com.mojang.blaze3d.shaders.Shader;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.phosphophyllite.util.Util;
@@ -15,7 +14,8 @@ import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
 
-import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.Map;
 
 import static net.roguelogix.quartz.internal.gl.GLCore.SSBO_VERTEX_BLOCK_LIMIT;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.*;
@@ -29,21 +29,27 @@ public class GLTransformFeedbackProgram {
     private static final ResourceLocation vertexShaderLocation = new ResourceLocation(baseResourceLocation.getNamespace(), baseResourceLocation.getPath() + ".vert");
     public static final boolean SSBO = GLCore.SSBO && SSBO_VERTEX_BLOCK_LIMIT >= 2;
     
-    public record VertexFormatOutput(VertexFormat format, int colorOffset, int textureOffset, int overlayOffset, int lightmapOffset, int normalOffset, int stride) {
+    public record VertexFormatOutput(VertexFormat format, String[] varyings, int vertexSize) {
+        
+        private static final Map<VertexFormatElement, String> elementVaryingNames;
+        
+        static {
+            final var map = new Object2ObjectArrayMap<VertexFormatElement, String>();
+            map.put(DefaultVertexFormat.ELEMENT_POSITION, "positionOutput");
+            map.put(DefaultVertexFormat.ELEMENT_NORMAL, "normalOutput");
+            map.put(DefaultVertexFormat.ELEMENT_COLOR, "colorOutput");
+            map.put(DefaultVertexFormat.ELEMENT_UV0, "textureOutput");
+            map.put(DefaultVertexFormat.ELEMENT_UV1, "overlayOutput");
+            map.put(DefaultVertexFormat.ELEMENT_UV2, "lightmapOutput");
+            elementVaryingNames = Collections.unmodifiableMap(map);
+        }
         
         public static final VertexFormatOutput BLOCK = new VertexFormatOutput(DefaultVertexFormat.BLOCK);
         public static final VertexFormatOutput NEW_ENTITY = new VertexFormatOutput(DefaultVertexFormat.NEW_ENTITY);
         public static final VertexFormatOutput POSITION_COLOR_TEX_LIGHTMAP = new VertexFormatOutput(DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
         
         public VertexFormatOutput(VertexFormat format) {
-            this(format,
-                    offsetOf(format, DefaultVertexFormat.ELEMENT_COLOR),
-                    offsetOf(format, DefaultVertexFormat.ELEMENT_UV0),
-                    offsetOf(format, DefaultVertexFormat.ELEMENT_UV1),
-                    offsetOf(format, DefaultVertexFormat.ELEMENT_UV2),
-                    offsetOf(format, DefaultVertexFormat.ELEMENT_NORMAL),
-                    format.getVertexSize()
-            );
+            this(format, generateVaryings(format), format.getVertexSize());
         }
         
         private static int offsetOf(VertexFormat format, VertexFormatElement element) {
@@ -54,49 +60,20 @@ public class GLTransformFeedbackProgram {
             return format.getOffset(elementIndex);
         }
         
-        boolean colorEnabled() {
-            return colorOffset != 0;
-        }
-        
-        boolean textureEnabled() {
-            return textureOffset != 0;
-        }
-        
-        boolean overlayEnabled() {
-            return overlayOffset != 0;
-        }
-        
-        boolean lightmapEnabled() {
-            return lightmapOffset != 0;
-        }
-        
-        boolean normalEnabled() {
-            return normalOffset != 0;
-        }
-        
-        String generateDefines() {
-            var builder = new StringBuilder();
-            generateDefines(builder);
-            return builder.toString();
-        }
-        
-        void generateDefines(StringBuilder builder) {
-            if (colorEnabled()) {
-                builder.append("#define COLOR_OUTPUT ").append(colorOffset).append("\n");
+        private static String[] generateVaryings(VertexFormat format) {
+            final var elements = format.getElements();
+            final var list = new ObjectArrayList<String>();
+            for (final var element : elements) {
+                if (element == DefaultVertexFormat.ELEMENT_PADDING) {
+                    continue;
+                }
+                var elementName = elementVaryingNames.get(element);
+                if (elementName == null) {
+                    throw new IllegalStateException();
+                }
+                list.add(elementName);
             }
-            if (textureEnabled()) {
-                builder.append("#define UV0_OUTPUT ").append(textureOffset).append("\n");
-            }
-            if (overlayEnabled()) {
-                builder.append("#define UV1_OUTPUT ").append(overlayOffset).append("\n");
-            }
-            if (lightmapEnabled()) {
-                builder.append("#define UV2_OUTPUT ").append(lightmapOffset).append("\n");
-            }
-            if (normalEnabled()) {
-                builder.append("#define NORMAL_OUTPUT ").append(normalOffset).append("\n");
-            }
-            builder.append("#define FEEDBACK_BUFFER_STRIDE ").append(stride).append("\n");
+            return list.toArray(new String[]{});
         }
     }
     
@@ -109,8 +86,16 @@ public class GLTransformFeedbackProgram {
             int VERT_LIGHTING_UNIFORM_LOCATION) {
         
         private static int createProgram(final VertexFormatOutput outputFormat, boolean shadersLoaded) {
+            var extensionsBuilder = new StringBuilder();
+            // gpuinfo says this is supported, so im using it
+            extensionsBuilder.append("#version 150 core\n");
+            extensionsBuilder.append("#line 1 1\n");
+            extensionsBuilder.append("#extension GL_ARB_explicit_attrib_location : require\n");
+            
             var prependBuilder = new StringBuilder();
-            outputFormat.generateDefines(prependBuilder);
+            prependBuilder.append("#line 0 2\n");
+            prependBuilder.append("#define QUARTZ_INSERT_DEFINES\n");
+            
             
             // the string concat will happen once because these are static finals
             prependBuilder.append("#define POSITION_LOCATION " + MagicNumbers.GL.POSITION_LOCATION + "\n");
@@ -126,6 +111,7 @@ public class GLTransformFeedbackProgram {
             
             if (SSBO) {
                 prependBuilder.append("#define USE_SSBO\n");
+                extensionsBuilder.append("#extension GL_ARB_shader_storage_buffer_object : require\n");
             }
             
             if (shadersLoaded) {
@@ -136,15 +122,33 @@ public class GLTransformFeedbackProgram {
             if (shaderCode == null) {
                 throw new IllegalStateException("Failed to load shader code for " + baseResourceLocation);
             }
-            var codeBuilder = new StringBuilder();
-            codeBuilder.append(shaderCode);
-            codeBuilder.insert(shaderCode.indexOf('\n') + 1, prependBuilder);
             
-            final int vertexProgram = glCreateShaderProgramv(GL_VERTEX_SHADER, codeBuilder.toString());
+            final int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+            
+            glShaderSource(vertexShader, extensionsBuilder, prependBuilder, "#line 0 3\n", shaderCode);
+            glCompileShader(vertexShader);
+            
+            if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) != GL_TRUE) {
+                final var infoLog = glGetShaderInfoLog(vertexShader);
+                glDeleteShader(vertexShader);
+                throw new IllegalStateException("Vertex shader compilation failed for " + vertexShaderLocation + '\n' + infoLog + '\n');
+            }
+            
+            final int vertexProgram = glCreateProgram();
+            glAttachShader(vertexProgram, vertexShader);
+            glTransformFeedbackVaryings(vertexProgram, outputFormat.varyings, GL_INTERLEAVED_ATTRIBS);
+            glProgramParameteri(vertexProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
+            glLinkProgram(vertexProgram);
             
             if (glGetProgrami(vertexProgram, GL_LINK_STATUS) != GL_TRUE) {
-                throw new IllegalStateException("Vertex shader compilation failed for " + vertexShaderLocation + '\n' + glGetProgramInfoLog(vertexProgram) + '\n');
+                final var infoLog = glGetProgramInfoLog(vertexProgram);
+                glDeleteShader(vertexShader);
+                glDeleteProgram(vertexProgram);
+                throw new IllegalStateException("Vertex program link failed for " + vertexShaderLocation + '\n' + infoLog + '\n');
             }
+            
+            glDetachShader(vertexProgram, vertexShader);
+            glDeleteShader(vertexShader);
             
             return vertexProgram;
         }

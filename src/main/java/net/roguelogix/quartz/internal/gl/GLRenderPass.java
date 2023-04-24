@@ -43,8 +43,6 @@ public class GLRenderPass {
     public final GLTransformFeedbackProgram.VertexFormatOutput vertexFormatOutput;
     public final Supplier<ShaderInstance> renderTypeShader;
     
-    private final GLBuffer transformFeedbackRecordBuffer = new GLBuffer(false);
-    private GLBuffer.Allocation transformFeedbackRecordBufferAlloc = transformFeedbackRecordBuffer.alloc(16384);
     private final GLBuffer transformFeedbackBuffer = new GLBuffer(false);
     private GLBuffer.Allocation transformFeedbackBufferAlloc = transformFeedbackBuffer.alloc(16384);
     
@@ -163,27 +161,20 @@ public class GLRenderPass {
     
     public void beginTransformFeedback(int vertices) {
         verticesLastFeedback = vertices;
-        var requiredBufferSize = vertices * vertexFormat.getVertexSize();
-        if (transformFeedbackRecordBufferAlloc.size() < requiredBufferSize) {
-            transformFeedbackRecordBufferAlloc = transformFeedbackRecordBuffer.realloc(transformFeedbackRecordBufferAlloc, requiredBufferSize);
+        
+        final var drawSize = vertices * vertexFormat.getVertexSize();
+        final var currentOffset = drawnVertices * vertexFormat.getVertexSize();
+        final var requiredBufferSize = drawSize + currentOffset;
+        
+        if (transformFeedbackBufferAlloc.size() < requiredBufferSize) {
+            transformFeedbackBufferAlloc = transformFeedbackBuffer.realloc(transformFeedbackBufferAlloc, requiredBufferSize);
         }
-        glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transformFeedbackRecordBuffer.handle());
+        glBindBufferRange(GL_TRANSFORM_FEEDBACK_BUFFER, 0, transformFeedbackBuffer.handle(), currentOffset, drawSize);
         glBeginTransformFeedback(GL_MODE);
     }
     
     public void endTransformFeedback() {
         glEndTransformFeedback();
-        
-        var requiredBufferSize = (drawnVertices + verticesLastFeedback) * vertexFormat.getVertexSize();
-        if (transformFeedbackBuffer.size() < requiredBufferSize) {
-            transformFeedbackBufferAlloc = transformFeedbackBuffer.realloc(transformFeedbackBufferAlloc, requiredBufferSize);
-        }
-        
-        glBindBuffer(GL_COPY_READ_BUFFER, transformFeedbackRecordBuffer.handle());
-        glBindBuffer(GL_COPY_WRITE_BUFFER, transformFeedbackBuffer.handle());
-        glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, (long) drawnVertices * vertexFormat.getVertexSize(), (long) verticesLastFeedback * vertexFormat.getVertexSize());
-        glBindBuffer(GL_COPY_READ_BUFFER, 0);
-        glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
         
         drawnVertices += verticesLastFeedback;
     }

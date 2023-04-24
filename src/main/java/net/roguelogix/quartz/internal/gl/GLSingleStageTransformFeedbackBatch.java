@@ -712,7 +712,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         // matrices need to be updated anyway
         dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
         
-        if (cullAABB != null&& !IrisDetection.areShadersActive()) {
+        if (cullAABB != null && !IrisDetection.areShadersActive()) {
             cullVectorMin.set(2);
             cullVectorMax.set(-2);
             for (int i = 0; i < 8; i++) {
@@ -775,6 +775,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
             glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);
             glActiveTexture(DYNAMIC_LIGHT_TEXTURE_UNIT_GL);
             glBindTexture(GL_TEXTURE_BUFFER, dynamicLightTexture);
+            glActiveTexture(ATLAS_TEXTURE_UNIT_GL);
         } else {
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.handle());
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, dynamicLightBuffer.handle());
@@ -785,8 +786,6 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         }
         
         final var program = INSTANCE.transformFeedbackProgram;
-        
-        glActiveTexture(ATLAS_TEXTURE_UNIT_GL);
         
         glBindVertexArray(VAO);
         

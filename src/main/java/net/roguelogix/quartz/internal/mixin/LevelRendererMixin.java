@@ -92,7 +92,7 @@ public class LevelRendererMixin {
     // line 2414-2415
     @Inject(method = "setSectionDirty(IIIZ)V", at = @At("HEAD"))
     public void setSectionDirty(int x, int y, int z, boolean updateNow, CallbackInfo ci) {
-        QuartzCore.INSTANCE.lightEngine.sectionDirty(x, y, z);
+        QuartzCore.INSTANCE.sectionDirty(x, y, z);
     }
     
     @Inject(method = "renderChunkLayer", at = @At(value = "HEAD"))

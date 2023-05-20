@@ -1,17 +1,8 @@
 package net.roguelogix.quartz.internal.gl;
 
-import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import it.unimi.dsi.fastutil.objects.*;
-import net.coderbot.iris.Iris;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraftforge.client.event.ScreenEvent;
 import net.roguelogix.phosphophyllite.repack.org.joml.*;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
@@ -20,6 +11,8 @@ import net.roguelogix.quartz.DynamicMatrix;
 import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.*;
 import net.roguelogix.quartz.internal.common.*;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
@@ -28,7 +21,6 @@ import java.util.function.Consumer;
 import static net.roguelogix.quartz.internal.MagicNumbers.GL.*;
 import static net.roguelogix.quartz.internal.MagicNumbers.*;
 import static net.roguelogix.quartz.internal.gl.GLCore.*;
-import static net.roguelogix.quartz.internal.gl.GLMainProgram.SSBO;
 import static org.lwjgl.opengl.ARBBaseInstance.glDrawArraysInstancedBaseInstance;
 import static org.lwjgl.opengl.ARBBaseInstance.glDrawElementsInstancedBaseVertexBaseInstance;
 import static org.lwjgl.opengl.ARBDrawIndirect.*;
@@ -71,9 +63,9 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
                     GLCore.INSTANCE.ensureElementBufferLength(elementCountTemp / 6);
                 }
                 elementCount = elementCountTemp;
-                var drawComponents = (renderPass.ALPHA_DISCARD ? cutoutDrawComponents : opaqueDrawComponents).computeIfAbsent(renderPass, e -> new ObjectArrayList<>());
-                drawIndex = drawComponents.size();
-                drawComponents.add(this);
+                var components = drawComponents.computeIfAbsent(renderPass, e -> new ObjectArrayList<>());
+                drawIndex = components.size();
+                components.add(this);
             }
             
             private void draw() {
@@ -180,7 +172,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
             for (int i = 0; i < components.size(); i++) {
                 var component = components.get(i);
                 var renderPass = component.renderPass;
-                final var componentMap = renderPass.ALPHA_DISCARD ? cutoutDrawComponents : opaqueDrawComponents;
+                final var componentMap = drawComponents;
                 final var drawComponents = componentMap.get(renderPass);
                 if (drawComponents == null) {
                     component.drawIndex = -1;
@@ -239,13 +231,14 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
             }
             
             
-            final var byteBuf = instanceDataAlloc.buffer();
+            final var buffer = instanceDataAlloc.address();
             int baseOffset = instanceCount * INSTANCE_DATA_BYTE_SIZE;
-            worldPosition.get(baseOffset + WORLD_POSITION_OFFSET, byteBuf);
-            byteBuf.putInt(baseOffset + DYNAMIC_MATRIX_ID_OFFSET, dynamicMatrix.id());
-            byteBuf.putInt(baseOffset + DYNAMIC_LIGHT_ID_OFFSET, dynamicLight.id());
-            staticMatrix.get(baseOffset + STATIC_MATRIX_OFFSET, byteBuf);
-            staticMatrix.normal(SCRATCH_NORMAL_MATRIX).get(baseOffset + STATIC_NORMAL_MATRIX_OFFSET, byteBuf);
+            buffer.putVector3i(baseOffset + WORLD_POSITION_OFFSET, worldPosition);
+            buffer.putInt(baseOffset + DYNAMIC_MATRIX_ID_OFFSET, dynamicMatrix.id(0));
+            buffer.putInt(baseOffset + DYNAMIC_LIGHT_ID_OFFSET, dynamicLight.id());
+            buffer.putMatrix4f(baseOffset + STATIC_MATRIX_OFFSET, staticMatrix);
+            staticMatrix.normal(SCRATCH_NORMAL_MATRIX);
+            buffer.putMatrix4f(baseOffset + STATIC_NORMAL_MATRIX_OFFSET, SCRATCH_NORMAL_MATRIX);
 //            instanceDataAlloc.dirtyRange(baseOffset, INSTANCE_DATA_BYTE_SIZE);
             instanceDataBuffer.dirtyAll();
             
@@ -264,8 +257,6 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
             if (instance != endInstance) {
                 // swapping time!
                 instanceDataAlloc.copy(endInstance.location * INSTANCE_DATA_BYTE_SIZE, instance.location * INSTANCE_DATA_BYTE_SIZE, INSTANCE_DATA_BYTE_SIZE);
-//                instanceDataAlloc.dirtyRange(instance.location * INSTANCE_DATA_BYTE_SIZE, INSTANCE_DATA_BYTE_SIZE);
-//                instanceDataBuffer.dirtyAll();
                 
                 liveInstances.set(instance.location, endInstance);
                 endInstance.location = instance.location;
@@ -284,7 +275,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
             for (int i = 0; i < components.size(); i++) {
                 var component = components.get(i);
                 var renderPass = component.renderPass;
-                final var componentMap = renderPass.ALPHA_DISCARD ? cutoutDrawComponents : opaqueDrawComponents;
+                final var componentMap = drawComponents;
                 final var drawComponents = componentMap.get(renderPass);
                 if (drawComponents == null) {
                     component.drawIndex = -1;
@@ -334,6 +325,12 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
             }
             
             @Override
+            public void updatePosition(Vector3ic position) {
+                final var offset = location.location * INSTANCE_DATA_BYTE_SIZE + WORLD_POSITION_OFFSET;
+                instanceDataAlloc.address().putVector3i(offset, position);
+            }
+            
+            @Override
             public void updateDynamicMatrix(@Nullable DynamicMatrix newDynamicMatrix) {
                 if (dynamicMatrix == newDynamicMatrix) {
                     return;
@@ -344,7 +341,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
                 if (newDynamicMatrix instanceof DynamicMatrixManager.Matrix dynamicMatrix && dynamicMatrixManager.owns(dynamicMatrix)) {
                     this.dynamicMatrix = dynamicMatrix;
                     final var offset = location.location * INSTANCE_DATA_BYTE_SIZE + DYNAMIC_MATRIX_ID_OFFSET;
-                    instanceDataAlloc.buffer().putInt(offset, dynamicMatrix.id());
+                    instanceDataAlloc.address().putInt(offset, dynamicMatrix.id(0));
                     instanceDataAlloc.dirtyRange(offset, INT_BYTE_SIZE);
                 }
             }
@@ -356,12 +353,16 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
                 }
                 final var transformOffset = location.location * INSTANCE_DATA_BYTE_SIZE + STATIC_MATRIX_OFFSET;
                 final var normalOffset = location.location * INSTANCE_DATA_BYTE_SIZE + STATIC_NORMAL_MATRIX_OFFSET;
-                newStaticMatrix.get(transformOffset, instanceDataAlloc.buffer());
-                newStaticMatrix.normal(SCRATCH_NORMAL_MATRIX).get(normalOffset, instanceDataAlloc.buffer());
-                instanceDataAlloc.dirtyRange(transformOffset, MATRIX_4F_BYTE_SIZE_2);
+                instanceDataAlloc.address().putMatrix4f(transformOffset, newStaticMatrix);
+                newStaticMatrix.normal(SCRATCH_NORMAL_MATRIX);
+                instanceDataAlloc.address().putMatrix4f(normalOffset, SCRATCH_NORMAL_MATRIX);
             }
             
             @Override
+            public void updateAABB(@Nullable AABBi aabb) {
+            
+            }
+            
             public void updateDynamicLight(@Nullable DynamicLight newDynamicLight) {
                 if (dynamicLight == newDynamicLight) {
                     return;
@@ -373,7 +374,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
                     this.dynamicLight = dynamicLight;
                     int newLightID = dynamicLight.id();
                     final var offset = location.location * INSTANCE_DATA_BYTE_SIZE + DYNAMIC_LIGHT_ID_OFFSET;
-                    instanceDataAlloc.buffer().putInt(offset, newLightID);
+                    instanceDataAlloc.address().putInt(offset, newLightID);
                     instanceDataAlloc.dirtyRange(offset, INT_BYTE_SIZE);
                 }
             }
@@ -399,6 +400,11 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
             
             @Nullable
             @Override
+            public DrawBatch.Instance createInstance(Vector3ic position, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable AABBi aabb) {
+                return null;
+            }
+            
+            @Nullable
             public DrawBatch.Instance createInstance(Vector3ic position, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight light, @Nullable DynamicLight.Type lightType) {
                 final var instance = instanceManager.createInstance(position, dynamicMatrix, staticMatrix, light, lightType);
                 if (!(instance instanceof MeshInstanceManager.Instance instance1)) {
@@ -410,9 +416,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         }
     }
     
-    private record IndirectDrawBlock(int glMode, boolean QUAD, GLBuffer.Allocation drawInfoAlloc, int count,
-                                     ObjectArrayList<MeshInstanceManager.DrawComponent> drawComponents,
-                                     boolean multidraw) {
+    private record IndirectDrawBlock(int glMode, boolean QUAD, GLBuffer.Allocation drawInfoAlloc, int count, ObjectArrayList<MeshInstanceManager.DrawComponent> drawComponents, boolean multidraw) {
         
         public IndirectDrawBlock(ObjectArrayList<MeshInstanceManager.DrawComponent> drawComponents, GLBuffer indirectBuffer, boolean multidraw) {
             this(drawComponents.get(0).GL_MODE, drawComponents.get(0).QUAD, indirectBuffer.alloc(drawComponents.size() * 5 * INT_BYTE_SIZE), drawComponents.size(), drawComponents, multidraw);
@@ -465,9 +469,9 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
     
     private final GLBuffer instanceDataBuffer = new GLBuffer(false);
     
-    private final GLBuffer dynamicMatrixBuffer = new GLBuffer(false);
+    private final MultiBuffer<GLBuffer> dynamicMatrixBuffer = new MultiBuffer<>(1);
     private final DynamicMatrixManager dynamicMatrixManager = new DynamicMatrixManager(dynamicMatrixBuffer);
-    private final DynamicMatrix IDENTITY_DYNAMIC_MATRIX = dynamicMatrixManager.createMatrix((matrix, nanoSinceLastFrame, partialTicks, playerBlock, playerPartialBlock) -> matrix.write(IDENTITY_MATRIX), null);
+    private final DynamicMatrix IDENTITY_DYNAMIC_MATRIX = dynamicMatrixManager.createMatrix(null, null);
     private final GLBuffer dynamicLightBuffer = new GLBuffer(false);
     private final DynamicLightManager lightManager = new DynamicLightManager(dynamicLightBuffer);
     private final DynamicLightManager.Light ZERO_LEVEL_LIGHT = lightManager.createLight((light, blockAndTintGetter) -> light.write((byte) 0, (byte) 0, (byte) 0));
@@ -478,12 +482,10 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
     
     private final Object2ObjectMap<InternalMesh, MeshInstanceManager> instanceManagers = new Object2ObjectOpenHashMap<>();
     private final ObjectOpenHashSet<MeshInstanceManager> instanceBatches = new ObjectOpenHashSet<>();
-    private final Object2ObjectMap<GLRenderPass, ObjectArrayList<MeshInstanceManager.DrawComponent>> opaqueDrawComponents = new Object2ObjectArrayMap<>();
-    private final Object2ObjectMap<GLRenderPass, ObjectArrayList<MeshInstanceManager.DrawComponent>> cutoutDrawComponents = new Object2ObjectArrayMap<>();
+    private final Object2ObjectMap<GLRenderPass, ObjectArrayList<MeshInstanceManager.DrawComponent>> drawComponents = new Object2ObjectArrayMap<>();
     
     private final GLBuffer indirectDrawBuffer = DRAW_INDIRECT ? new GLBuffer(false) : null;
-    private final Object2ObjectMap<GLRenderPass, IndirectDrawBlock> opaqueIndirectInfo = new Object2ObjectArrayMap<>();
-    private final Object2ObjectMap<GLRenderPass, IndirectDrawBlock> cutoutIndirectInfo = new Object2ObjectArrayMap<>();
+    private final Object2ObjectMap<GLRenderPass, IndirectDrawBlock> indirectInfo = new Object2ObjectArrayMap<>();
     private boolean indirectDrawInfoDirty = false;
     private boolean rebuildIndirectBlocks = false;
     
@@ -624,7 +626,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         
         final int dynamicMatrixTexture = glGenTextures();
         glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);
-        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, dynamicMatrixBuffer.handle());
+        glTexBuffer(GL_TEXTURE_BUFFER, GL_RGBA32F, dynamicMatrixBuffer.buffer(0).handle());
         
         final int dynamicLightTexture = glGenTextures();
         glBindTexture(GL_TEXTURE_BUFFER, dynamicLightTexture);
@@ -643,6 +645,12 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         this.dynamicLightTexture = dynamicLightTexture;
     }
     
+    @Nullable
+    @Override
+    public Instance createInstance(Vector3ic position, Mesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable AABBi aabb) {
+        return null;
+    }
+    
     @Override
     @Nullable
     public MeshInstanceManager.InstanceBatch createInstanceBatch(Mesh quartzMesh) {
@@ -656,7 +664,6 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
     }
     
     @Nullable
-    @Override
     public Instance createInstance(Vector3ic position, Mesh quartzMesh, @Nullable DynamicMatrix quartzDynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight quartzLight, @Nullable DynamicLight.Type lightType) {
         if (!(quartzMesh instanceof InternalMesh mesh)) {
             return null;
@@ -688,7 +695,6 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         return dynamicMatrixManager.createMatrix(updateFunc, parentTransform);
     }
     
-    @Override
     public DynamicLight createLight(Vector3ic lightPosition, DynamicLight.Type lightType) {
         return QuartzCore.INSTANCE.lightEngine.createLightForPos(lightPosition, lightManager, lightType);
     }
@@ -708,6 +714,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         return instanceManagers.isEmpty() && instanceBatches.isEmpty();
     }
     
+    @Override
     public void updateAndCull(@SuppressWarnings("SameParameterValue") DrawInfo drawInfo) {
         // matrices need to be updated anyway
         dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
@@ -734,13 +741,15 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         
         assert Minecraft.getInstance().level != null;
         lightManager.updateAll(Minecraft.getInstance().level);
-        dynamicMatrixBuffer.flush();
+        dynamicMatrixBuffer.buffer(0).flush();
         dynamicLightBuffer.flush();
         instanceDataBuffer.flush();
         updateIndirectInfo();
-
-        drawOpaqueFeedback();
-        drawCutoutFeedback();
+    }
+    
+    @Override
+    public void drawFeedback(RenderType renderType, boolean shadowsEnabled) {
+    
     }
     
     private void updateIndirectInfo() {
@@ -750,23 +759,19 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         indirectDrawInfoDirty = false;
         if (rebuildIndirectBlocks) {
             rebuildIndirectBlocks = false;
-            opaqueIndirectInfo.forEach((glRenderPass, drawBlock) -> indirectDrawBuffer.free(drawBlock.drawInfoAlloc));
-            cutoutIndirectInfo.forEach((glRenderPass, drawBlock) -> indirectDrawBuffer.free(drawBlock.drawInfoAlloc));
-            opaqueIndirectInfo.clear();
-            cutoutIndirectInfo.clear();
-            opaqueDrawComponents.forEach((glRenderPass, drawComponents) -> opaqueIndirectInfo.put(glRenderPass, new IndirectDrawBlock(drawComponents, indirectDrawBuffer, MULTIDRAW_INDIRECT)));
-            cutoutDrawComponents.forEach((glRenderPass, drawComponents) -> cutoutIndirectInfo.put(glRenderPass, new IndirectDrawBlock(drawComponents, indirectDrawBuffer, MULTIDRAW_INDIRECT)));
+            indirectInfo.forEach((glRenderPass, drawBlock) -> indirectDrawBuffer.free(drawBlock.drawInfoAlloc));
+            indirectInfo.clear();
+            drawComponents.forEach((glRenderPass, drawComponents) -> indirectInfo.put(glRenderPass, new IndirectDrawBlock(drawComponents, indirectDrawBuffer, MULTIDRAW_INDIRECT)));
         } else {
-            opaqueIndirectInfo.values().forEach(IndirectDrawBlock::updateDrawInfo);
-            cutoutIndirectInfo.values().forEach(IndirectDrawBlock::updateDrawInfo);
+            indirectInfo.values().forEach(IndirectDrawBlock::updateDrawInfo);
         }
         indirectDrawBuffer.dirtyAll();
         indirectDrawBuffer.flush();
     }
     
-    public void drawOpaqueFeedback() {
+    public void drawFeedback() {
         
-        if (!enabled || culled || opaqueDrawComponents.isEmpty()) {
+        if (!enabled || culled) {
             return;
         }
         
@@ -777,7 +782,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
             glBindTexture(GL_TEXTURE_BUFFER, dynamicLightTexture);
             glActiveTexture(ATLAS_TEXTURE_UNIT_GL);
         } else {
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.handle());
+            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.buffer(0).handle());
             glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, dynamicLightBuffer.handle());
         }
         
@@ -791,14 +796,14 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         
         if (DRAW_INDIRECT) {
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawBuffer.handle());
-            opaqueIndirectInfo.forEach((renderPass, drawBlock) -> {
+            indirectInfo.forEach((renderPass, drawBlock) -> {
                 program.setupRenderPass(renderPass);
                 renderPass.beginTransformFeedback(drawBlock.vertexCount());
                 drawBlock.draw();
                 renderPass.endTransformFeedback();
             });
         } else {
-            for (var entry : opaqueDrawComponents.entrySet()) {
+            for (var entry : drawComponents.entrySet()) {
                 final var renderPass = entry.getKey();
                 final var drawComponents = entry.getValue();
                 
@@ -815,67 +820,5 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
                 renderPass.endTransformFeedback();
             }
         }
-    }
-    
-    @Override
-    public void drawOpaque() {
-    
-    }
-    
-    public void drawCutoutFeedback() {
-        if (!enabled || culled || cutoutDrawComponents.isEmpty()) {
-            return;
-        }
-        
-        if (!SSBO) {
-            glActiveTexture(DYNAMIC_MATRIX_TEXTURE_UNIT_GL);
-            glBindTexture(GL_TEXTURE_BUFFER, dynamicMatrixTexture);
-            glActiveTexture(DYNAMIC_LIGHT_TEXTURE_UNIT_GL);
-            glBindTexture(GL_TEXTURE_BUFFER, dynamicLightTexture);
-        } else {
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.handle());
-            glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, dynamicLightBuffer.handle());
-        }
-        
-        if (!BASE_INSTANCE && !DRAW_INDIRECT) {
-            B3DStateHelper.bindArrayBuffer(instanceDataBuffer.handle());
-        }
-        
-        final var program = INSTANCE.transformFeedbackProgram;
-        
-        glActiveTexture(ATLAS_TEXTURE_UNIT_GL);
-        
-        glBindVertexArray(VAO);
-        
-        if (DRAW_INDIRECT) {
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectDrawBuffer.handle());
-            cutoutIndirectInfo.forEach((renderPass, drawBlock) -> {
-                program.setupRenderPass(renderPass);
-                renderPass.beginTransformFeedback(drawBlock.vertexCount());
-                drawBlock.draw();
-                renderPass.endTransformFeedback();
-            });
-        } else {
-            for (var entry : cutoutDrawComponents.entrySet()) {
-                final var renderPass = entry.getKey();
-                final var drawComponents = entry.getValue();
-                
-                program.setupRenderPass(renderPass);
-                
-                int vertexCount = 0;
-                for (int i = 0; i < drawComponents.size(); i++) {
-                    vertexCount += drawComponents.get(i).vertexCount();
-                }
-                renderPass.beginTransformFeedback(vertexCount);
-                for (int i = 0; i < drawComponents.size(); i++) {
-                    drawComponents.get(i).draw();
-                }
-                renderPass.endTransformFeedback();
-            }
-        }
-    }
-    
-    public void drawCutout() {
-    
     }
 }

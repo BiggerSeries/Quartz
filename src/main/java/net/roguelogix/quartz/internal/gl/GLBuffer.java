@@ -6,6 +6,7 @@ import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
+import net.roguelogix.quartz.internal.util.PointerWrapper;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 
@@ -75,12 +76,17 @@ public class GLBuffer implements Buffer {
         }
         
         public void delete() {
-            free(info);
+            GLBuffer.this.free(info);
             slicers.remove(slicer);
         }
         
         public ByteBuffer buffer() {
             return byteBuffer[0].rewind();
+        }
+        
+        @Override
+        public PointerWrapper address() {
+            return null;
         }
         
         public int offset() {
@@ -89,10 +95,6 @@ public class GLBuffer implements Buffer {
         
         public int size() {
             return info.size;
-        }
-        
-        public void dirty() {
-            dirtyRange(0, info.size);
         }
         
         public void dirtyRange(int offset, int size) {
@@ -114,24 +116,15 @@ public class GLBuffer implements Buffer {
             dirtyRange(dstOffset, size);
         }
         
-        public void addReallocCallback(Consumer<Buffer.Allocation> consumer) {
+        public CallbackHandle addReallocCallback(Consumer<Buffer.Allocation> consumer) {
             consumer.accept(this);
             reallocCallbacks.add(consumer);
+            return null;
         }
         
         public void addBufferSliceCallback(Consumer<Buffer.Allocation> consumer) {
             consumer.accept(this);
             sliceCallbacks.add(consumer);
-        }
-        
-        @Override
-        public void lock() {
-        
-        }
-        
-        @Override
-        public void unlock() {
-        
         }
         
         public int compareTo(Allocation other) {
@@ -305,9 +298,6 @@ public class GLBuffer implements Buffer {
             for (int i = 0; i < allocation.reallocCallbacks.size(); i++) {
                 newAlloc.addReallocCallback(allocation.reallocCallbacks.get(i));
             }
-            for (int i = 0; i < allocation.sliceCallbacks.size(); i++) {
-                newAlloc.addBufferSliceCallback(allocation.sliceCallbacks.get(i));
-            }
             return newAlloc;
         }
         
@@ -401,11 +391,6 @@ public class GLBuffer implements Buffer {
     }
     
     @Override
-    public void addGPUReallocCallback(Consumer<Buffer> consumer) {
-        // GL doesnt realloc on the GPU
-    }
-    
-    @Override
     public void free(Buffer.Allocation allocation) {
         if (allocation instanceof Allocation alloc) {
             free(alloc);
@@ -438,6 +423,11 @@ public class GLBuffer implements Buffer {
     public void dirtyAll() {
         minDirty = 0;
         maxDirty = size;
+    }
+    
+    @Override
+    public CallbackHandle addReallocCallback(boolean callImmediately, Consumer<Buffer> consumer) {
+        return null;
     }
     
     public void dirtyRange(int min, int max) {

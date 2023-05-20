@@ -11,11 +11,14 @@ import javax.annotation.Nullable;
 public interface DrawBatch {
     
     interface Instance {
+        
+        void updatePosition(Vector3ic position);
+        
         void updateDynamicMatrix(@Nullable DynamicMatrix newDynamicMatrix);
         
         void updateStaticMatrix(@Nullable Matrix4fc newStaticMatrix);
         
-        void updateDynamicLight(@Nullable DynamicLight newDynamicLight);
+        void updateAABB(@Nullable AABBi aabb);
         
         void delete();
     }
@@ -24,13 +27,13 @@ public interface DrawBatch {
      * DynamicMatrix and DynamicLight must be instances created by this draw batch
      */
     @Nullable
-    Instance createInstance(Vector3ic position, Mesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight light, @Nullable DynamicLight.Type lightType);
+    Instance createInstance(Vector3ic position, Mesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable AABBi aabb);
     
     interface InstanceBatch {
         void updateMesh(Mesh mesh);
         
         @Nullable
-        Instance createInstance(Vector3ic position, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight light, @Nullable DynamicLight.Type lightType);
+        Instance createInstance(Vector3ic position, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable AABBi aabb);
     }
     
     @Nullable
@@ -42,9 +45,7 @@ public interface DrawBatch {
         return createDynamicMatrix(null, updateFunc);
     }
     
-    DynamicLight createLight(Vector3ic lightPosition, DynamicLight.Type lightType);
-    
-    void setCullAABB(AABBi aabb);
+    void setCullAABB(@Nullable AABBi aabb);
     
     void setEnabled(boolean enabled);
     

@@ -1,10 +1,6 @@
 package net.roguelogix.quartz.internal.gl;
 
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.phosphophyllite.util.Util;
@@ -13,9 +9,7 @@ import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
-
-import java.util.Collections;
-import java.util.Map;
+import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 
 import static net.roguelogix.quartz.internal.gl.GLCore.SSBO_VERTEX_BLOCK_LIMIT;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.*;
@@ -28,54 +22,6 @@ public class GLTransformFeedbackProgram {
     public static final ResourceLocation baseResourceLocation = new ResourceLocation(Quartz.modid, "shaders/gl/transform_feedback");
     private static final ResourceLocation vertexShaderLocation = new ResourceLocation(baseResourceLocation.getNamespace(), baseResourceLocation.getPath() + ".vert");
     public static final boolean SSBO = GLCore.SSBO && SSBO_VERTEX_BLOCK_LIMIT >= 2;
-    
-    public record VertexFormatOutput(VertexFormat format, String[] varyings, int vertexSize) {
-        
-        private static final Map<VertexFormatElement, String> elementVaryingNames;
-        
-        static {
-            final var map = new Object2ObjectArrayMap<VertexFormatElement, String>();
-            map.put(DefaultVertexFormat.ELEMENT_POSITION, "positionOutput");
-            map.put(DefaultVertexFormat.ELEMENT_NORMAL, "normalOutput");
-            map.put(DefaultVertexFormat.ELEMENT_COLOR, "colorOutput");
-            map.put(DefaultVertexFormat.ELEMENT_UV0, "textureOutput");
-            map.put(DefaultVertexFormat.ELEMENT_UV1, "overlayOutput");
-            map.put(DefaultVertexFormat.ELEMENT_UV2, "lightmapOutput");
-            elementVaryingNames = Collections.unmodifiableMap(map);
-        }
-        
-        public static final VertexFormatOutput BLOCK = new VertexFormatOutput(DefaultVertexFormat.BLOCK);
-        public static final VertexFormatOutput NEW_ENTITY = new VertexFormatOutput(DefaultVertexFormat.NEW_ENTITY);
-        public static final VertexFormatOutput POSITION_COLOR_TEX_LIGHTMAP = new VertexFormatOutput(DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
-        
-        public VertexFormatOutput(VertexFormat format) {
-            this(format, generateVaryings(format), format.getVertexSize());
-        }
-        
-        private static int offsetOf(VertexFormat format, VertexFormatElement element) {
-            final var elementIndex = format.getElements().indexOf(element);
-            if (elementIndex == -1) {
-                return 0;
-            }
-            return format.getOffset(elementIndex);
-        }
-        
-        private static String[] generateVaryings(VertexFormat format) {
-            final var elements = format.getElements();
-            final var list = new ObjectArrayList<String>();
-            for (final var element : elements) {
-                if (element == DefaultVertexFormat.ELEMENT_PADDING) {
-                    continue;
-                }
-                var elementName = elementVaryingNames.get(element);
-                if (elementName == null) {
-                    throw new IllegalStateException();
-                }
-                list.add(elementName);
-            }
-            return list.toArray(new String[]{});
-        }
-    }
     
     private record ShaderInstance(
             VertexFormatOutput outputFormat, int vertexProgram, int pipeline,
@@ -136,7 +82,7 @@ public class GLTransformFeedbackProgram {
             
             final int vertexProgram = glCreateProgram();
             glAttachShader(vertexProgram, vertexShader);
-            glTransformFeedbackVaryings(vertexProgram, outputFormat.varyings, GL_INTERLEAVED_ATTRIBS);
+            glTransformFeedbackVaryings(vertexProgram, outputFormat.varyings(), GL_INTERLEAVED_ATTRIBS);
             glProgramParameteri(vertexProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
             glLinkProgram(vertexProgram);
             
@@ -205,8 +151,6 @@ public class GLTransformFeedbackProgram {
     }
     
     public void initialLoad() {
-        setupVertexFormat(VertexFormatOutput.BLOCK);
-        setupVertexFormat(VertexFormatOutput.NEW_ENTITY);
         loaded = true;
     }
     

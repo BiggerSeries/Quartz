@@ -18,7 +18,13 @@ public class EventListener {
     }
 
     private static void clientSetup(FMLClientSetupEvent event) {
-        event.enqueueWork(QuartzCore::startup);
+        event.enqueueWork(() -> {
+            try {
+                QuartzCore.startup();
+            } catch (Throwable e){
+                Minecraft.crash(new CrashReport("Quartz startup exception", e));
+            }
+        });
     }
     
     public static void initQuartz() {

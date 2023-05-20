@@ -1,0 +1,92 @@
+#version 460 core
+
+layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(std430, binding = 0) buffer rawLightDataBuffer {
+    int rawLightDataSSBO[];
+};
+
+layout(location = 0) uniform uvec3 lightChunkBaseTexel;
+layout(location = 1) uniform uint rawLightDataBaseInt;
+
+layout(binding = 1) writeonly uniform uimage2DArray intermediateLightDataTexture[6];
+
+struct NeighboringLightLevels {
+    uvec2 level[2][2][2];
+};
+
+uvec2 lightLeveForPos(uvec3 pos) {
+    uint offset = 0;
+    offset += pos.x;
+    offset *= 18;
+    offset += pos.y;
+    offset *= 18;
+    offset += pos.z;
+    offset *= 9;
+    int rawLightData = rawLightDataSSBO[offset];
+    rawLightData >>= 16u * (pos.z & 1u);
+    uvec2 toRet;
+    toRet[0] = (rawLightData >> 8) & 0xFF;
+    toRet[1] = rawLightData & 0xFF;
+    return toRet;
+}
+
+NeighboringLightLevels getNeighboringLighLevels() {
+    NeighboringLightLevels levels;
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2; j++) {
+            for (int k = 0; k < 2; k++) {
+                levels.level[i][j][k] = lightLeveForPos(gl_GlobalInvocationID + uvec3(i, j, k));
+            }
+        }
+    }
+    return levels;
+}
+
+uvec2 averageValues(uvec2 a, uvec2 b, uvec2 c, uvec2 d) {
+    float divisor = 1;
+    vec2 outputLevel = vec2(0, 0);
+    {
+        float mult = -float((a[0] >> 4) & 1u);
+        divisor -= 0.25 * mult;
+        outputLevel += mult * a;
+    }
+    {
+        float mult = -float((a[0] >> 4) & 1u);
+        divisor -= 0.25 * mult;
+        outputLevel += mult * a;
+    }
+    {
+        float mult = -float((a[0] >> 4) & 1u);
+        divisor -= 0.25 * mult;
+        outputLevel += mult * a;
+    }
+    {
+        float mult = -float((d[0] >> 4) & 1u);
+        divisor -= 0.25 * mult;
+        outputLevel += mult * d;
+    }
+    if (divisor != 0){
+        outputLevel /= divisor;
+    } else {
+        outputLevel = vec2(0, 0);
+    }
+    barrier();
+    return uvec2(outputLevel);
+}
+
+void main() {
+    uvec2 neighborLevels[2][2][2] = getNeighboringLighLevels().level;
+
+    uvec3 outputTexelPos = lightChunkBaseTexel;
+    outputTexelPos.x += gl_GlobalInvocationID.x;
+    outputTexelPos.y += gl_GlobalInvocationID.y;
+    outputTexelPos.y += gl_GlobalInvocationID.z * 17;
+
+    imageStore(intermediateLightDataTexture[0], ivec3(outputTexelPos), uvec4(averageValues(neighborLevels[1][0][0], neighborLevels[1][0][1], neighborLevels[1][1][0], neighborLevels[1][1][1]), 0, 0));
+    imageStore(intermediateLightDataTexture[3], ivec3(outputTexelPos), uvec4(averageValues(neighborLevels[0][0][0], neighborLevels[0][0][1], neighborLevels[0][1][0], neighborLevels[0][1][1]), 0, 0));
+    imageStore(intermediateLightDataTexture[1], ivec3(outputTexelPos), uvec4(averageValues(neighborLevels[0][1][0], neighborLevels[0][1][1], neighborLevels[1][1][0], neighborLevels[1][1][1]), 0, 0));
+    imageStore(intermediateLightDataTexture[4], ivec3(outputTexelPos), uvec4(averageValues(neighborLevels[0][0][0], neighborLevels[0][0][1], neighborLevels[1][0][0], neighborLevels[1][0][1]), 0, 0));
+    imageStore(intermediateLightDataTexture[2], ivec3(outputTexelPos), uvec4(averageValues(neighborLevels[0][0][1], neighborLevels[0][1][1], neighborLevels[1][0][1], neighborLevels[1][1][1]), 0, 0));
+    imageStore(intermediateLightDataTexture[5], ivec3(outputTexelPos), uvec4(averageValues(neighborLevels[0][0][0], neighborLevels[0][1][0], neighborLevels[1][0][0], neighborLevels[1][1][0]), 0, 0));
+}

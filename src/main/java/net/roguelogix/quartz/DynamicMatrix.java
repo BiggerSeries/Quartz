@@ -1,5 +1,6 @@
 package net.roguelogix.quartz;
 
+import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4f;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -11,8 +12,10 @@ import javax.annotation.Nullable;
 public interface DynamicMatrix {
     void write(Matrix4fc matrixData);
     
+    void delete();
+    
     interface UpdateFunc {
-        void accept(DynamicMatrix matrix, long nanoSinceLastFrame, float partialTicks, Vector3ic playerBlock, Vector3fc playerPartialBlock);
+        void accept(Matrix4f matrix, long nanoSinceLastFrame, float partialTicks, Vector3ic playerBlock, Vector3fc playerPartialBlock);
     }
     
     interface Manager {

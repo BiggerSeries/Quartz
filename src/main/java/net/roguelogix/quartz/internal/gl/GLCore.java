@@ -10,16 +10,18 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.internal.DrawBatchInternal;
 import net.roguelogix.quartz.internal.IrisDetection;
-import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
+import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.common.DrawInfo;
 import org.lwjgl.opengl.ARBShaderStorageBufferObject;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.KHRDebug;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -43,6 +45,7 @@ public class GLCore extends QuartzCore {
     public static final int SSBO_FRAGMENT_BLOCK_LIMIT = GL11.glGetInteger(ARBShaderStorageBufferObject.GL_MAX_FRAGMENT_SHADER_STORAGE_BLOCKS);
     public static final boolean MULTI_BIND = GL.getCapabilities().GL_ARB_multi_bind && GLConfig.INSTANCE.ALLOW_SSBO;
     public static final boolean DSA = GL.getCapabilities().GL_ARB_direct_state_access && GLConfig.INSTANCE.ALLOW_DSA;
+    public static final boolean KHR_DEBUG = GL.getCapabilities().GL_KHR_debug && Phosphophyllite.CONFIG.debugMode;
     
     // its fine, in the event its null, nothing will need it to not be null
     @SuppressWarnings("ConstantConditions")
@@ -79,10 +82,18 @@ public class GLCore extends QuartzCore {
             return null;
         }
         LOGGER.info("Quartz initializing GLCore");
-        return new GLCore();
+        try {
+            if (KHR_DEBUG) {
+                KHRDebug.glPushDebugGroup(KHRDebug.GL_DEBUG_SOURCE_THIRD_PARTY, 0, "Quartz Renderer setup");
+            }
+            return new GLCore();
+        } finally {
+            if (KHR_DEBUG) {
+                KHRDebug.glPopDebugGroup();
+            }
+        }
     }
     
-    public GLMainProgram mainProgram = new GLMainProgram();
     public GLTransformFeedbackProgram transformFeedbackProgram = new GLTransformFeedbackProgram();
     public GLBuffer vertexBuffer = meshManager.vertexBuffer.as(GLBuffer.class);
     public GLBuffer elementBuffer = allocBuffer();
@@ -121,10 +132,9 @@ public class GLCore extends QuartzCore {
     @Override
     protected void resourcesReloadedInternal() {
         try {
-            mainProgram.reload(false);
             transformFeedbackProgram.reload();
         } catch (IllegalStateException e) {
-            if (!mainProgram.loaded() || !transformFeedbackProgram.loaded()) {
+            if (!transformFeedbackProgram.loaded()) {
                 // rethrowing because this is a crash at launch
                 throw e;
             }
@@ -135,8 +145,10 @@ public class GLCore extends QuartzCore {
     
     @Override
     public DrawBatch createDrawBatch() {
-        var batcher = new GLSingleStageTransformFeedbackBatch();
-        batchers.add(new WeakReference<>(batcher));
+        final var batcher = new GLSingleStageTransformFeedbackBatch();
+        final var ref = new WeakReference<DrawBatchInternal>(batcher);
+        batchers.add(ref);
+        CLEANER.register(batcher, () -> deletionQueue.enqueue(() -> batchers.remove(ref)));
         return batcher;
     }
     
@@ -173,14 +185,6 @@ public class GLCore extends QuartzCore {
     public void frameStart(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection) {
 //        GLFW.glfwSetInputMode(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_CURSOR, GLFW.GLFW_CURSOR_NORMAL);
         
-        if (IrisDetection.isComplementaryLoaded() != mainProgram.complementaryEnabled()) {
-            try {
-                mainProgram.reload(IrisDetection.isComplementaryLoaded());
-            } catch (IllegalStateException e) {
-                e.printStackTrace();
-            }
-        }
-        
         deletionQueue.runAll();
         
         long timeNanos = System.nanoTime();
@@ -209,6 +213,7 @@ public class GLCore extends QuartzCore {
     
     @Override
     public void lightUpdated() {
+        
         // early out if we have nothing to do
         if (batchers.size() == 0) {
             return;
@@ -227,7 +232,6 @@ public class GLCore extends QuartzCore {
         drawInfo.fogColor.set(RenderSystem.getShaderFogColor());
         
         GLStateTracker.reset();
-        mainProgram.setupDrawInfo(drawInfo);
         transformFeedbackProgram.setupDrawInfo(drawInfo);
         
         for (int i = 0; i < batchers.size(); i++) {
@@ -236,6 +240,24 @@ public class GLCore extends QuartzCore {
                 batch.updateAndCull(drawInfo);
             }
         }
+        for (int i = 0; i < batchers.size(); i++) {
+            var batch = batchers.get(i).get();
+            if (batch != null) {
+                batch.drawFeedback(null, false);
+            }
+        }
+        
+        B3DStateHelper.bindArrayBuffer(0);
+        glBindProgramPipeline(0);
+        for (int i = 0; i < 16; i++) {
+            glActiveTexture(GL_TEXTURE0 + i);
+            glBindTexture(GL_TEXTURE_BUFFER, 0);
+        }
+        glActiveTexture(GL_TEXTURE0);
+        if (DRAW_INDIRECT) {
+            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     
     @Override
@@ -256,49 +278,11 @@ public class GLCore extends QuartzCore {
             return;
         }
         
-        glEnable(GL_DEPTH_TEST);
-        glDepthFunc(GL_LEQUAL);
-        
         BufferUploader.invalidate();
-        glUseProgram(0);
         
         IrisDetection.bindIrisFramebuffer();
         
-        glActiveTexture(MagicNumbers.GL.LIGHTMAP_TEXTURE_UNIT_GL);
-        glBindTexture(GL_TEXTURE_2D, Minecraft.getInstance().gameRenderer.lightTexture().lightTexture.getId());
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glActiveTexture(MagicNumbers.GL.ATLAS_TEXTURE_UNIT_GL);
-        
-        for (int i = 0; i < batchers.size(); i++) {
-            var batch = batchers.get(i).get();
-            if (batch != null) {
-                batch.drawOpaque();
-            }
-        }
-        for (int i = 0; i < batchers.size(); i++) {
-            var batch = batchers.get(i).get();
-            if (batch != null) {
-                batch.drawCutout();
-            }
-        }
-        
         GLRenderPass.drawAll(false);
-        
-        glBindVertexArray(0);
-        glBindProgramPipeline(0);
-        for (int i = 0; i < 16; i++) {
-            glActiveTexture(GL_TEXTURE0 + i);
-            glBindTexture(GL_TEXTURE_BUFFER, 0);
-        }
-        glActiveTexture(GL_TEXTURE0);
-        if (DRAW_INDIRECT) {
-            glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-        }
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-//        glDisable(GL_DEPTH_TEST);
     }
     
     @Override
@@ -309,5 +293,20 @@ public class GLCore extends QuartzCore {
     @Override
     public void endTranslucent() {
     
+    }
+    
+    @Override
+    public void waitIdle() {
+    
+    }
+    
+    @Override
+    public int frameInFlight() {
+        return 0;
+    }
+    
+    @Override
+    public void sectionDirty(int x, int y, int z) {
+        lightEngine.sectionDirty(x, y, z);
     }
 }

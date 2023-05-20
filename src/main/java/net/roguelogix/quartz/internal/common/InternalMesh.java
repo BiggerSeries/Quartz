@@ -13,6 +13,7 @@ import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
+import net.roguelogix.quartz.internal.util.PointerWrapper;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
@@ -35,7 +36,7 @@ public class InternalMesh implements Mesh {
         this.buildFunc = buildFunc;
     }
     
-    public Object2LongArrayMap<RenderType> build(Function<Integer, ByteBuffer> bufferCreator) {
+    public Object2LongArrayMap<RenderType> build(Function<Integer, PointerWrapper> bufferCreator) {
         Builder builder = new Builder();
         buildFunc.accept(builder);
         var buffer = bufferCreator.apply(builder.bytesRequired());
@@ -94,8 +95,8 @@ public class InternalMesh implements Mesh {
             @Override
             public VertexConsumer color(int r, int g, int b, int a) {
                 // assumes each value is <= 255, if i need to put an "& 0xFF" on these, im going to find you
-                // as a side note, that means you can pass in an RGBA value in a
-                currentVertex.rgba = (r << 24) | (g << 16) | (b << 8) | a;
+                // as a side note, that means you can pass in an RGBA value in r
+                currentVertex.rgba = (a << 24) | (b << 16) | (g << 8) | r;
                 return this;
             }
             
@@ -109,6 +110,7 @@ public class InternalMesh implements Mesh {
             @Override
             public VertexConsumer overlayCoords(int oU, int oV) {
                 // ignored, the fuck is this for?
+                // figured it out, this is for entities when you hurt them, or creepers exploding
                 return this;
             }
             
@@ -141,7 +143,7 @@ public class InternalMesh implements Mesh {
             public void defaultColor(int r, int g, int b, int a) {
                 // assumes each value is <= 255, if i need to put an "& 0xFF" on these, im going to find you
                 // as a side note, that means you can pass in an RGBA value in a
-                drgba = (r << 24) | (g << 16) | (b << 8) | a;
+                drgba = (a << 24) | (b << 16) | (g << 8) | r;
                 defaultColorSet = true;
             }
             
@@ -187,7 +189,7 @@ public class InternalMesh implements Mesh {
             return totalVertices * VERTEX_BYTE_SIZE;
         }
         
-        Object2LongArrayMap<RenderType> build(ByteBuffer masterBuffer) {
+        Object2LongArrayMap<RenderType> build(PointerWrapper masterBuffer) {
             Object2LongArrayMap<RenderType> drawInfoMap = new Object2LongArrayMap<>();
             
             int currentByteIndex = 0;
@@ -199,97 +201,32 @@ public class InternalMesh implements Mesh {
                     continue;
                 }
                 final long offsetAndSize = (long) (currentByteIndex / VERTEX_BYTE_SIZE) << 32 | (long) vertexCount;
-                final var byteBuf = masterBuffer.slice(currentByteIndex, vertexCount * VERTEX_BYTE_SIZE);
-                byteBuf.order(ByteOrder.nativeOrder());
+                final var typeBuffer = masterBuffer.slice(currentByteIndex, vertexCount * VERTEX_BYTE_SIZE);
                 currentByteIndex += vertexCount * VERTEX_BYTE_SIZE;
                 
                 Vector3f tempNormalVec = new Vector3f();
                 
-                final boolean quadType = renderType.mode() == VertexFormat.Mode.QUADS;
-                if (!quadType) {
-                    int vertexIndex = 0;
-                    for (Vertex vertex : bufferBuilder.vertices) {
-                        if (vertexIndex > vertexCount) {
-                            break;
-                        }
-                        byteBuf.putFloat(vertex.x); // 4
-                        byteBuf.putFloat(vertex.y); // 8
-                        byteBuf.putFloat(vertex.z); // 12
-                        byteBuf.putInt(vertex.rgba); // 16
-                        byteBuf.putFloat(vertex.texU); // 20
-                        byteBuf.putFloat(vertex.texV); // 24
-                        
-                        int packedA = 0;
-                        int packedB = 0;
-                        
-                        packedA |= (vertex.lightmapU & 0xFF) << 24;
-                        packedA |= (vertex.lightmapV & 0xFF) << 16;
-                        
-                        tempNormalVec.set(vertex.normalX, vertex.normalY, vertex.normalZ);
-                        tempNormalVec.normalize(Short.MAX_VALUE);
-                        
-                        packedA |= (((int) tempNormalVec.x) & 0xFFFF);
-                        packedB |= (((int) tempNormalVec.y) & 0xFFFF) << 16;
-                        packedB |= (((int) tempNormalVec.z) & 0xFFFF);
-                        
-                        byteBuf.putInt(packedA);
-                        byteBuf.putInt(packedB);
-                        vertexIndex++;
+                int vertexIndex = 0;
+                for (Vertex vertex : bufferBuilder.vertices) {
+                    if (vertexIndex > vertexCount) {
+                        break;
                     }
-                } else {
-                    int vertexIndex = 0;
-                    var iter = bufferBuilder.vertices.iterator();
-                    Vertex[] currentVertices = new Vertex[4];
-                    mainLoop:
-                    while (true) {
-                        for (int i = 0; i < 4; i++) {
-                            if (vertexIndex > vertexCount) {
-                                break mainLoop;
-                            }
-                            if (!iter.hasNext()) {
-                                break mainLoop;
-                            }
-                            currentVertices[i] = iter.next();
-                            vertexIndex++;
-                        }
-                        
-                        int packedLightA = 0;
-                        int packedLightB = 0;
-                        // this might be the wrong order, ill need to check that
-                        packedLightA |= (currentVertices[0].lightmapU & 0x3F);
-                        packedLightA |= (currentVertices[0].lightmapV & 0x3F) << 6;
-                        packedLightA |= (currentVertices[1].lightmapU & 0x3F) << 12;
-                        packedLightA |= (currentVertices[1].lightmapV & 0x3F) << 18;
-                        packedLightB |= (currentVertices[2].lightmapU & 0x3F);
-                        packedLightB |= (currentVertices[2].lightmapV & 0x3F) << 6;
-                        packedLightB |= (currentVertices[3].lightmapU & 0x3F) << 12;
-                        packedLightB |= (currentVertices[3].lightmapV & 0x3F) << 18;
-                        
-                        for (int i = 0; i < 4; i++) {
-                            var vertex = currentVertices[i];
-                            byteBuf.putInt(Float.floatToIntBits(vertex.x)); // 4
-                            byteBuf.putInt(Float.floatToIntBits(vertex.y)); // 8
-                            byteBuf.putInt(Float.floatToIntBits(vertex.z)); // 12
-                            byteBuf.putInt(vertex.rgba); // 16
-                            byteBuf.putInt(Float.floatToIntBits(vertex.texU)); // 20
-                            byteBuf.putInt(Float.floatToIntBits(vertex.texV)); // 24
-                            
-                            int packedA = packedLightA;
-                            int packedB = packedLightB;
-                            
-                            tempNormalVec.set(vertex.normalX, vertex.normalY, vertex.normalZ);
-                            tempNormalVec.normalize(7);
-                            
-                            packedA |= packInt(Math.round(tempNormalVec.x), 24, 4);
-                            packedA |= packInt(Math.round(tempNormalVec.y), 28, 4);
-                            packedB |= packInt(Math.round(tempNormalVec.z), 24, 4);
-                            
-                            packedB |= (i & 0x3) << 28;
-                            
-                            byteBuf.putInt(packedA);
-                            byteBuf.putInt(packedB);
-                        }
-                    }
+                    final var vertexBuffer = typeBuffer.slice((long) vertexIndex * VERTEX_BYTE_SIZE, VERTEX_BYTE_SIZE);
+                    
+                    vertexBuffer.putFloatIdx(0, vertex.x); // 4
+                    vertexBuffer.putFloatIdx(1, vertex.y); // 8
+                    vertexBuffer.putFloatIdx(2, vertex.z); // 12
+                    vertexBuffer.putIntIdx(3, vertex.rgba); // 16
+                    vertexBuffer.putFloatIdx(4, vertex.texU); // 20
+                    vertexBuffer.putFloatIdx(5, vertex.texV); // 24
+                    
+                    tempNormalVec.set(vertex.normalX, vertex.normalY, vertex.normalZ);
+                    tempNormalVec.normalize(Short.MAX_VALUE);
+                    
+                    vertexBuffer.putShortIdx(12, (short) tempNormalVec.x);
+                    vertexBuffer.putShortIdx(13, (short) tempNormalVec.y);
+                    vertexBuffer.putShortIdx(14, (short) tempNormalVec.z);
+                    vertexIndex++;
                 }
                 drawInfoMap.put(renderType, offsetAndSize);
             }
@@ -321,6 +258,7 @@ public class InternalMesh implements Mesh {
             
             public final WeakReference<InternalMesh> meshRef;
             private final Buffer vertexBuffer;
+            @Nullable
             private Buffer.Allocation vertexAllocation;
             private final Object2ObjectArrayMap<RenderType, Component> drawInfo = new Object2ObjectArrayMap<>();
             private final ObjectArrayList<Consumer<TrackedMesh>> buildCallbacks = new ObjectArrayList<>();
@@ -331,20 +269,16 @@ public class InternalMesh implements Mesh {
             }
             
             void rebuild() {
+                QuartzCore.INSTANCE.waitIdle();
                 var mesh = meshRef.get();
                 if (mesh == null) {
                     return;
                 }
                 Object2LongArrayMap<RenderType> rawDrawInfo;
                 drawInfo.clear();
-                try {
-                    rawDrawInfo = mesh.build(this::allocBuffer);
-                    vertexAllocation.dirty();
-                } finally {
-                    if (vertexAllocation != null) {
-                        vertexAllocation.unlock();
-                    }
-                }
+                rawDrawInfo = mesh.build(this::allocBuffer);
+                assert vertexAllocation != null;
+                vertexAllocation.dirty();
                 for (var renderTypeEntry : rawDrawInfo.object2LongEntrySet()) {
                     var renderType = renderTypeEntry.getKey();
                     var drawLong = renderTypeEntry.getLongValue();
@@ -356,14 +290,13 @@ public class InternalMesh implements Mesh {
                 }
             }
             
-            private ByteBuffer allocBuffer(int size) {
+            private PointerWrapper allocBuffer(int size) {
                 if (vertexAllocation != null) {
                     vertexAllocation = vertexBuffer.realloc(vertexAllocation, size, VERTEX_BYTE_SIZE);
                 } else {
                     vertexAllocation = vertexBuffer.alloc(size, VERTEX_BYTE_SIZE);
                 }
-                vertexAllocation.lock();
-                return vertexAllocation.buffer();
+                return vertexAllocation.address();
             }
             
             public Collection<RenderType> usedRenderTypes() {
@@ -430,6 +363,7 @@ public class InternalMesh implements Mesh {
         }
         
         private void buildTrackedMesh(TrackedMesh trackedMesh) {
+            QuartzCore.INSTANCE.waitIdle();
             trackedMesh.rebuild();
         }
         

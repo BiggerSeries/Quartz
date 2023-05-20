@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.math.Matrix3f;
-import com.mojang.math.Matrix4f;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.Minecraft;
@@ -16,6 +15,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.common.ShaderInfo;
+import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 
 import javax.annotation.Nullable;
 
@@ -30,8 +30,6 @@ public class GLRenderPass {
     public final boolean QUAD;
     public final boolean TEXTURE;
     public final boolean LIGHTING;
-    public final boolean ALPHA_DISCARD;
-    
     public final int VERTICES_PER_PRIMITIVE;
     public final int GL_MODE;
     
@@ -40,7 +38,7 @@ public class GLRenderPass {
     
     public final RenderType.CompositeRenderType sourceRenderType;
     public final VertexFormat vertexFormat;
-    public final GLTransformFeedbackProgram.VertexFormatOutput vertexFormatOutput;
+    public final VertexFormatOutput vertexFormatOutput;
     public final Supplier<ShaderInstance> renderTypeShader;
     
     private final GLBuffer transformFeedbackBuffer = new GLBuffer(false);
@@ -83,7 +81,7 @@ public class GLRenderPass {
         
         var compositeState = renderType.state();
         vertexFormat = renderType.format();
-        vertexFormatOutput = new GLTransformFeedbackProgram.VertexFormatOutput(vertexFormat);
+        vertexFormatOutput = VertexFormatOutput.of(vertexFormat);
         GLCore.INSTANCE.transformFeedbackProgram.setupVertexFormat(vertexFormatOutput);
         
         if (compositeState.shaderState.shader.isEmpty()) {
@@ -99,7 +97,6 @@ public class GLRenderPass {
         QUAD = renderType.mode() == VertexFormat.Mode.QUADS;
         TEXTURE = compositeState.textureState != RenderStateShard.NO_TEXTURE;
         LIGHTING = compositeState.lightmapState != RenderStateShard.NO_LIGHTMAP;
-        ALPHA_DISCARD = shaderInfo.ALPHA_DISCARD;
         
         if (TEXTURE && compositeState.textureState instanceof RenderStateShard.TextureStateShard texShard) {
             textureResourceLocation = texShard.cutoutTexture().orElse(null);
@@ -138,7 +135,6 @@ public class GLRenderPass {
         return QUAD == otherPass.QUAD &&
                 TEXTURE == otherPass.TEXTURE &&
                 LIGHTING == otherPass.LIGHTING &&
-                ALPHA_DISCARD == otherPass.ALPHA_DISCARD &&
                 VERTICES_PER_PRIMITIVE == otherPass.VERTICES_PER_PRIMITIVE &&
                 GL_MODE == otherPass.GL_MODE &&
                 textureResourceLocation.equals(otherPass.textureResourceLocation) &&
@@ -196,6 +192,9 @@ public class GLRenderPass {
         B3DStateHelper.bindVertexArray(drawVAO);
         
         RenderSystem.setShaderColor(1, 1, 1, 1);
+        if (TEXTURE) {
+            RenderSystem.setShaderTexture(0, texture.getId());
+        }
         
         var renderTypeShader = this.renderTypeShader.get();
         

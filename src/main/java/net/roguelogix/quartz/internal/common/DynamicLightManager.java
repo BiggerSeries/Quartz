@@ -7,6 +7,8 @@ import net.roguelogix.quartz.DynamicLight;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.QuartzCore;
+import net.roguelogix.quartz.internal.util.PointerWrapper;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
@@ -16,7 +18,7 @@ import java.nio.ByteBuffer;
 public class DynamicLightManager implements DynamicLight.Manager {
     public static class Light implements DynamicLight {
         final Buffer.Allocation allocation;
-        ByteBuffer buffer;
+        PointerWrapper buffer;
         final DynamicLight.UpdateFunc updateCall;
         
         public Light(Buffer.Allocation allocation, final ObjectArrayList<WeakReference<Light>> lights, UpdateFunc updateCall) {
@@ -26,10 +28,10 @@ public class DynamicLightManager implements DynamicLight.Manager {
             synchronized (lights) {
                 lights.add(ref);
             }
-            allocation.addBufferSliceCallback(alloc -> {
+            allocation.addReallocCallback(alloc -> {
                 var light = ref.get();
                 if (light != null) {
-                    light.buffer = alloc.buffer();
+                    light.buffer = alloc.address();
                 }
             });
             QuartzCore.CLEANER.register(this, () -> {
@@ -52,8 +54,8 @@ public class DynamicLightManager implements DynamicLight.Manager {
             vertexDirection += 2;
             vertexDirection &= 0xFF;
             vertexDirection -= 2;
-            buffer.put(vertex * 12 + vertexDirection * 2, blockLight);
-            buffer.put(vertex * 12 + vertexDirection * 2 + 1, skyLight);
+            buffer.putByte(vertex * 12 + vertexDirection * 2, blockLight);
+            buffer.putByte(vertex * 12 + vertexDirection * 2 + 1, skyLight);
         }
         
         @Override

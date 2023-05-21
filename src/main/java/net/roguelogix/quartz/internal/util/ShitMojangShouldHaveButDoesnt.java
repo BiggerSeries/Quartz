@@ -42,6 +42,7 @@ public class ShitMojangShouldHaveButDoesnt {
         
         drawWithShaderSequentialIndices(modelViewMatrix, projectionMatrix, RenderSystem.getShader(), renderType.mode(), vertexCount);
         
+        renderType.format()._clearBufferState();
         glBindVertexArray(0);
         renderType.clearRenderState();
     }

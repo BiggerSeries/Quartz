@@ -10,6 +10,7 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.QuartzEvent;
+import net.roguelogix.quartz.internal.common.B3DStateHelper;
 
 import static org.lwjgl.opengl.GL33C.*;
 
@@ -36,14 +37,14 @@ public class ShitMojangShouldHaveButDoesnt {
     
     public static void drawRenderTypePreboundVertexBuffer(Matrix4f modelViewMatrix, Matrix4f projectionMatrix, RenderType renderType, int vertexCount) {
         renderType.setupRenderState();
-        glBindVertexArray(drawVAO);
+        B3DStateHelper.bindVertexArray(drawVAO);
         // Iris hooks into the default one, so i have to use the private one
         renderType.format()._setupBufferState();
         
         drawWithShaderSequentialIndices(modelViewMatrix, projectionMatrix, RenderSystem.getShader(), renderType.mode(), vertexCount);
         
         renderType.format()._clearBufferState();
-        glBindVertexArray(0);
+        B3DStateHelper.bindVertexArray(0);
         renderType.clearRenderState();
     }
     
@@ -56,7 +57,7 @@ public class ShitMojangShouldHaveButDoesnt {
         indexBuffer.bind(indexCount);
         drawElementsWithShader(modelViewMatrix, projectionMatrix, shaderInstance, mode, indexCount, indexBuffer.type());
         // technically unncesscary, but there are going to be so few draws, it doesnt matter
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+        B3DStateHelper.bindElementBuffer(0);
     }
     
     public static void drawElementsWithShader(Matrix4f modelViewMatrix, Matrix4f projectionMatrix, ShaderInstance shaderInstance, VertexFormat.Mode mode, int indexCount, VertexFormat.IndexType indexType) {

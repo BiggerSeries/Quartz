@@ -10,7 +10,6 @@ import javax.annotation.Nullable;
 
 @NonnullDefault
 public interface DynamicMatrix {
-    void write(Matrix4fc matrixData);
     
     void delete();
     
@@ -20,10 +19,13 @@ public interface DynamicMatrix {
     
     interface Manager {
         default DynamicMatrix createMatrix(UpdateFunc updateFunc) {
-            return createMatrix(updateFunc, null);
+            return createMatrix(null, updateFunc, null);
+        }
+        default DynamicMatrix createMatrix(Matrix4fc initialValue, UpdateFunc updateFunc) {
+            return createMatrix(initialValue, updateFunc, null);
         }
         
-        DynamicMatrix createMatrix(@Nullable UpdateFunc updateFunc, @Nullable DynamicMatrix parent);
+        DynamicMatrix createMatrix(@Nullable Matrix4fc initialValue, @Nullable UpdateFunc updateFunc, @Nullable DynamicMatrix parent);
         
         boolean owns(@Nullable DynamicMatrix dynamicMatrix);
     }

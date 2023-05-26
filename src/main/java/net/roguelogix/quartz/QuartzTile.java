@@ -59,7 +59,7 @@ public interface QuartzTile extends IModularTile {
         }
         
         DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc) {
-            return getDrawBatch().createDynamicMatrix(parentTransform, updateFunc);
+            return getDrawBatch().createDynamicMatrix(null, parentTransform, updateFunc);
         }
         
         private DrawBatch getDrawBatch() {

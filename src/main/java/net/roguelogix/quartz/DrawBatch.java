@@ -39,7 +39,11 @@ public interface DrawBatch {
     @Nullable
     InstanceBatch createInstanceBatch(Mesh mesh);
     
-    DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc);
+    DynamicMatrix createDynamicMatrix(@Nullable Matrix4fc initialValue, @Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc);
+    
+    default DynamicMatrix createDynamicMatrix(@Nullable Matrix4fc initialValue, @Nullable DynamicMatrix.UpdateFunc updateFunc) {
+        return createDynamicMatrix(initialValue, null, updateFunc);
+    }
     
     default DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix.UpdateFunc updateFunc) {
         return createDynamicMatrix(null, updateFunc);

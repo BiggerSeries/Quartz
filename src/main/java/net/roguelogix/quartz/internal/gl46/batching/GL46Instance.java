@@ -5,17 +5,14 @@ import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.DynamicMatrix;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DynamicMatrixManager;
-import net.roguelogix.quartz.internal.gl.GLSingleStageTransformFeedbackBatch;
 import net.roguelogix.quartz.internal.gl46.GL46Core;
-import net.roguelogix.quartz.internal.gl46.GL46Statics;
-import net.roguelogix.quartz.internal.util.PointerWrapper;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.Objects;
 
-import static net.roguelogix.quartz.internal.MagicNumbers.GL.DYNAMIC_MATRIX_ID_OFFSET;
 import static net.roguelogix.quartz.internal.gl46.GL46Statics.*;
+import static org.lwjgl.opengl.GL11C.glFinish;
 
 @Nullable
 public class GL46Instance implements DrawBatch.Instance {
@@ -39,7 +36,7 @@ public class GL46Instance implements DrawBatch.Instance {
     private final Matrix4f normalMatrix = new Matrix4f();
     
     @Nullable
-    private AABBi aabb;
+    AABBi aabb;
     
     private int dirtyForFrames;
     
@@ -55,7 +52,7 @@ public class GL46Instance implements DrawBatch.Instance {
             throw new IllegalStateException("Attempt to dirty deleted instance");
         }
         manager.dirtyInstances.add(selfWeakRef);
-        dirtyForFrames = GL46Statics.FRAMES_IN_FLIGHT;
+        dirtyForFrames = FRAMES_IN_FLIGHT;
     }
     
     @Override
@@ -97,7 +94,24 @@ public class GL46Instance implements DrawBatch.Instance {
     
     @Override
     public void updateAABB(@Nullable AABBi aabb) {
-        // TODO: light engine updates off this
+        if (this.aabb == null && aabb == null) {
+            return;
+        }
+        if (this.aabb == null) {
+            this.aabb = new AABBi(aabb);
+            manager.drawBatch.instanceAABBsDirty();
+        }
+        if (this.aabb.minX >> 4 != aabb.minX >> 4
+                || this.aabb.minY >> 4 != aabb.minY >> 4
+                || this.aabb.minZ >> 4 != aabb.minZ >> 4
+                || this.aabb.maxX >> 4 != aabb.maxX >> 4
+                || this.aabb.maxY >> 4 != aabb.maxY >> 4
+                || this.aabb.maxZ >> 4 != aabb.maxZ >> 4
+        ) {
+            // the light chunks this is inside have changed, mark for update
+            manager.drawBatch.instanceAABBsDirty();
+        }
+        this.aabb = new AABBi(aabb);
     }
     
     @Override
@@ -124,5 +138,23 @@ public class GL46Instance implements DrawBatch.Instance {
     
     boolean dirty() {
         return dirtyForFrames > 0;
+    }
+    
+    void printAllInstanceData() {
+        glFinish();
+        for (int i = 0; i < FRAMES_IN_FLIGHT + 1; i++) {
+            final var instanceGPUMemory = manager.instanceDataAlloc.allocation(i).address().slice((long) location.location * INSTANCE_DATA_BYTE_SIZE, INSTANCE_DATA_BYTE_SIZE);
+            final var mat = new Matrix4f();
+            instanceGPUMemory.getMatrix4f(STATIC_MATRIX_OFFSET, mat);
+            System.out.println(mat);
+            instanceGPUMemory.getMatrix3x4f(STATIC_NORMAL_MATRIX_OFFSET, mat);
+            System.out.println(mat);
+            // these "overlap" because the normal matrix is only a mat3, so the last column is unused, and thus i can fit this info into it
+            final var vec = new Vector3i();
+            instanceGPUMemory.getVector3i(WORLD_POSITION_OFFSET, vec);
+            System.out.println(vec);
+            System.out.println(instanceGPUMemory.getInt(DYNAMIC_MATRIX_ID_OFFSET));
+        }
+        System.out.println();
     }
 }

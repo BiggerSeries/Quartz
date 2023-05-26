@@ -2,6 +2,7 @@ package net.roguelogix.quartz.internal.gl46;
 
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
+import net.roguelogix.quartz.internal.QuartzCore;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.MemoryStack;
 
@@ -13,6 +14,8 @@ import static org.lwjgl.opengl.GL46C.*;
 public class GL46Statics {
     
     public static final boolean AVAILABLE;
+    public static final boolean REQUIRE_SPARSE_TEXTURE = false;
+    public static final boolean SPARSE_TEXTURE_ENABLED;
     
     public static final int FRAMES_IN_FLIGHT = 2;
     
@@ -43,7 +46,12 @@ public class GL46Statics {
     // light/matrix IDs could be packed together
     
     static {
+        final var capabilities = GL.getCapabilities();
         AVAILABLE = capCheck();
+        SPARSE_TEXTURE_ENABLED = false;
+        if (!SPARSE_TEXTURE_ENABLED) {
+            QuartzCore.LOGGER.warn("Sparse texture disabled, this will massively increase minimum vram requirements for lighting");
+        }
     }
     
     private static boolean capCheck() {
@@ -52,44 +60,46 @@ public class GL46Statics {
         if (!capabilities.OpenGL46) {
             return false;
         }
-//        if (!capabilities.GL_ARB_sparse_texture) {
-//            return false;
-//        }
-//
-//        try (var stack = MemoryStack.stackPush()) {
-//            final var format = GL_R16UI;
-//            final var pageSizeCount = glGetInternalformati(GL_TEXTURE_2D_ARRAY, format, GL_NUM_VIRTUAL_PAGE_SIZES_ARB);
-//            if (pageSizeCount == 0) {
-//                return false;
-//            }
-//            final var sizesX = stack.mallocInt(pageSizeCount);
-//            final var sizesY = stack.mallocInt(pageSizeCount);
-//            final var sizesZ = stack.mallocInt(pageSizeCount);
-//            glGetInternalformativ(GL_TEXTURE_2D_ARRAY, format, GL_VIRTUAL_PAGE_SIZE_X_ARB, sizesX);
-//            glGetInternalformativ(GL_TEXTURE_2D_ARRAY, format, GL_VIRTUAL_PAGE_SIZE_Y_ARB, sizesY);
-//            glGetInternalformativ(GL_TEXTURE_2D_ARRAY, format, GL_VIRTUAL_PAGE_SIZE_Z_ARB, sizesZ);
-//
-//            boolean foundSize = false;
-//            for (int i = 0; i < pageSizeCount; i++) {
-//                int xSize = sizesX.get(i);
-//                int ySize = sizesY.get(i);
-//                int zSize = sizesZ.get(i);
-//                if (LIGHT_SPARE_TEXTURE_SIZE.x() % xSize != 0) {
-//                    continue;
-//                }
-//                if (LIGHT_SPARE_TEXTURE_SIZE.y() % ySize != 0) {
-//                    continue;
-//                }
-//                if (1 % zSize != 0) {
-//                    continue;
-//                }
-//                foundSize = true;
-//                break;
-//            }
-//            if(!foundSize){
-//                return false;
-//            }
-//        }
+        if (!capabilities.GL_ARB_sparse_texture) {
+            if (REQUIRE_SPARSE_TEXTURE) {
+                return false;
+            }
+        } else {
+            try (var stack = MemoryStack.stackPush()) {
+                final var format = GL_R16UI;
+                final var pageSizeCount = glGetInternalformati(GL_TEXTURE_2D_ARRAY, format, GL_NUM_VIRTUAL_PAGE_SIZES_ARB);
+                if (pageSizeCount == 0) {
+                    return false;
+                }
+                final var sizesX = stack.mallocInt(pageSizeCount);
+                final var sizesY = stack.mallocInt(pageSizeCount);
+                final var sizesZ = stack.mallocInt(pageSizeCount);
+                glGetInternalformativ(GL_TEXTURE_2D_ARRAY, format, GL_VIRTUAL_PAGE_SIZE_X_ARB, sizesX);
+                glGetInternalformativ(GL_TEXTURE_2D_ARRAY, format, GL_VIRTUAL_PAGE_SIZE_Y_ARB, sizesY);
+                glGetInternalformativ(GL_TEXTURE_2D_ARRAY, format, GL_VIRTUAL_PAGE_SIZE_Z_ARB, sizesZ);
+                
+                boolean foundSize = false;
+                for (int i = 0; i < pageSizeCount; i++) {
+                    int xSize = sizesX.get(i);
+                    int ySize = sizesY.get(i);
+                    int zSize = sizesZ.get(i);
+                    if (LIGHT_SPARE_TEXTURE_SIZE.x() % xSize != 0) {
+                        continue;
+                    }
+                    if (LIGHT_SPARE_TEXTURE_SIZE.y() % ySize != 0) {
+                        continue;
+                    }
+                    if (1 % zSize != 0) {
+                        continue;
+                    }
+                    foundSize = true;
+                    break;
+                }
+                if (!foundSize) {
+                    return false;
+                }
+            }
+        }
         
         return true;
     }

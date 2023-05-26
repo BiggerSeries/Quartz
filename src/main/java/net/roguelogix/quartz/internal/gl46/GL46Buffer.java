@@ -55,10 +55,10 @@ public class GL46Buffer implements Buffer {
             this(new ObjectArrayList<>(), info);
         }
         
-        private Allocation(Allocation allocation, Info info) {
+        private Allocation(Allocation allocation, Info info, boolean copyData) {
             this(allocation.reallocCallbacks, info);
             allocation.bufferRealloc.delete();
-            if (allocation.info.offset != info.offset) {
+            if (copyData && allocation.info.offset != info.offset) {
                 allocation.copy(0, this, 0, Math.min(allocation.info.size, info.size));
             }
             for (int i = 0; i < reallocCallbacks.size(); i++) {
@@ -220,13 +220,13 @@ public class GL46Buffer implements Buffer {
         // cannot reference 'this'
         final var bufArray = glBufferArray;
         QuartzCore.mainThreadClean(this, () -> {
-            glUnmapBuffer(bufArray[0]);
+            glUnmapNamedBuffer(bufArray[0]);
             glDeleteBuffers(bufArray[0]);
         });
     }
     
     public void delete() {
-        glUnmapBuffer(glBufferArray[0]);
+        glUnmapNamedBuffer(glBufferArray[0]);
         glDeleteBuffers(glBufferArray[0]);
         glBufferArray[0] = 0;
     }
@@ -282,14 +282,14 @@ public class GL46Buffer implements Buffer {
     }
     
     @Override
-    public Allocation realloc(@Nullable Buffer.Allocation bufAlloc, int newSize, int alignment) {
+    public Allocation realloc(@Nullable Buffer.Allocation bufAlloc, int newSize, int alignment, boolean copyData) {
         if (!(bufAlloc instanceof Allocation alloc)) {
             throw new IllegalArgumentException("Cannot realloc allocation from another buffer");
         }
-        return realloc(alloc, newSize, alignment);
+        return realloc(alloc, newSize, alignment, copyData);
     }
     
-    public Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment) {
+    public Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment, boolean copyData) {
         if (allocation == null) {
             return alloc(newSize, alignment);
         }
@@ -320,7 +320,7 @@ public class GL46Buffer implements Buffer {
             collapseFreeAllocationWithNext(index - 1);
             collapseFreeAllocationWithNext(index);
             liveAllocations.add(newAllocInfo);
-            return new Allocation(allocation, newAllocInfo);
+            return new Allocation(allocation, newAllocInfo, copyData);
         }
         
         Allocation.Info precedingAlloc = null;
@@ -370,11 +370,11 @@ public class GL46Buffer implements Buffer {
             if (newAllocInfo == null) {
                 throw new IllegalStateException("Realloc failed in guaranteed space");
             }
-            return new Allocation(allocation, newAllocInfo);
+            return new Allocation(allocation, newAllocInfo, copyData);
         }
         
         free(allocation);
-        return new Allocation(allocation, allocSpace(newSize, alignment));
+        return new Allocation(allocation, allocSpace(newSize, alignment), copyData);
     }
     
     @Nullable

@@ -6,17 +6,10 @@ import it.unimi.dsi.fastutil.objects.Reference2IntMap;
 import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.util.Util;
 import net.roguelogix.quartz.Quartz;
-import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.common.DrawInfo;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 
-import static org.lwjgl.opengl.ARBSeparateShaderObjects.GL_PROGRAM_SEPARABLE;
-import static org.lwjgl.opengl.ARBSeparateShaderObjects.glProgramParameteri;
-import static org.lwjgl.opengl.GL11C.GL_TRUE;
-import static org.lwjgl.opengl.GL20C.*;
-import static org.lwjgl.opengl.GL20C.glDeleteShader;
-import static org.lwjgl.opengl.GL30C.GL_INTERLEAVED_ATTRIBS;
-import static org.lwjgl.opengl.GL30C.glTransformFeedbackVaryings;
+import static org.lwjgl.opengl.GL46C.*;
 
 public class GL46FeedbackPrograms {
     
@@ -56,7 +49,7 @@ public class GL46FeedbackPrograms {
         
         vertexShader = glCreateShader(GL_VERTEX_SHADER);
         
-        glShaderSource(vertexShader, extensionsBuilder, prependBuilder, "#line 1 3\n", shaderCode);
+        glShaderSource(vertexShader, extensionsBuilder, prependBuilder, shaderCode);
         glCompileShader(vertexShader);
         
         if (glGetShaderi(vertexShader, GL_COMPILE_STATUS) != GL_TRUE) {
@@ -84,7 +77,17 @@ public class GL46FeedbackPrograms {
     
     public static void shutdown() {
         glDeleteShader(vertexShader);
-    } 
+        vertexShader = 0;
+        for (final var value : programs.reference2IntEntrySet()) {
+            glDeleteProgram(value.getIntValue());
+        }
+        programs.clear();
+    }
+    
+    public static void reload() {
+        shutdown();
+        startup();
+    }
     
     private static int createProgramForFormat(VertexFormatOutput outputFormat) {
         final int vertexProgram = glCreateProgram();
@@ -105,7 +108,7 @@ public class GL46FeedbackPrograms {
     }
     
     public static void setupDrawInfo(DrawInfo drawInfo) {
-        
+    
     }
     
     public static int getProgramForOutputFormat(VertexFormatOutput formatOutput) {

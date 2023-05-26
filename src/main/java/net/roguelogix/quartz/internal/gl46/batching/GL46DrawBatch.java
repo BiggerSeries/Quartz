@@ -2,6 +2,7 @@ package net.roguelogix.quartz.internal.gl46.batching;
 
 import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.core.SectionPos;
 import net.roguelogix.phosphophyllite.repack.org.joml.AABBi;
 import net.roguelogix.phosphophyllite.repack.org.joml.Matrix4fc;
 import net.roguelogix.phosphophyllite.repack.org.joml.Vector3ic;
@@ -17,16 +18,12 @@ import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
 import net.roguelogix.quartz.internal.common.DynamicMatrixManager;
 import net.roguelogix.quartz.internal.common.InternalMesh;
-import net.roguelogix.quartz.internal.gl46.GL46Buffer;
-import net.roguelogix.quartz.internal.gl46.GL46Core;
-import net.roguelogix.quartz.internal.gl46.GL46FeedbackDrawing;
-import net.roguelogix.quartz.internal.gl46.GL46Statics;
+import net.roguelogix.quartz.internal.gl46.*;
 
 import javax.annotation.Nullable;
 
 import static net.roguelogix.quartz.internal.MagicNumbers.IDENTITY_MATRIX;
 import static net.roguelogix.quartz.internal.MagicNumbers.INT_BYTE_SIZE;
-
 import static org.lwjgl.opengl.GL46C.*;
 
 // dont you dare touch my spaghet
@@ -35,13 +32,14 @@ public class GL46DrawBatch implements DrawBatchInternal {
     
     private boolean enabled = true;
     private boolean culled = false;
+    @Nullable
     private AABBi cullAABB = null;
     
     private Vector4f cullVector = new Vector4f();
     private Vector4f cullVectorMin = new Vector4f();
     private Vector4f cullVectorMax = new Vector4f();
     
-    final MultiBuffer<GL46Buffer> instanceDataBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT);
+    final MultiBuffer<GL46Buffer> instanceDataBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT + 1);
     
     final Reference2ReferenceMap<InternalMesh, Gl46InstanceManager> instanceManagers = new Reference2ReferenceOpenHashMap<>();
     final ReferenceSet<Gl46InstanceManager> instanceBatches = new ReferenceOpenHashSet<>();
@@ -56,7 +54,9 @@ public class GL46DrawBatch implements DrawBatchInternal {
         final var indirectBuffers = indirectBufferAllocs;
         QuartzCore.mainThreadClean(this, () -> {
             for (int i = 0; i < indirectBuffers.length; i++) {
-                indirectBuffers[i].free();
+                if (indirectBuffers[i] != null) {
+                    indirectBuffers[i].free();
+                }
             }
             renderTypes.forEach(GL46FeedbackDrawing::removeRenderTypeUse);
         });
@@ -91,13 +91,69 @@ public class GL46DrawBatch implements DrawBatchInternal {
     }
     
     @Override
-    public DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc) {
-        return dynamicMatrixManager.createMatrix(updateFunc, parentTransform);
+    public DynamicMatrix createDynamicMatrix(@Nullable Matrix4fc initialValue, @Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc) {
+        return dynamicMatrixManager.createMatrix(initialValue, updateFunc, parentTransform);
     }
     
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") // this is just holding handles so the light engine does its thing
+    private final ReferenceArrayList<GL46LightEngine.ChunkHandle> cullLightChunks = new ReferenceArrayList<>();
+    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") // this is just holding handles so the light engine does its thing
+    private final ReferenceArrayList<GL46LightEngine.ChunkHandle> instanceLightChunks = new ReferenceArrayList<>();
+    
     @Override
-    public void setCullAABB(AABBi aabb) {
-        cullAABB = aabb;
+    public void setCullAABB(@Nullable AABBi aabb) {
+        if (aabb == null) {
+            cullAABB = null;
+            cullLightChunks.clear();
+            return;
+        }
+        cullAABB = new AABBi(aabb);
+        cullLightChunks.clear();
+        for (int X = cullAABB.minX; X < ((cullAABB.maxX + 16) & 0xFFFFFFF0); X += 16) {
+            for (int Y = cullAABB.minY; Y < ((cullAABB.maxY + 16) & 0xFFFFFFF0); Y += 16) {
+                for (int Z = cullAABB.minZ; Z < ((cullAABB.maxZ + 16) & 0xFFFFFFF0); Z += 16) {
+                    int chunkX = X >> 4;
+                    int chunkY = Y >> 4;
+                    int chunkZ = Z >> 4;
+                    cullLightChunks.add(GL46LightEngine.getChunk(SectionPos.asLong(chunkX, chunkY, chunkZ)));
+                }
+            }
+        }
+    }
+    
+    private boolean instanceAABBsDirty = false;
+    
+    public void instanceAABBsDirty() {
+        instanceAABBsDirty = true;
+    }
+    
+    private void updateInstanceAABBs() {
+        if (!instanceAABBsDirty) {
+            return;
+        }
+        instanceAABBsDirty = false;
+        final var fullAABB = new AABBi();
+        for (final var batch : instanceBatches) {
+            for (final var instanceRef : batch.instances) {
+                final var instance = instanceRef.get();
+                if (instance == null || instance.aabb == null) {
+                    continue;
+                }
+                fullAABB.union(instance.aabb);
+            }
+        }
+        // TODO: dont just use the full volume, but this should work for now
+        instanceLightChunks.clear();
+        for (int X = fullAABB.minX; X < ((fullAABB.maxX + 16) & 0xFFFFFFF0); X += 16) {
+            for (int Y = fullAABB.minY; Y < ((fullAABB.maxY + 16) & 0xFFFFFFF0); Y += 16) {
+                for (int Z = fullAABB.minZ; Z < ((fullAABB.maxZ + 16) & 0xFFFFFFF0); Z += 16) {
+                    int chunkX = X >> 4;
+                    int chunkY = Y >> 4;
+                    int chunkZ = Z >> 4;
+                    instanceLightChunks.add(GL46LightEngine.getChunk(SectionPos.asLong(chunkX, chunkY, chunkZ)));
+                }
+            }
+        }
     }
     
     @Override
@@ -121,6 +177,7 @@ public class GL46DrawBatch implements DrawBatchInternal {
         dynamicMatrixBuffer.setActiveFrame(currentFrame);
         
         // these updates are global frame specific, so they must be checked and done every frame
+        dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
         if (!dirtyBatches.isEmpty()) {
             if (instanceDataFences[currentFrame] != 0 && glIsSync(instanceDataFences[currentFrame])) {
                 glClientWaitSync(instanceDataFences[currentFrame], GL_SYNC_FLUSH_COMMANDS_BIT, -1);
@@ -183,7 +240,7 @@ public class GL46DrawBatch implements DrawBatchInternal {
             }
             
             final var indirectBuffer = indirectBuffers[newBufferIndex];
-            final var alloc = indirectBufferAllocs[newBufferIndex] = indirectBuffer.realloc(indirectBufferAllocs[newBufferIndex], totalChunks * 4 * INT_BYTE_SIZE, totalChunks * 5 * INT_BYTE_SIZE);
+            final var alloc = indirectBufferAllocs[newBufferIndex] = indirectBuffer.realloc(indirectBufferAllocs[newBufferIndex], totalChunks * 4 * INT_BYTE_SIZE, totalChunks * 5 * INT_BYTE_SIZE, false);
             
             for (int i = 0; i < GL46Statics.FRAMES_IN_FLIGHT; i++) {
                 indirectBuffer.setActiveFrame(i);
@@ -216,6 +273,15 @@ public class GL46DrawBatch implements DrawBatchInternal {
             
             currentIndirectBuffer = newBufferIndex;
             indirectDirty = false;
+        }
+        
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.activeBuffer().handle());
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, instanceDataBuffer.activeBuffer().handle());
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, instanceDataBuffer.buffer(GL46Statics.FRAMES_IN_FLIGHT).handle());
+        for (final var value : instanceBatches) {
+            glUniform1ui(0, value.instanceDataAlloc.activeAllocation().offset() / GL46Statics.INSTANCE_DATA_BYTE_SIZE);
+            // TODO: cubify, my driver supports up to intmax here, not all do
+            glDispatchCompute(value.instanceCount(), 1, 1);
         }
     }
     
@@ -278,11 +344,14 @@ public class GL46DrawBatch implements DrawBatchInternal {
         if (culled && !shadowsEnabled) {
             return 0;
         }
+        if (isEmpty()) {
+            return 0;
+        }
         int vertices = verticesPerRenderType.getOrDefault(renderType, -1);
         if (vertices == -1) {
             return 0;
         }
-        return (int) (vertices);
+        return vertices;
     }
     
     @Override
@@ -309,10 +378,12 @@ public class GL46DrawBatch implements DrawBatchInternal {
         // this does assume a VAO is already bound
         // the feedback program too, and all uniforms are set
         // this assumes a lot of stuff
-        glBindVertexBuffer(1, instanceDataBuffer.activeBuffer().handle(), 0, GL46Statics.INSTANCE_DATA_BYTE_SIZE);
+        
+        // the last buffer is a special case of the compute shader output, others are written to by the CPU
+        glBindVertexBuffer(1, instanceDataBuffer.buffer(GL46Statics.FRAMES_IN_FLIGHT).handle(), 0, GL46Statics.INSTANCE_DATA_BYTE_SIZE);
         // TODO: roll this into the "static" instance data
         //       currently this causes the GPU to do expensive matrix ops per vertex, instead of per instance
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.activeBuffer().handle());
+//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.activeBuffer().handle());
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffers[currentIndirectBuffer].activeBuffer().handle());
         glMultiDrawArraysIndirect(GL_POINTS, indirectOffset, draws, 0);
     }

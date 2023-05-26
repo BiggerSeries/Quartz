@@ -227,7 +227,7 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
         
         Instance createInstance(Vector3ic worldPosition, DynamicMatrixManager.Matrix dynamicMatrix, Matrix4fc staticMatrix, DynamicLightManager.Light dynamicLight) {
             if (instanceDataAlloc.size() < (instanceCount + 1) * INSTANCE_DATA_BYTE_SIZE) {
-                instanceDataAlloc = instanceDataBuffer.realloc(instanceDataAlloc, instanceDataAlloc.size() * 2, INSTANCE_DATA_BYTE_SIZE);
+                instanceDataAlloc = instanceDataBuffer.realloc(instanceDataAlloc, instanceDataAlloc.size() * 2, INSTANCE_DATA_BYTE_SIZE, true);
             }
             
             
@@ -691,8 +691,8 @@ public class GLSingleStageTransformFeedbackBatch implements DrawBatchInternal {
     }
     
     @Override
-    public DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc) {
-        return dynamicMatrixManager.createMatrix(updateFunc, parentTransform);
+    public DynamicMatrix createDynamicMatrix(@Nullable Matrix4fc initialValue, @Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc) {
+        return dynamicMatrixManager.createMatrix(initialValue, updateFunc, parentTransform);
     }
     
     public DynamicLight createLight(Vector3ic lightPosition, DynamicLight.Type lightType) {

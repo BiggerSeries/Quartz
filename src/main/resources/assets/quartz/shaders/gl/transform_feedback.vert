@@ -15,7 +15,7 @@ struct SplitDynamicLightDirectionInfo {
  */
 const vec3 lightDirections[6] = vec3[6](vec3(1, 0, 0), vec3(0, 1, 0), vec3(0, 0, 1), vec3(-1, 0, 0), vec3(0, -1, 0), vec3(0, 0, -1));
 struct SplitDynamicLightVertexInfo {
-    SplitDynamicLightDirectionInfo directionInfo[8];
+    SplitDynamicLightDirectionInfo directionInfo[6];
 };
 
 /*

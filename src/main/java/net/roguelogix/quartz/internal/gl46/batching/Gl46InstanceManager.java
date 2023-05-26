@@ -29,6 +29,7 @@ public class Gl46InstanceManager {
     final GL46DrawBatch drawBatch;
     private final boolean autoDelete;
     
+    private int instancesAllocated = 8;
     MultiBuffer<GL46Buffer>.Allocation instanceDataAlloc;
     
     private InternalMesh staticMesh;
@@ -37,7 +38,7 @@ public class Gl46InstanceManager {
     
     final ReferenceArrayList<GL46DrawChunk> drawChunks = new ReferenceArrayList<>();
     
-    private final ReferenceArrayList<WeakReference<GL46Instance>> instances = new ReferenceArrayList<>();
+    final ReferenceArrayList<WeakReference<GL46Instance>> instances = new ReferenceArrayList<>();
     final FastArraySet<WeakReference<GL46Instance>> dirtyInstances = new FastArraySet<>();
     
     public Gl46InstanceManager(GL46DrawBatch drawBatch, InternalMesh mesh, boolean autoDelete) {
@@ -53,7 +54,7 @@ public class Gl46InstanceManager {
             }
         };
         
-        instanceDataAlloc = drawBatch.instanceDataBuffer.alloc(GL46Statics.INSTANCE_DATA_BYTE_SIZE, GL46Statics.INSTANCE_DATA_BYTE_SIZE);
+        instanceDataAlloc = drawBatch.instanceDataBuffer.alloc(instancesAllocated * GL46Statics.INSTANCE_DATA_BYTE_SIZE, GL46Statics.INSTANCE_DATA_BYTE_SIZE);
         updateMesh(mesh);
     }
     
@@ -169,9 +170,6 @@ public class Gl46InstanceManager {
     }
     
     void setDirty() {
-        if (instanceCount() > 0) {
-            instanceDataAlloc = drawBatch.instanceDataBuffer.realloc(instanceDataAlloc, instanceCount() * GL46Statics.INSTANCE_DATA_BYTE_SIZE, GL46Statics.INSTANCE_DATA_BYTE_SIZE);
-        }
         drawBatch.dirtyBatches.add(this);
         drawBatch.setIndirectInfoDirty();
     }
@@ -187,6 +185,21 @@ public class Gl46InstanceManager {
     public boolean writeUpdates() {
         if (dirtyInstances.isEmpty()) {
             return false;
+        }
+        if (instanceCount() > instancesAllocated || (instanceCount() > 16 && instanceCount() <= (instancesAllocated / 4))) {
+            int newAllocCount = instancesAllocated;
+            do {
+                newAllocCount = instanceCount() > newAllocCount ? newAllocCount * 2 : newAllocCount / 2;
+            } while (instanceCount() > newAllocCount || (instanceCount() > 16 && instanceCount() <= (newAllocCount / 4)));
+            instanceDataAlloc = drawBatch.instanceDataBuffer.realloc(instanceDataAlloc, newAllocCount * GL46Statics.INSTANCE_DATA_BYTE_SIZE, GL46Statics.INSTANCE_DATA_BYTE_SIZE, false);
+            instancesAllocated = newAllocCount;
+            for (final var instanceRef : instances) {
+                final var instance = instanceRef.get();
+                if (instance == null) {
+                    continue;
+                }
+                instance.setDirty();
+            }
         }
         for (int i = 0; i < dirtyInstances.size(); i++) {
             final var dirtyInstanceRef = dirtyInstances.get(i);

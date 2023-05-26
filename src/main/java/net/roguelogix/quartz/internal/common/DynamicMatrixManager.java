@@ -29,7 +29,10 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
         
         private boolean deleted = false;
         
-        public Matrix(MultiBuffer<?>.Allocation allocation, @Nullable UpdateFunc updateFunc, ObjectArrayList<WeakReference<Matrix>> matrixList) {
+        public Matrix(@Nullable Matrix4fc initialValue, MultiBuffer<?>.Allocation allocation, @Nullable UpdateFunc updateFunc, ObjectArrayList<WeakReference<Matrix>> matrixList) {
+            if (initialValue != null) {
+                this.localTransformMatrix.set(initialValue);
+            }
             this.allocation = allocation;
             this.updateFunc = updateFunc;
             final var ref = new WeakReference<>(this);
@@ -41,14 +44,6 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
             });
         }
         
-        @Override
-        public void write(Matrix4fc matrixData) {
-            if(deleted) {
-                return;
-            }
-            transformMatrix.set(matrixData);
-        }
-        
         public void update(long nanos, float partialTicks, Vector3i playerBlock, Vector3f playerPartialBlock, Matrix4fc parentTransform) {
             if(deleted) {
                 return;
@@ -57,7 +52,7 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
                 updateFunc.accept(localTransformMatrix, nanos, partialTicks, playerBlock, playerPartialBlock);
             }
             transformMatrix.set(localTransformMatrix);
-            transformMatrix.mul(parentTransform);
+            parentTransform.mul(transformMatrix, transformMatrix);
             transformMatrix.normal(normalMatrix);
             final var buffer = allocation.activeAllocation().address();
             buffer.putMatrix4fIdx(0, transformMatrix);
@@ -107,7 +102,7 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
     }
     
     @Override
-    public DynamicMatrix createMatrix(@Nullable DynamicMatrix.UpdateFunc updateFunc, @Nullable DynamicMatrix parent) {
+    public DynamicMatrix createMatrix(@Nullable Matrix4fc initialValue, @Nullable DynamicMatrix.UpdateFunc updateFunc, @Nullable DynamicMatrix parent) {
         Matrix parentMatrix = null;
         if (parent != null) {
             if (parent instanceof Matrix parentMat && owns(parentMat)) {
@@ -117,7 +112,7 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
             }
         }
         final var list = parentMatrix == null ? rootMatrices : ((Matrix) parent).childMatrices;
-        return new Matrix(buffer.alloc(MagicNumbers.MATRIX_4F_BYTE_SIZE_2, MagicNumbers.MATRIX_4F_BYTE_SIZE_2), updateFunc, list);
+        return new Matrix(initialValue, buffer.alloc(MagicNumbers.MATRIX_4F_BYTE_SIZE_2, MagicNumbers.MATRIX_4F_BYTE_SIZE_2), updateFunc, list);
     }
     
     @Override

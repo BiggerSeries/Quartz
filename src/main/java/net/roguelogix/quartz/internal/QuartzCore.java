@@ -78,7 +78,7 @@ public abstract class QuartzCore {
 //                    yield null;
 //                }
 //            }
-            case OpenGL33 -> GLCore.INSTANCE;
+//            case OpenGL33 -> GLCore.INSTANCE;
             case OpenGL46 -> GL46Core.INSTANCE;
             case Automatic -> {
                 for (QuartzConfig.Mode value : QuartzConfig.Mode.values()) {

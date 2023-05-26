@@ -78,8 +78,8 @@ public class MultiBuffer<T extends Buffer> {
      * NOTE: may have different alignment than current allocation
      * If allocation is null, creates a new allocation
      */
-    public Allocation realloc(@Nullable Allocation allocation, int newSize) {
-        return realloc(allocation, newSize, 1);
+    public Allocation realloc(@Nullable Allocation allocation, int newSize, boolean copyData) {
+        return realloc(allocation, newSize, 1, copyData);
     }
     
     /**
@@ -89,12 +89,12 @@ public class MultiBuffer<T extends Buffer> {
      * Alignment may differ from the current allocation alignment
      * If allocation is null, creates a new allocation
      */
-    public Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment) {
+    public Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment, boolean copyData) {
         if (allocation == null) {
             return alloc(newSize, alignment);
         }
         for (int i = 0; i < backingBuffers.length; i++) {
-            allocation.backingAllocations[i] = backingBuffers[i].realloc(allocation.backingAllocations[i], newSize, alignment);
+            allocation.backingAllocations[i] = backingBuffers[i].realloc(allocation.backingAllocations[i], newSize, alignment, copyData);
         }
         return allocation;
     }

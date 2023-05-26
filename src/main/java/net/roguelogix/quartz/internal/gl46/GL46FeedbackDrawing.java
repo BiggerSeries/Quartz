@@ -1,23 +1,12 @@
 package net.roguelogix.quartz.internal.gl46;
 
-import com.mojang.blaze3d.platform.Window;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.math.Matrix4f;
 import it.unimi.dsi.fastutil.objects.*;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.ShaderInstance;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector3i;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector4f;
-import net.roguelogix.phosphophyllite.repack.org.joml.Vector4i;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import net.roguelogix.quartz.internal.MultiBuffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
-import net.roguelogix.quartz.internal.gl.GLBuffer;
 import net.roguelogix.quartz.internal.gl46.batching.GL46DrawBatch;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 
@@ -25,7 +14,6 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 
 import static net.roguelogix.quartz.internal.util.ShitMojangShouldHaveButDoesnt.drawRenderTypePreboundVertexBuffer;
-import static org.lwjgl.opengl.ARBVertexAttribBinding.glVertexBindingDivisor;
 import static org.lwjgl.opengl.GL46C.*;
 
 public class GL46FeedbackDrawing {
@@ -129,7 +117,7 @@ public class GL46FeedbackDrawing {
     }
     
     public static void addRenderTypeUse(RenderType renderType) {
-        if (renderTypeUsages.put(renderType, renderTypeUsages.getOrDefault(renderType, 0) + 1) == 1) {
+        if (renderTypeUsages.put(renderType, renderTypeUsages.getOrDefault(renderType, 0) + 1) == 0) {
             inUseRenderTypes.add(renderType);
         }
     }
@@ -172,6 +160,7 @@ public class GL46FeedbackDrawing {
     }
     
     public static void beginFrame() {
+        glUseProgram(GL46ComputePrograms.dynamicMatrixProgram());
         for (final var batchRef : drawBatches) {
             final var batch = batchRef.get();
             if (batch == null) {
@@ -179,6 +168,11 @@ public class GL46FeedbackDrawing {
             }
             batch.updateAndCull(GL46Core.INSTANCE.drawInfo);
         }
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, 0);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
+        glUseProgram(0);
+        glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
     }
     
     public static void collectAllFeedback(boolean shadowsEnabled) {
@@ -189,13 +183,13 @@ public class GL46FeedbackDrawing {
         
         UBOPointer.putVector3i(0, GL46Core.INSTANCE.drawInfo.playerPosition);
         UBOPointer.putVector3f(16, GL46Core.INSTANCE.drawInfo.playerSubBlock);
-//        UBOPointer.putVector3i(32, GL46LightEngine.lookupOffset());
+        UBOPointer.putVector3i(32, GL46LightEngine.lookupOffset());
         
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOBuffers.activeBuffer().handle());
 
-//        GL46LightEngine.bind();
+        GL46LightEngine.bind();
         
-        glBindVertexArray(feedbackVAO);
+        B3DStateHelper.bindVertexArray(feedbackVAO);
         for (final var renderType : inUseRenderTypes) {
             final var outputFormat = VertexFormatOutput.of(renderType.format());
             
@@ -232,9 +226,9 @@ public class GL46FeedbackDrawing {
             }
             glEndTransformFeedback();
         }
-        glBindVertexArray(0);
+        B3DStateHelper.bindVertexArray(0);
 
-//        GL46LightEngine.unbind();
+        GL46LightEngine.unbind();
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
         glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, 0, 0);

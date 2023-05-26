@@ -279,6 +279,16 @@ public record PointerWrapper(long pointer, long size) {
         MemUtil.MemUtilUnsafe.get(matrix4fc, pointer + offset);
     }
     
+    public void getMatrix3x4f(long offset, Matrix4fc matrix4fc) {
+        checkRange(offset, 64, 16);
+        MemUtil.MemUtilUnsafe.get((Matrix4f) matrix4fc, pointer + offset);
+    }
+    
+    public void getVector3i(long offset, Vector3ic vector) {
+        checkRange(offset, 12, 16);
+        MemUtil.MemUtilUnsafe.get((Vector3i) vector, pointer + offset);
+    }
+    
     public short getShortIdx(long index) {
         return getShort(index * MagicNumbers.SHORT_BYTE_SIZE);
     }

@@ -292,7 +292,7 @@ public class InternalMesh implements Mesh {
             
             private PointerWrapper allocBuffer(int size) {
                 if (vertexAllocation != null) {
-                    vertexAllocation = vertexBuffer.realloc(vertexAllocation, size, VERTEX_BYTE_SIZE);
+                    vertexAllocation = vertexBuffer.realloc(vertexAllocation, size, VERTEX_BYTE_SIZE, false);
                 } else {
                     vertexAllocation = vertexBuffer.alloc(size, VERTEX_BYTE_SIZE);
                 }

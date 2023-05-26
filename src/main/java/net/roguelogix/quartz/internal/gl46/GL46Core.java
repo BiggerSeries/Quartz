@@ -5,7 +5,6 @@ import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Matrix3f;
 import com.mojang.math.Matrix4f;
-import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -16,15 +15,9 @@ import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
-import net.roguelogix.quartz.internal.gl.GLCore;
-import net.roguelogix.quartz.internal.gl46.batching.GL46DrawBatch;
 import org.lwjgl.opengl.KHRDebug;
 
-import java.lang.ref.WeakReference;
-
-import static net.roguelogix.quartz.internal.QuartzCore.LOGGER;
-import static net.roguelogix.quartz.internal.gl.GLCore.drawInfo;
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL46C.glFinish;
 
 @NonnullDefault
 public class GL46Core extends QuartzCore {
@@ -53,21 +46,25 @@ public class GL46Core extends QuartzCore {
     public final DrawInfo drawInfo = new DrawInfo();
     @Override
     protected void startupInternal() {
+        GL46ComputePrograms.startup();
         GL46FeedbackPrograms.startup();
-//        GL46LightEngine.startup();
+        GL46LightEngine.startup();
         GL46FeedbackDrawing.startup();
     }
     
     @Override
     protected void shutdownInternal() {
         GL46FeedbackDrawing.shutdown();
-//        GL46LightEngine.shutdown();
+        GL46LightEngine.shutdown();
         GL46FeedbackPrograms.shutdown();
+        GL46ComputePrograms.shutdown();
     }
     
     @Override
     protected void resourcesReloadedInternal() {
-    
+        GL46FeedbackPrograms.reload();
+        GL46ComputePrograms.reload();
+//        GL46LightEngine.dirtyAll();
     }
     
     @Override
@@ -115,7 +112,7 @@ public class GL46Core extends QuartzCore {
     
     @Override
     public void lightUpdated() {
-//        GL46LightEngine.update(Minecraft.getInstance().level);
+        GL46LightEngine.update(Minecraft.getInstance().level);
     }
     
     @Override
@@ -135,8 +132,9 @@ public class GL46Core extends QuartzCore {
         if(!GL46FeedbackDrawing.hasBatch()){
             return;
         }
-        
-        
+        RenderSystem.setProjectionMatrix(projectionMatrix);
+        RenderSystem.getModelViewMatrix().load(modelView.last().pose());
+        GL46FeedbackDrawing.getActiveRenderTypes().forEach(GL46FeedbackDrawing::drawRenderType);
     }
     
     @Override
@@ -177,6 +175,6 @@ public class GL46Core extends QuartzCore {
     
     @Override
     public void sectionDirty(int x, int y, int z) {
-//        GL46LightEngine.sectionDirty(x, y, z);
+        GL46LightEngine.sectionDirty(x, y, z);
     }
 }

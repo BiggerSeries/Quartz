@@ -108,8 +108,8 @@ public interface Buffer {
      * NOTE: may have different alignment than current allocation
      * If allocation is null, creates a new allocation
      */
-    default Allocation realloc(@Nullable Allocation allocation, int newSize) {
-        return realloc(allocation, newSize, 1);
+    default Allocation realloc(@Nullable Allocation allocation, int newSize, boolean copyData) {
+        return realloc(allocation, newSize, 1, copyData);
     }
     
     /**
@@ -119,7 +119,7 @@ public interface Buffer {
      * Alignment may differ from the current allocation alignment
      * If allocation is null, creates a new allocation
      */
-    Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment);
+    Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment, boolean copyData);
     
     void free(Allocation allocation);
     

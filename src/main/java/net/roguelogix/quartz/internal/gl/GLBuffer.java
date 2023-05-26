@@ -253,7 +253,7 @@ public class GLBuffer implements Buffer {
     }
     
     @Override
-    public Buffer.Allocation realloc(@Nullable Buffer.Allocation bufAlloc, int newSize, int alignment) {
+    public Buffer.Allocation realloc(@Nullable Buffer.Allocation bufAlloc, int newSize, int alignment, boolean copyData) {
         if (!(bufAlloc instanceof Allocation alloc)) {
             throw new IllegalArgumentException("Cannot realloc allocation from another buffer");
         }

@@ -1,10 +1,8 @@
 package net.roguelogix.quartz.internal.gl46.batching;
 
-import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.renderer.RenderType;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.common.InternalMesh;
-import net.roguelogix.quartz.internal.gl.GLCore;
 import net.roguelogix.quartz.internal.util.IndirectDrawInfo;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 

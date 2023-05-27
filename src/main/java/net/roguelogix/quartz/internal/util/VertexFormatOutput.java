@@ -6,8 +6,6 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.roguelogix.quartz.internal.gl.GLTransformFeedbackProgram;
-import org.codehaus.plexus.util.dag.Vertex;
 
 import java.util.Collections;
 import java.util.Map;

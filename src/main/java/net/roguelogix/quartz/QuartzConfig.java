@@ -1,21 +1,13 @@
 package net.roguelogix.quartz;
 
-import com.electronwill.nightconfig.core.AbstractCommentedConfig;
-import net.minecraftforge.fml.VersionChecker;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
 import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.config.ConfigValue;
-import net.roguelogix.quartz.internal.QuartzCore;
-import net.roguelogix.quartz.internal.gl.GLConfig;
-import net.roguelogix.quartz.internal.vk.VKConfig;
 import net.roguelogix.phosphophyllite.registry.IgnoreRegistration;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
-import org.apache.maven.artifact.versioning.ComparableVersion;
-
-import java.util.ArrayList;
-import java.util.Map;
+import net.roguelogix.quartz.internal.vk.VKConfig;
 
 public class QuartzConfig {
     
@@ -85,8 +77,6 @@ public class QuartzConfig {
         debug = false;
     }
     
-    @ConfigValue(advanced = ConfigValue.BoolOption.True)
-    public final GLConfig GL = GLConfig.INSTANCE;
     @ConfigValue(advanced = ConfigValue.BoolOption.True)
     public final VKConfig VK = VKConfig.INSTANCE;
 }

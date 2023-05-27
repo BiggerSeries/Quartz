@@ -55,9 +55,16 @@ public class GL46FeedbackDrawing {
     
     private static final Object2ObjectMap<RenderType, FeedbackBuffer> renderTypeFeedbackBuffers = new Object2ObjectArrayMap<>();
     
+    private static Buffer.CallbackHandle rebuildCallbackHandle;
+    
     public static void startup() {
+        if(rebuildCallbackHandle != null){
+            rebuildCallbackHandle.delete();
+            rebuildCallbackHandle = null;
+        }
+        
         feedbackVAO = glCreateVertexArrays();
-        QuartzCore.INSTANCE.meshManager.vertexBuffer.addReallocCallback(true, buffer -> {
+        rebuildCallbackHandle = QuartzCore.INSTANCE.meshManager.vertexBuffer.addReallocCallback(true, buffer -> {
             glVertexArrayVertexBuffer(feedbackVAO, 0, buffer.as(GL46Buffer.class).handle(), 0, MagicNumbers.VERTEX_BYTE_SIZE);
         });
         // instance data is bound per drawbatch feedback draw
@@ -112,6 +119,8 @@ public class GL46FeedbackDrawing {
     public static void shutdown() {
         glDeleteVertexArrays(feedbackVAO);
         renderTypeFeedbackBuffers.values().forEach(FeedbackBuffer::delete);
+        rebuildCallbackHandle.delete();
+        rebuildCallbackHandle = null;
     }
     
     public static void addRenderTypeUse(RenderType renderType) {

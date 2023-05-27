@@ -22,16 +22,9 @@ public final class IrisDetection {
         }
     }
     
-    public static boolean isComplementaryLoaded() {
-        if (areShadersActive()) {
-            return Detector.isComplementaryLoaded();
-        }
-        return false;
-    }
-    
     public static boolean isRenderingShadows() {
         if (areShadersActive()) {
-            return Detector.isComplementaryLoaded();
+            return Detector.isRenderingShadows();
         }
         return false;
     }
@@ -51,23 +44,6 @@ public final class IrisDetection {
         
         public static void bindIrisFramebuffer() {
             Iris.getPipelineManager().getPipeline().ifPresent(pipe -> pipe.getSodiumTerrainPipeline().getTerrainFramebuffer().bind());
-        }
-        
-        private static String lastCheckedName = null;
-        private static boolean lastResult = false;
-        
-        public static boolean isComplementaryLoaded() {
-            if (areShadersActive()) {
-                var currentPackName = Iris.getCurrentPackName();
-                // this is on purpose, i want to check for identical object
-                //noinspection StringEquality
-                if(currentPackName != lastCheckedName) {
-                    lastCheckedName = currentPackName;
-                    lastResult = lastCheckedName.startsWith("Complementary");
-                }
-                return lastResult;
-            }
-            return false;
         }
         
         public static boolean isRenderingShadows() {

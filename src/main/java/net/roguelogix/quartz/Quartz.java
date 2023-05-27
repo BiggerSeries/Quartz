@@ -71,4 +71,8 @@ public final class Quartz {
     public static DrawBatch getDrawBatcherForAABB(AABBi aabb) {
         return QuartzCore.INSTANCE.getWorldEngine().getBatcherForAABB(aabb);
     }
+    
+    public static DrawBatch getEntityBatcher() {
+        return QuartzCore.INSTANCE.getEntityBatcher();
+    }
 }

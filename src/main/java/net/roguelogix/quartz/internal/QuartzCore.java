@@ -112,8 +112,14 @@ public abstract class QuartzCore {
         if (!wasInit) {
             return;
         }
+        INSTANCE.entityBatch = null;
         Quartz.EVENT_BUS.post(new QuartzEvent.Shutdown());
         INSTANCE.shutdownInternal();
+        // clean everything up, hopefully
+        do {
+            System.gc();
+        } while (deletionQueue.runAll());
+        System.gc();
     }
     
     protected abstract void shutdownInternal();
@@ -128,6 +134,8 @@ public abstract class QuartzCore {
     
     protected abstract void resourcesReloadedInternal();
     
+    @Nullable
+    public DrawBatch entityBatch = null;
     public final WorldEngine worldEngine = new WorldEngine();
     public final LightEngine lightEngine = new LightEngine();
     public final InternalMesh.Manager meshManager = new InternalMesh.Manager(allocBuffer());
@@ -137,6 +145,13 @@ public abstract class QuartzCore {
     }
     
     public abstract DrawBatch createDrawBatch();
+    
+    public DrawBatch getEntityBatcher() {
+        if (entityBatch == null){
+            entityBatch = createDrawBatch();
+        }
+        return entityBatch;
+    }
     
     public abstract Buffer allocBuffer();
     

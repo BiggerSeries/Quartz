@@ -1,5 +1,6 @@
 package net.roguelogix.quartz.internal.common;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 import org.joml.Vector3i;
@@ -22,6 +23,7 @@ public class DrawInfo {
     public final Vector3f playerSubBlock = new Vector3f();
     public final Vector3f playerSubBlockNegative = new Vector3f();
     public final Matrix4f projectionMatrix = new Matrix4f();
+    public PoseStack.Pose mojPose;
     public final ByteBuffer projectionMatrixByteBuffer = MemoryUtil.memAlloc(MagicNumbers.MATRIX_4F_BYTE_SIZE);
     public final FloatBuffer projectionMatrixFloatBuffer = projectionMatrixByteBuffer.asFloatBuffer();
     

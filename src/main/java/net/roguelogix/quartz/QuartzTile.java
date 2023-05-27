@@ -54,11 +54,11 @@ public interface QuartzTile extends IModularTile {
         
         @Nullable
         private DrawBatch.Instance createInstance(Mesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix) {
-            return getDrawBatch().createInstance(position, mesh, dynamicMatrix, staticMatrix, null, null);
+            return getDrawBatch().createInstance(position, mesh, dynamicMatrix, staticMatrix, null);
         }
         
         DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc) {
-            return getDrawBatch().createDynamicMatrix(parentTransform, updateFunc);
+            return getDrawBatch().createDynamicMatrix(null, parentTransform, updateFunc);
         }
         
         private DrawBatch getDrawBatch() {

@@ -3,6 +3,8 @@ package net.roguelogix.quartz;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.BusBuilder;
@@ -28,8 +30,24 @@ public final class Quartz {
     
     public static Mesh createStaticMesh(BlockState blockState) {
         return createStaticMesh(builder -> {
-            //noinspection ConstantConditions
-            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(blockState, builder.matrixStack(), builder.bufferSource(), 0, 0x00000, ModelData.EMPTY, null);
+            final var minecraft = Minecraft.getInstance();
+            final var blockColors = minecraft.getBlockColors();
+            final var renderer = minecraft.getBlockRenderer();
+            final var modelRenderer = renderer.getModelRenderer();
+            
+            final var blockModel = renderer.getBlockModel(blockState);
+            final var renderTypes = blockModel.getRenderTypes(blockState, RandomSource.create(42), ModelData.EMPTY);
+            
+            final int color = blockColors.getColor(blockState, null, null, 0);
+            final float r = (float) (color >> 16 & 255) / 255.0F;
+            final float g = (float) (color >> 8 & 255) / 255.0F;
+            final float b = (float) (color & 255) / 255.0F;
+            
+            final var topOfStack = builder.matrixStack().last();
+            final var bufferSource = builder.bufferSource();
+            for (final var rt : renderTypes) {
+                modelRenderer.renderModel(topOfStack, bufferSource.getBuffer(rt), blockState, blockModel, r, g, b, 0, 0, ModelData.EMPTY, rt);
+            }
         });
     }
     
@@ -51,5 +69,9 @@ public final class Quartz {
     
     public static DrawBatch getDrawBatcherForAABB(AABB aabb) {
         return QuartzCore.INSTANCE.getWorldEngine().getBatcherForAABB(aabb);
+    }
+    
+    public static DrawBatch getEntityBatcher() {
+        return QuartzCore.INSTANCE.getEntityBatcher();
     }
 }

@@ -10,11 +10,14 @@ import javax.annotation.Nullable;
 public interface DrawBatch {
     
     interface Instance {
+        
+        void updatePosition(Vector3ic position);
+        
         void updateDynamicMatrix(@Nullable DynamicMatrix newDynamicMatrix);
         
         void updateStaticMatrix(@Nullable Matrix4fc newStaticMatrix);
         
-        void updateDynamicLight(@Nullable DynamicLight newDynamicLight);
+        void updateAABB(@Nullable AABB aabb);
         
         void delete();
     }
@@ -23,27 +26,29 @@ public interface DrawBatch {
      * DynamicMatrix and DynamicLight must be instances created by this draw batch
      */
     @Nullable
-    Instance createInstance(Vector3ic position, Mesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight light, @Nullable DynamicLight.Type lightType);
+    Instance createInstance(Vector3ic position, Mesh mesh, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable AABB aabb);
     
     interface InstanceBatch {
         void updateMesh(Mesh mesh);
         
         @Nullable
-        Instance createInstance(Vector3ic position, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable DynamicLight light, @Nullable DynamicLight.Type lightType);
+        Instance createInstance(Vector3ic position, @Nullable DynamicMatrix dynamicMatrix, @Nullable Matrix4fc staticMatrix, @Nullable AABB aabb);
     }
     
     @Nullable
     InstanceBatch createInstanceBatch(Mesh mesh);
     
-    DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc);
+    DynamicMatrix createDynamicMatrix(@Nullable Matrix4fc initialValue, @Nullable DynamicMatrix parentTransform, @Nullable DynamicMatrix.UpdateFunc updateFunc);
+    
+    default DynamicMatrix createDynamicMatrix(@Nullable Matrix4fc initialValue, @Nullable DynamicMatrix.UpdateFunc updateFunc) {
+        return createDynamicMatrix(initialValue, null, updateFunc);
+    }
     
     default DynamicMatrix createDynamicMatrix(@Nullable DynamicMatrix.UpdateFunc updateFunc) {
         return createDynamicMatrix(null, updateFunc);
     }
     
-    DynamicLight createLight(Vector3ic lightPosition, DynamicLight.Type lightType);
-    
-    void setCullAABB(AABB aabb);
+    void setCullAABB(@Nullable AABB aabb);
     
     void setEnabled(boolean enabled);
     

@@ -44,39 +44,61 @@ uniform mat4 projectionMatrix;
 uniform bool LIGHTING;
 uniform bool QUAD;
 
-#ifndef USE_SSBO
-uniform samplerBuffer dynamicMatrices;
-uniform usamplerBuffer dynamicLights;
-#else
+struct PackedDynamicLightInfo {
+// opengl doesnt support smaller types than this, unfortunately
+    uint lightingInfo[32];
+};
+
+// this is to get around arrays of arrays requirement
+struct UnpackedDynamicLightInfoInner {
+    uvec2 info[6];
+};
+
+struct UnpackedDynamicLightInfo {
+    UnpackedDynamicLightInfoInner lighting[8];
+};
+
+struct SplitDynamicLightDirectionInfo {
+    vec2 directionLight;
+    float AO;
+};
+
+struct SplitDynamicLightVertexInfo {
+    SplitDynamicLightDirectionInfo[6] directionInfo;
+};
+
+struct SplitDynamicLightInfo {
+    SplitDynamicLightVertexInfo[8] vertexInfo;
+};
 
 struct DynamicMatrixPair {
     mat4 modelMatrix;
     mat4 normalMatrix;
 };
 
+#ifndef USE_SSBO
+uniform samplerBuffer dynamicMatrices;
+uniform usamplerBuffer dynamicLights;
+#else
+
 layout(std430, binding = 0) buffer dynamicMatrixBuffer {
-    DynamicMatrixPair dynamicMatrices[];
+    DynamicMatrixPair dynamicMatricesSSBO[];
 };
 
-struct DynamicLightInfo {
-// opengl doesnt support smaller types than this, unfortunately
-    uint lightingInfo[32];
-};
 
 layout(std430, binding = 1) buffer dynamicLightBuffer {
-    DynamicLightInfo dynamicLights[];
+    PackedDynamicLightInfo dynamicLightsSSBO[];
 };
 
 #endif
 
-layout(location = 0) out float vertexDistance;
+//layout(location = 0) out float vertexDistance;
 layout(location = 1) out vec4 vertexColor;
-
-layout(location = 2) out vec2 texCoordOut;
+layout(location = 2) out vec4 worldPositionOut;
 
 layout(location = 3) flat out vec3 vertexNormal;
 #define LIGHTMAP_MULTIPLIER 0.015625 /* 1 / 64 (6 bit) */
-layout(location = 4) out vec2 vertexLightmapCoord;
+layout(location = 4) out vec4 textureLightmapOut;
 layout(location = 5) out vec4 lightmapCoords[2];// locations 5 6
 
 layout(location = 7) out vec4 vertexModelPos;
@@ -98,24 +120,9 @@ int extractInt(uint packedint, uint pos, uint width);
 
 uint extractUInt(uint packedint, uint pos, uint width);
 
-#ifdef USE_SSBO
+UnpackedDynamicLightInfo getLightInfo(int lightID);
 
-struct SplitDynamicLightDirectionInfo {
-    vec2 directionLight;
-    float AO;
-};
-
-struct SplitDynamicLightVertexInfo {
-    SplitDynamicLightDirectionInfo[6] directionInfo;
-};
-
-struct SplitDynamicLightInfo {
-    SplitDynamicLightVertexInfo[8] vertexInfo;
-};
-
-SplitDynamicLightInfo getLightInfo(int lightID);
-
-#endif
+SplitDynamicLightInfo splitLightingInfo(UnpackedDynamicLightInfo rawInfo);
 
 void main() {
 
@@ -126,7 +133,7 @@ void main() {
     dynamicModelMatrix[2] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 2);
     dynamicModelMatrix[3] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 3);
     #else
-    dynamicModelMatrix = dynamicMatrices[dynamicMatrixID].modelMatrix;
+    dynamicModelMatrix = dynamicMatricesSSBO[dynamicMatrixID].modelMatrix;
     #endif
 
     vec3 floatWorldPosition = vec3(worldPosition - playerBlock) - playerSubBlock;
@@ -136,7 +143,7 @@ void main() {
     vec4 vertexPosition = modelMatrix * vec4(position, 1.0);
     vertexModelPos.xyz = vertexPosition.xyz;
     vertexPosition += vec4(floatWorldPosition, 0);
-    vertexDistance = cylindrical_distance(vertexPosition.xyz);
+    worldPositionOut = vec4(vertexPosition.xyz, cylindrical_distance(vertexPosition.xyz));
     gl_Position = projectionMatrix * vertexPosition;
 
     int r = (colorIn >> 24) & 0xFF;
@@ -146,15 +153,15 @@ void main() {
 
     vertexColor = vec4(r, g, b, a) / 255;
 
-    texCoordOut = texCoordIn;
+    textureLightmapOut.xy = texCoordIn;
 
     if (LIGHTING){
         if (!QUAD) {
             vertexNormal = normalize(vec3(extractInt(lightingInfo.x, 0u, 16u), extractInt(lightingInfo.y, 16u, 16u), extractInt(lightingInfo.y, 0u, 16u)));
-            vertexLightmapCoord = vec2((lightingInfo.x >> 24) & 0xFFu, (lightingInfo.x >> 16) & 0xFFu) * LIGHTMAP_MULTIPLIER;
+            textureLightmapOut.zw = vec2((lightingInfo.x >> 24) & 0xFFu, (lightingInfo.x >> 16) & 0xFFu) * LIGHTMAP_MULTIPLIER;
         } else {
             vertexNormal = normalize(vec3(extractInt(lightingInfo.x, 24u, 4u), extractInt(lightingInfo.x, 28u, 4u), extractInt(lightingInfo.y, 24u, 4u)));
-            vertexLightmapCoord = vec2((lightingInfo.y >> 28) & 0x1u, (lightingInfo.y >> 29) & 0x1u);
+            textureLightmapOut.zw = vec2((lightingInfo.y >> 28) & 0x1u, (lightingInfo.y >> 29) & 0x1u);
             lightmapCoords[0].xy = vec2((lightingInfo.x >> 00) & 0x3Fu, (lightingInfo.x >> 06) & 0x3Fu) * LIGHTMAP_MULTIPLIER;
             lightmapCoords[0].zw = vec2((lightingInfo.x >> 12) & 0x3Fu, (lightingInfo.x >> 18) & 0x3Fu) * LIGHTMAP_MULTIPLIER;
             lightmapCoords[1].xy = vec2((lightingInfo.y >> 00) & 0x3Fu, (lightingInfo.y >> 06) & 0x3Fu) * LIGHTMAP_MULTIPLIER;
@@ -167,37 +174,27 @@ void main() {
         dynamicNormalMatrix[1] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 5).xyz;
         dynamicNormalMatrix[2] = texelFetch(dynamicMatrices, dynamicMatrixID * 8 + 6).xyz;
         #else
-        dynamicNormalMatrix = mat3(dynamicMatrices[dynamicMatrixID].normalMatrix);
+        dynamicNormalMatrix = mat3(dynamicMatricesSSBO[dynamicMatrixID].normalMatrix);
         #endif
         mat3 normalMatrix = dynamicNormalMatrix * mat3(staticNormalMatrix);
 
-        vertexNormal = normalize(normalMatrix * vertexNormal);
+        vertexNormal = normalMatrix * vertexNormal;
         vertexModelPos.w = calcuateDiffuseMultiplier(vertexNormal);
 
         //            vec3 clampedPosition = clamp(position, vec3(0), vec3(1)); // maybe clamp it? its extrapolating right now instead
-        #ifdef USE_SSBO
-        SplitDynamicLightInfo lightingInfo = getLightInfo(dynamicLightID);
-        #endif
+        SplitDynamicLightInfo lightingInfo = splitLightingInfo(getLightInfo(dynamicLightID));
         for (int i = 0; i < 8; i++) {
             cornerLightLevels[i] = vec3(0);
-            #ifdef USE_SSBO
             SplitDynamicLightVertexInfo vertexInfo = lightingInfo.vertexInfo[i];
-            #endif
             for (int j = 0; j < 6; j++){
                 vec3 lightDirection = lightDirections[j];
                 float multiplier = dot(lightDirection, vertexNormal);
                 multiplier *= float(multiplier > 0);
                 multiplier *= multiplier;
 
-                #ifndef USE_SSBO
-                uvec2 udirectionLight = texelFetch(dynamicLights, dynamicLightID * 64 + i * 6 + j).rg;
-                vec2 directionLight = vec2(udirectionLight & 0x3Fu) * LIGHTMAP_MULTIPLIER;
-                float AO = udirectionLight.x >> 6 & 0x3u;
-                #else
                 SplitDynamicLightDirectionInfo directionInfo = vertexInfo.directionInfo[j];
                 vec2 directionLight = directionInfo.directionLight;
                 float AO = directionInfo.AO;
-                #endif
                 cornerLightLevels[i] += vec3(directionLight, AO) * multiplier;
             }
         }
@@ -231,24 +228,56 @@ uint extractUInt(uint packedint, uint pos, uint width) {
     return packedint & bitMask;
 }
 
-#ifdef USE_SSBO
-SplitDynamicLightInfo getLightInfo(int lightID) {
-    DynamicLightInfo rawInfo = dynamicLights[lightID];
+SplitDynamicLightInfo splitLightingInfo(UnpackedDynamicLightInfo rawInfo) {
+
     SplitDynamicLightInfo info;
     for (int i = 0; i < 8; i++) {
         SplitDynamicLightVertexInfo vertexInfo;
         for (int j = 0; j < 6; j++){
-            // each int packs two, because its 16 bit info
-            uint lightInt = rawInfo.lightingInfo[((i * 6) + j) >> 1] >> ((~j & 1) << 4);
-            uvec2 udirectionLight = uvec2(lightInt & 0xFFu, (lightInt >> 8 & 0xFFu));
-            vec2 directionLight = vec2(udirectionLight & 0x3Fu) * LIGHTMAP_MULTIPLIER;
-            float AO = udirectionLight.x >> 6 & 0x3u;
+            uvec2 uDirectionLight = rawInfo.lighting[i].info[j];
+            vec2 directionLight = vec2(uDirectionLight & 0x3Fu) * LIGHTMAP_MULTIPLIER;
+            float AO = uDirectionLight.x >> 6 & 0x3u;
+
             SplitDynamicLightDirectionInfo directionInfo;
             directionInfo.directionLight = directionLight;
             directionInfo.AO = AO;
+
             vertexInfo.directionInfo[j] = directionInfo;
         }
         info.vertexInfo[i] = vertexInfo;
+
+    }
+
+    return info;
+}
+
+#ifndef USE_SSBO
+UnpackedDynamicLightInfo getLightInfo(int lightID) {
+    UnpackedDynamicLightInfo info;
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 6; j++){
+            info.lighting[i].info[j] = texelFetch(dynamicLights, dynamicLightID * 64 + i * 6 + j).rg;
+        }
+    }
+    return info;
+}
+#else
+
+UnpackedDynamicLightInfo getLightInfo(int lightID) {
+    PackedDynamicLightInfo rawInfo = dynamicLightsSSBO[lightID];
+
+    UnpackedDynamicLightInfo info;
+    for (int i = 0; i < 8; i++) {
+        for (int j = 0; j < 3; j++){
+            for(int k = 0; k < 2; k++) {
+                uint rawUInt = rawInfo.lightingInfo[(i * 3) + j];
+                uint shiftAmount = uint(k) * 16u;
+                uint blocklightInfo = uint(rawUInt >> shiftAmount);
+                uint skyLightInfo = uint(rawUInt >> (shiftAmount + 8u));
+
+                info.lighting[i].info[j * 2 + k] = uvec2(blocklightInfo, skyLightInfo);
+            }
+        }
     }
     return info;
 }

@@ -1,6 +1,7 @@
 package net.roguelogix.quartz.internal;
 
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import net.roguelogix.quartz.internal.util.PointerWrapper;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -15,15 +16,20 @@ import java.util.function.Consumer;
 @NonnullDefault
 public interface Buffer {
     
+    @FunctionalInterface
+    interface CallbackHandle {
+        void delete();
+    }
+    
     interface Allocation {
         
         /**
-         * @apiNote byte buffer reflects CPU side of allocation, not GPU side, does not reflect GPU writes
-         *          reading is allowed
+         * @apiNote buffer reflects CPU side of allocation, may be a coherent mapped buffer
+         *          reading is not allowed
          *
-         * @return sliced bytebuffer for this allocation only
+         * @return memory address for this allocation
          */
-        ByteBuffer buffer();
+        PointerWrapper address();
         
         /**
          * @return offset (in bytes) into OpenGL buffer
@@ -38,7 +44,9 @@ public interface Buffer {
         /**
          * marks entire allocation as dirty
          */
-        void dirty();
+        default void dirty() {
+            dirtyRange(0, size());
+        }
         
         /**
          * marks range in allocation as dirty
@@ -65,21 +73,11 @@ public interface Buffer {
          *
          * @param consumer: callback
          */
-        void addReallocCallback(Consumer<Allocation> consumer);
+        CallbackHandle addReallocCallback(Consumer<Allocation> consumer);
         
-        /**
-         * Called when this allocation's ByteBuffer is re-sliced, ByteBuffer fed to consumer is new ByteBuffer
-         * Callback is fed current ByteBuffer immediately at add when added
-         *
-         * WARNING: these callbacks must only weakly refer to this allocation object, else you will cause a memory leak
-         *
-         * @param consumer: callback
-         */
-        void addBufferSliceCallback(Consumer<Allocation> consumer);
-        
-        void lock();
-        
-        void unlock();
+        default void free() {
+            allocator().free(this);
+        }
     }
     
     /**
@@ -110,8 +108,8 @@ public interface Buffer {
      * NOTE: may have different alignment than current allocation
      * If allocation is null, creates a new allocation
      */
-    default Allocation realloc(@Nullable Allocation allocation, int newSize) {
-        return realloc(allocation, newSize, 1);
+    default Allocation realloc(@Nullable Allocation allocation, int newSize, boolean copyData) {
+        return realloc(allocation, newSize, 1, copyData);
     }
     
     /**
@@ -121,7 +119,7 @@ public interface Buffer {
      * Alignment may differ from the current allocation alignment
      * If allocation is null, creates a new allocation
      */
-    Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment);
+    Allocation realloc(@Nullable Allocation allocation, int newSize, int alignment, boolean copyData);
     
     void free(Allocation allocation);
     
@@ -134,16 +132,7 @@ public interface Buffer {
      *
      * @param consumer: callback
      */
-    void addCPUReallocCallback(Consumer<Buffer> consumer);
-    
-    /**
-     * Called when a new GL buffer is allocated, changing the result of calling handle()
-     *
-     *      * WARNING: these callbacks must only weakly refer to this buffer object, else you will cause a memory leak
-     *
-     * @param consumer: callback
-     */
-    void addGPUReallocCallback(Consumer<Buffer> consumer);
+    CallbackHandle addReallocCallback(boolean callImmediately, Consumer<Buffer> consumer);
     
     default <T extends Buffer> T as(Class<T> ignored){
         //noinspection unchecked

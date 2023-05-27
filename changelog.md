@@ -1,3 +1,12 @@
+# 1.19.2-0.1.0-beta.2.1
+ - ensure b3d state cache is always cleared, fixes interaction bug
+
+# 1.19.2-0.1.0-beta.2
+ - update phosphophyllite (breaking changes)
+
+# 1.19.2-0.1.0-beta.1.1 (backport from 0.1.0-beta.2.1)
+- ensure b3d state cache is always cleared, fixes interaction bug
+
 # 1.19.2-0.1.0-beta.1
  - update phosphophyllite (breaking changes)
  - check phos version before attempting to use any faetures of phos

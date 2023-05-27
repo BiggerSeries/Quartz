@@ -6,13 +6,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
-import net.roguelogix.quartz.internal.common.LightEngine;
-import net.roguelogix.quartz.internal.common.InternalMesh;
-import net.roguelogix.quartz.internal.gl.GLCore;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.QuartzConfig;
 import net.roguelogix.quartz.QuartzEvent;
+import net.roguelogix.quartz.internal.common.InternalMesh;
+import net.roguelogix.quartz.internal.common.LightEngine;
+import net.roguelogix.quartz.internal.gl46.GL46Core;
 import net.roguelogix.quartz.internal.world.WorldEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -26,17 +26,25 @@ import java.lang.ref.Cleaner;
 public abstract class QuartzCore {
     
     public static final Logger LOGGER = LogManager.getLogger("Quartz");
+    public static final boolean DEBUG;
     
     @Nonnull
     public static final QuartzCore INSTANCE;
     public static final Cleaner CLEANER = Cleaner.create();
     public static final WorkQueue deletionQueue = new WorkQueue();
     
+    public static void mainThreadClean(Object referent, Runnable cleanFunc) {
+        CLEANER.register(referent, () -> deletionQueue.enqueueUntracked(cleanFunc));
+    }
+    
     static {
         if (!Thread.currentThread().getStackTrace()[2].getClassName().equals(EventListener.class.getName())) {
             throw new IllegalStateException("Attempt to init quartz before it is ready");
         }
         LOGGER.info("Quartz Init");
+        if (QuartzConfig.INSTANCE.debug) {
+            LOGGER.warn("Debug mode enabled, performance may suffer");
+        }
         QuartzCore instance = null;
         try {
             instance = createCore(QuartzConfig.INSTANCE.mode);
@@ -53,6 +61,7 @@ public abstract class QuartzCore {
         // in the event this is null, phos isn't present
         //noinspection ConstantConditions
         INSTANCE = instance;
+        DEBUG = QuartzConfig.INSTANCE.debug;
     }
     
     @Nullable
@@ -68,7 +77,8 @@ public abstract class QuartzCore {
 //                    yield null;
 //                }
 //            }
-            case OpenGL33 -> GLCore.INSTANCE;
+//            case OpenGL33 -> GLCore.INSTANCE;
+            case OpenGL46 -> GL46Core.INSTANCE;
             case Automatic -> {
                 for (QuartzConfig.Mode value : QuartzConfig.Mode.values()) {
                     if (value == QuartzConfig.Mode.Automatic) {
@@ -102,8 +112,14 @@ public abstract class QuartzCore {
         if (!wasInit) {
             return;
         }
+        INSTANCE.entityBatch = null;
         Quartz.EVENT_BUS.post(new QuartzEvent.Shutdown());
         INSTANCE.shutdownInternal();
+        // clean everything up, hopefully
+        do {
+            System.gc();
+        } while (deletionQueue.runAll());
+        System.gc();
     }
     
     protected abstract void shutdownInternal();
@@ -118,6 +134,8 @@ public abstract class QuartzCore {
     
     protected abstract void resourcesReloadedInternal();
     
+    @Nullable
+    public DrawBatch entityBatch = null;
     public final WorldEngine worldEngine = new WorldEngine();
     public final LightEngine lightEngine = new LightEngine();
     public final InternalMesh.Manager meshManager = new InternalMesh.Manager(allocBuffer());
@@ -127,6 +145,13 @@ public abstract class QuartzCore {
     }
     
     public abstract DrawBatch createDrawBatch();
+    
+    public DrawBatch getEntityBatcher() {
+        if (entityBatch == null){
+            entityBatch = createDrawBatch();
+        }
+        return entityBatch;
+    }
     
     public abstract Buffer allocBuffer();
     
@@ -139,9 +164,17 @@ public abstract class QuartzCore {
     
     public abstract void preTerrainSetup();
     
+    public abstract void shadowPass(PoseStack modelView, Matrix4f projectionMatrix);
+    
     public abstract void preOpaque();
     
     public abstract void endOpaque();
     
     public abstract void endTranslucent();
+    
+    public abstract void waitIdle();
+    
+    public abstract int frameInFlight();
+    
+    public abstract void sectionDirty(int x, int y, int z);
 }

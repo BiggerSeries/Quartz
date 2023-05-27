@@ -1,20 +1,13 @@
 package net.roguelogix.quartz;
 
-import com.electronwill.nightconfig.core.AbstractCommentedConfig;
-import net.minecraftforge.fml.VersionChecker;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
 import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.config.ConfigValue;
-import net.roguelogix.quartz.internal.gl.GLConfig;
-import net.roguelogix.quartz.internal.vk.VKConfig;
 import net.roguelogix.phosphophyllite.registry.IgnoreRegistration;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
-import org.apache.maven.artifact.versioning.ComparableVersion;
-
-import java.util.ArrayList;
-import java.util.Map;
+import net.roguelogix.quartz.internal.vk.VKConfig;
 
 public class QuartzConfig {
     
@@ -67,20 +60,23 @@ public class QuartzConfig {
     
     public enum Mode {
         Vulkan10,
+        OpenGL46,
         OpenGL33,
         Automatic,
         ;
     }
+    
+    @ConfigValue(comment = "Enable debug features, may lower performance")
+    public final boolean debug;
     
     @ConfigValue(comment = "Backend mode used by quartz\nAutomatic will try to use the best available, and fallback as necessary")
     public final Mode mode;
     
     {
         mode = Mode.Automatic;
+        debug = false;
     }
     
-    @ConfigValue(advanced = ConfigValue.BoolOption.True)
-    public final GLConfig GL = GLConfig.INSTANCE;
     @ConfigValue(advanced = ConfigValue.BoolOption.True)
     public final VKConfig VK = VKConfig.INSTANCE;
 }

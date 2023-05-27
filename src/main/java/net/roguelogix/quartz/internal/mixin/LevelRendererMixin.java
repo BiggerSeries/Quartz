@@ -5,6 +5,8 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.RenderType;
+import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.QuartzCore;
 import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Mixin;
@@ -89,6 +91,13 @@ public class LevelRendererMixin {
     // line 2414-2415
     @Inject(method = "setSectionDirty(IIIZ)V", at = @At("HEAD"))
     public void setSectionDirty(int x, int y, int z, boolean updateNow, CallbackInfo ci) {
-        QuartzCore.INSTANCE.lightEngine.sectionDirty(x, y, z);
+        QuartzCore.INSTANCE.sectionDirty(x, y, z);
+    }
+    
+    @Inject(method = "renderChunkLayer", at = @At(value = "HEAD"))
+    void invokeRenderChunkLayer(RenderType renderType, PoseStack modelView, double cameraX, double cameraY, double cameraZ, Matrix4f projectionMatrix, CallbackInfo ci) {
+        if (renderType == RenderType.solid() && IrisDetection.areShadersActive()) {
+            QuartzCore.INSTANCE.shadowPass(modelView, projectionMatrix);
+        }
     }
 }

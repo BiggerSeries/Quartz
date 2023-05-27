@@ -5,6 +5,7 @@ import net.roguelogix.phosphophyllite.util.NonnullDefault;
 
 import javax.annotation.Nullable;
 
+@Deprecated(forRemoval = true)
 @NonnullDefault
 public interface DynamicLight {
     

@@ -51,6 +51,10 @@ public class GL46Instance implements DrawBatch.Instance {
         if (location.location == -1) {
             throw new IllegalStateException("Attempt to dirty deleted instance");
         }
+        if(dirtyForFrames == FRAMES_IN_FLIGHT){
+            // already dirtied this frame
+            return;
+        }
         manager.dirtyInstances.add(selfWeakRef);
         dirtyForFrames = FRAMES_IN_FLIGHT;
     }

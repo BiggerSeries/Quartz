@@ -3,9 +3,7 @@ package net.roguelogix.quartz.internal.gl46;
 import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.renderer.RenderType;
 import net.roguelogix.quartz.DrawBatch;
-import net.roguelogix.quartz.internal.MagicNumbers;
-import net.roguelogix.quartz.internal.MultiBuffer;
-import net.roguelogix.quartz.internal.QuartzCore;
+import net.roguelogix.quartz.internal.*;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.gl46.batching.GL46DrawBatch;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
@@ -184,6 +182,7 @@ public class GL46FeedbackDrawing {
         UBOPointer.putVector3i(0, GL46Core.INSTANCE.drawInfo.playerPosition);
         UBOPointer.putVector3f(16, GL46Core.INSTANCE.drawInfo.playerSubBlock);
         UBOPointer.putVector3i(32, GL46LightEngine.lookupOffset());
+        UBOPointer.putInt(44, IrisDetection.areShadersActive() ? 1 : 0);
         
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOBuffers.activeBuffer().handle());
 

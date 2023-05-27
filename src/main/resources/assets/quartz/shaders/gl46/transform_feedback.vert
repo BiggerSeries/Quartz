@@ -126,7 +126,8 @@ layout(location = STATIC_NORMAL_MATRIX_LOCATION) in mat3 normalMatrix;
 layout(std140, binding = 0) uniform MainUBO {
     ivec4 playerBlock;
     vec4 playerSubBlock;
-    ivec4 lightCunkLookupOffset;
+    ivec3 lightCunkLookupOffset;
+    int irisShadersEnabled;
 };
 
 
@@ -215,20 +216,10 @@ DynamicMatrixPair getDynamicMatrix(int matrixID) {
 
 uint packNormal(vec3 normal){
     normal = normalize(normal);
-    //    normal += 1;
-    //    normal *= 0.5;
-    //    normal *= 127;
-    //    uvec3 uVertexNormal = uvec3(normal);
-    //    uint packedNormal = 0;
-    //    packedNormal |= uint(uVertexNormal.z & 0xFFu);
-    //    packedNormal <<= 8;
-    //    packedNormal |= uint(uVertexNormal.y & 0xFFu);
-    //    packedNormal <<= 8;
-    //    packedNormal |= uint(uVertexNormal.x & 0xFFu);
     uint packedNormal = 0;
-    packedNormal |= (uint(normal.x * 127.0) & 0xFFu);
-    packedNormal |= (uint(normal.y * 127.0) & 0xFFu) << 8;
-    packedNormal |= (uint(normal.z * 127.0) & 0xFFu) << 16;
+    packedNormal |= uint(int(normal.x * 127.0) & 0xFF);
+    packedNormal |= uint(int(normal.y * 127.0) & 0xFF) << 8;
+    packedNormal |= uint(int(normal.z * 127.0) & 0xFF) << 16;
     return packedNormal;
 }
 
@@ -341,7 +332,10 @@ DynamicLightingOutput calculateDynamicLighting(DynamicLightingIntermediate inter
     vec3 averaged = average3D(intermediate.cornerLightLevels, position);
 
     float ambientOcclusion = 1 - averaged.z * 0.2;
-    float totalColorMultiplier = ambientOcclusion * intermediate.diffuse;
+    float totalColorMultiplier = ambientOcclusion;
+    if (!bool(irisShadersEnabled)) {
+        totalColorMultiplier *= intermediate.diffuse;
+    }
 
     DynamicLightingOutput outputs;
     outputs.lightmap = averaged.xy;

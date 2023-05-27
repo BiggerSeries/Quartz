@@ -12,7 +12,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 
 import static net.roguelogix.quartz.internal.util.ShitMojangShouldHaveButDoesnt.drawRenderTypePreboundVertexBuffer;
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 public class GL46FeedbackDrawing {
     

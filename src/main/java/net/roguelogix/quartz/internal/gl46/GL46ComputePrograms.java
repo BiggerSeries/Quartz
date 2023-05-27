@@ -4,7 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.util.Util;
 import net.roguelogix.quartz.Quartz;
 
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 public class GL46ComputePrograms {
     private static int dynamicMatrixProgram;

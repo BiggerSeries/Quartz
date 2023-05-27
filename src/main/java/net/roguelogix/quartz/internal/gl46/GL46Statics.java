@@ -9,7 +9,7 @@ import org.lwjgl.system.MemoryStack;
 import static net.roguelogix.quartz.internal.MagicNumbers.*;
 import static org.lwjgl.opengl.ARBSparseTexture.*;
 import static org.lwjgl.opengl.ARBSparseTexture.GL_VIRTUAL_PAGE_SIZE_Z_ARB;
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 public class GL46Statics {
     
@@ -57,7 +57,7 @@ public class GL46Statics {
     private static boolean capCheck() {
         final var capabilities = GL.getCapabilities();
         
-        if (!capabilities.OpenGL46) {
+        if (!capabilities.OpenGL45) {
             return false;
         }
         if (!capabilities.GL_ARB_sparse_texture) {

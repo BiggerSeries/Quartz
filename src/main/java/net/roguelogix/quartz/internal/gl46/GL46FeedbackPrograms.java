@@ -9,7 +9,7 @@ import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.internal.common.DrawInfo;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 public class GL46FeedbackPrograms {
     
@@ -22,7 +22,7 @@ public class GL46FeedbackPrograms {
     public static void startup() {
         var extensionsBuilder = new StringBuilder();
         // gpuinfo says this is supported, so im using it
-        extensionsBuilder.append("#version 460 core\n");
+        extensionsBuilder.append("#version 450 core\n");
         extensionsBuilder.append("#line 1 1\n");
         // no GLSL extensions used outside of 460 core
         

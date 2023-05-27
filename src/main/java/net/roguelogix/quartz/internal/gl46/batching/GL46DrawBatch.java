@@ -24,7 +24,7 @@ import javax.annotation.Nullable;
 
 import static net.roguelogix.quartz.internal.MagicNumbers.IDENTITY_MATRIX;
 import static net.roguelogix.quartz.internal.MagicNumbers.INT_BYTE_SIZE;
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 // dont you dare touch my spaghet
 @NonnullDefault

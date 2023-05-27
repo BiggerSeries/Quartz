@@ -19,7 +19,7 @@ import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 
 import static org.lwjgl.opengl.ARBSparseTexture.*;
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 // TODO: 3d lookup texture
 public class GL46LightEngine {

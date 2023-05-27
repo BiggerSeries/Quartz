@@ -15,7 +15,7 @@ import java.lang.ref.WeakReference;
 import java.util.Collections;
 import java.util.function.Consumer;
 
-import static org.lwjgl.opengl.GL46C.*;
+import static org.lwjgl.opengl.GL45C.*;
 
 @NonnullDefault
 public class GL46Buffer implements Buffer {

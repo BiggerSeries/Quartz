@@ -172,6 +172,9 @@ public class InternalMesh implements Mesh {
         
         @Override
         public VertexConsumer getBuffer(RenderType renderType) {
+            if (!(renderType instanceof RenderType.CompositeRenderType)) {
+                throw new IllegalArgumentException("RenderType must be composite type");
+            }
             return buffers.computeIfAbsent(renderType, e -> new BufferBuilder());
         }
         

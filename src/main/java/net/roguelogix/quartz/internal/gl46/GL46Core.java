@@ -7,6 +7,8 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.RenderStateShard;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
@@ -17,6 +19,7 @@ import net.roguelogix.quartz.internal.common.DrawInfo;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.KHRDebug;
 
+import static org.lwjgl.opengl.GL11C.glDepthMask;
 import static org.lwjgl.opengl.GL46C.glFinish;
 
 @NonnullDefault
@@ -146,12 +149,30 @@ public class GL46Core extends QuartzCore {
         BufferUploader.invalidate();
         IrisDetection.bindIrisFramebuffer();
         
-        GL46FeedbackDrawing.getActiveRenderTypes().forEach(GL46FeedbackDrawing::drawRenderType);
+        for (final var renderType : GL46FeedbackDrawing.getActiveRenderTypes()) {
+            if (!(renderType instanceof RenderType.CompositeRenderType compositeRenderType)) {
+                continue;
+            }
+            if(compositeRenderType.state().transparencyState != RenderStateShard.NO_TRANSPARENCY) {
+                continue;
+            }
+            GL46FeedbackDrawing.drawRenderType(renderType);
+        }
     }
     
     @Override
     public void endOpaque() {
-    
+        for (final var renderType : GL46FeedbackDrawing.getActiveRenderTypes()) {
+            if (!(renderType instanceof RenderType.CompositeRenderType compositeRenderType)) {
+                continue;
+            }
+            if(compositeRenderType.state().transparencyState == RenderStateShard.NO_TRANSPARENCY) {
+                continue;
+            }
+            RenderSystem.depthMask(false);
+            GL46FeedbackDrawing.drawRenderType(renderType);
+        }
+        RenderSystem.depthMask(true);
     }
     
     @Override

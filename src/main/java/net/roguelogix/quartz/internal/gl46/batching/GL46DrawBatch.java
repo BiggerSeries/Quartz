@@ -381,9 +381,6 @@ public class GL46DrawBatch implements DrawBatchInternal {
         
         // the last buffer is a special case of the compute shader output, others are written to by the CPU
         glBindVertexBuffer(1, instanceDataBuffer.buffer(GL46Statics.FRAMES_IN_FLIGHT).handle(), 0, GL46Statics.INSTANCE_DATA_BYTE_SIZE);
-        // TODO: roll this into the "static" instance data
-        //       currently this causes the GPU to do expensive matrix ops per vertex, instead of per instance
-//        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, dynamicMatrixBuffer.activeBuffer().handle());
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffers[currentIndirectBuffer].activeBuffer().handle());
         glMultiDrawArraysIndirect(GL_POINTS, indirectOffset, draws, 0);
     }

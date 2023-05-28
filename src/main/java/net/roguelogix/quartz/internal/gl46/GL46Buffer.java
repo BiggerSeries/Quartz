@@ -2,7 +2,9 @@ package net.roguelogix.quartz.internal.gl46;
 
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.client.Minecraft;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import net.roguelogix.quartz.QuartzConfig;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.util.CallbackDeleter;
@@ -58,6 +60,7 @@ public class GL46Buffer implements Buffer {
         private Allocation(Allocation allocation, Info info, boolean copyData) {
             this(allocation.reallocCallbacks, info);
             allocation.bufferRealloc.delete();
+            allocation.freed[0] = true;
             if (copyData && allocation.info.offset != info.offset) {
                 allocation.copy(0, this, 0, Math.min(allocation.info.size, info.size));
             }
@@ -77,6 +80,12 @@ public class GL46Buffer implements Buffer {
                 }
             });
             final var freed = new boolean[]{false};
+            final Exception allocationPoint;
+            if (QuartzConfig.INSTANCE.debug) {
+                allocationPoint = new Exception();
+            } else {
+                allocationPoint = null;
+            }
             QuartzCore.mainThreadClean(this, () -> {
                 bufferRealloc.delete();
                 if (!freed[0]) {
@@ -84,6 +93,9 @@ public class GL46Buffer implements Buffer {
                     // this is the only way i can guarantee that this memory wont be overwritten while in flight
                     // yes this is a very heavy handed way to do this, *free the shit manually*
                     glFinish();
+                    if (allocationPoint != null) {
+                        allocationPoint.printStackTrace();
+                    }
                     allocator.free(info);
                 }
             });

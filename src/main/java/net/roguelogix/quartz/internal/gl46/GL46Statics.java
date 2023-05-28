@@ -18,7 +18,7 @@ public class GL46Statics {
     public static final boolean REQUIRE_SPARSE_TEXTURE = false;
     public static final boolean SPARSE_TEXTURE_ENABLED;
     
-    public static final int FRAMES_IN_FLIGHT = 2;
+    public static final int FRAMES_IN_FLIGHT = 3;
     
     public static final Vector3ic LIGHT_SPARE_TEXTURE_SIZE = new Vector3i(512, 640, 1024);
     

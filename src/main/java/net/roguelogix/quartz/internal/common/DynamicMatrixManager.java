@@ -37,10 +37,11 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
             this.updateFunc = updateFunc;
             final var ref = new WeakReference<>(this);
             matrixList.add(ref);
-            QuartzCore.CLEANER.register(this, () -> {
+            QuartzCore.mainThreadClean(this, () -> {
                 synchronized (matrixList) {
                     matrixList.remove(ref);
-                }
+                };
+                allocation.free();
             });
         }
         

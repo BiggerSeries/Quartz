@@ -74,8 +74,10 @@ public class Gl46InstanceManager {
         drawChunks.clear();
         drawBatch.instanceManagers.remove(staticMesh, this);
         drawBatch.instanceBatches.remove(this);
-        setDirty();
+        drawBatch.setIndirectInfoDirty();
         trackedMesh.removeBuildCallback(meshBuildCallback);
+        instanceDataAlloc.free();
+        
     }
     
     void updateMesh(Mesh quartzMesh) {

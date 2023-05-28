@@ -166,7 +166,7 @@ public class GL46LightEngine {
             
             if (GL46Statics.SPARSE_TEXTURE_ENABLED) {
                 for (int i = 0; i < intermediateTextures.length; i++) {
-                    glTexturePageCommitmentEXT(intermediateTextures[i], 0, 0, 0, layerIndex, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), 1, true);
+                    SparseTextureHelper.glTexturePageCommitmentEXT(intermediateTextures[i], 0, 0, 0, layerIndex, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), 1, true);
                 }
             }
             freeCommitedIndices += 60;
@@ -197,7 +197,7 @@ public class GL46LightEngine {
         }
         if (GL46Statics.SPARSE_TEXTURE_ENABLED) {
             for (int i = 0; i < intermediateTextures.length; i++) {
-                glTexturePageCommitmentEXT(intermediateTextures[i], 0, 0, 0, layerIndex, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), 1, false);
+                SparseTextureHelper.glTexturePageCommitmentEXT(intermediateTextures[i], 0, 0, 0, layerIndex, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), 1, false);
             }
         }
         freeCommitedIndices -= 60;

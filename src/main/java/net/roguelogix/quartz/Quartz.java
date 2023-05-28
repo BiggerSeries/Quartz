@@ -7,6 +7,7 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.model.data.ModelData;
@@ -64,7 +65,7 @@ public final class Quartz {
             final var model = minecraft.getModelManager().getModel(modelLocation);
             
             // yes this is a nonnull thing, this throwing isn't something i care about
-            final var renderTypes = model.getRenderTypes(null, RandomSource.create(42), ModelData.EMPTY);
+            final var renderTypes = model.getRenderTypes(Blocks.STONE.defaultBlockState(), RandomSource.create(42), ModelData.EMPTY);
             
             final var topOfStack = builder.matrixStack().last();
             final var bufferSource = builder.bufferSource();

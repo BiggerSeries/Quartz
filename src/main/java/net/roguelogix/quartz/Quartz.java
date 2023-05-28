@@ -1,11 +1,14 @@
 package net.roguelogix.quartz;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -47,6 +50,26 @@ public final class Quartz {
             final var bufferSource = builder.bufferSource();
             for (final var rt : renderTypes) {
                 modelRenderer.renderModel(topOfStack, bufferSource.getBuffer(rt), blockState, blockModel, r, g, b, 0, 0, ModelData.EMPTY, rt);
+            }
+        });
+    }
+    
+    public static Mesh createStaticMesh(ResourceLocation modelLocation) {
+        QuartzCore.registerModel(modelLocation);
+        return createStaticMesh(builder -> {
+            final var minecraft = Minecraft.getInstance();
+            final var renderer = minecraft.getBlockRenderer();
+            final var modelRenderer = renderer.getModelRenderer();
+            
+            final var model = minecraft.getModelManager().getModel(modelLocation);
+            
+            // yes this is a nonnull thing, this throwing isn't something i care about
+            final var renderTypes = model.getRenderTypes(null, RandomSource.create(42), ModelData.EMPTY);
+            
+            final var topOfStack = builder.matrixStack().last();
+            final var bufferSource = builder.bufferSource();
+            for (final var rt : renderTypes) {
+                modelRenderer.renderModel(topOfStack, bufferSource.getBuffer(rt), null, model, 1, 1, 1, 0, 0, ModelData.EMPTY, rt);
             }
         });
     }

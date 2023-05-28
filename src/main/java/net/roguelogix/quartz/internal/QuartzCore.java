@@ -1,9 +1,18 @@
 package net.roguelogix.quartz.internal;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
@@ -104,6 +113,21 @@ public abstract class QuartzCore {
         INSTANCE.startupInternal();
         Quartz.EVENT_BUS.post(new QuartzEvent.Startup());
         wasInit = true;
+    }
+    
+    private static final ReferenceSet<ResourceLocation> modelsToRegister = new ReferenceArraySet<>();
+    
+    public static void registerModel(ResourceLocation modelLocation) {
+        modelsToRegister.add(modelLocation);
+    }
+    
+    public static void onModelRegisterEvent(ModelEvent.RegisterAdditional event) {
+        modelsToRegister.forEach(event::register);
+    }
+    
+    @OnModLoad
+    private static void onModLoad() {
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(QuartzCore::onModelRegisterEvent);
     }
     
     protected abstract void startupInternal();

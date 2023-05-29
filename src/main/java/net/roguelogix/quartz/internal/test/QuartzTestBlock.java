@@ -13,11 +13,11 @@ import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 
-@CreativeTabBlock
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
 public class QuartzTestBlock extends Block implements EntityBlock {
     
+    @CreativeTabBlock
     @RegisterBlock(name = "quartz_test_block",  tileEntityClass = QuartzTestBlockTile.class)
     public static final QuartzTestBlock INSTANCE = new QuartzTestBlock();
     

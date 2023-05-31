@@ -2,12 +2,16 @@ package net.roguelogix.quartz.internal.gl46;
 
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.LightLayer;
+import net.roguelogix.phosphophyllite.util.FastArraySet;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.VectorUtil;
@@ -24,9 +28,10 @@ import static org.lwjgl.opengl.GL45C.*;
 // TODO: 3d lookup texture
 public class GL46LightEngine {
     private static final int CHUNK_UPDATES_PER_FRAME = 16;
-    private static boolean dirty = false;
-    private static final Long2ObjectOpenHashMap<SoftReference<Chunk>> allChunks = new Long2ObjectOpenHashMap<>();
-    private static final Long2ObjectOpenHashMap<WeakReference<ChunkHandle>> chunkHandles = new Long2ObjectOpenHashMap<>();
+    private static boolean allocsDirty = false;
+    private static final Long2ReferenceOpenHashMap<SoftReference<Chunk>> allChunks = new Long2ReferenceOpenHashMap<>();
+    private static final Long2ReferenceOpenHashMap<WeakReference<ChunkHandle>> chunkHandles = new Long2ReferenceOpenHashMap<>();
+    private static final FastArraySet<WeakReference<ChunkHandle>> dirtyChunks = new FastArraySet<>();
     
     private static int freeCommitedIndices = 0;
     private static final ObjectArrayList<ShortArrayList> freeIndices = new ObjectArrayList<>(GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.z());
@@ -139,6 +144,7 @@ public class GL46LightEngine {
     }
     
     private static short allocLightChunk() {
+        allocsDirty = true;
         for (int i = 0; i < residentLayers.size(); i++) {
             if (!residentLayers.getBoolean(i)) {
                 continue;
@@ -182,6 +188,7 @@ public class GL46LightEngine {
     }
     
     private static void freeLightChunk(final short index) {
+        allocsDirty = true;
         final int layerIndex = index & 0x3FF;
         final short subIndex = (short) ((index >> 10) & 0x3F);
         if (!residentLayers.getBoolean(layerIndex)) {
@@ -205,42 +212,44 @@ public class GL46LightEngine {
     }
     
     public static void update(BlockAndTintGetter blockAndTintGetter) {
-        if (!dirty) {
-            return;
-        }
+        
         for (int i = 0; i < 6; i++) {
             glBindImageTexture(i + 1, intermediateTextures[i], 0, true, 0, GL_WRITE_ONLY, GL_R16UI);
         }
         int updatesThisFrame = 0;
-        for (final var entry : allChunks.long2ObjectEntrySet()) {
-            final var value = entry.getValue();
-            if (value == null) {
-                continue;
-            }
+        for (int i = 0; i < dirtyChunks.size(); i++) {
+            final var value = dirtyChunks.get(i);
             final var chunk = value.get();
             if (chunk == null) {
+                dirtyChunks.remove(value);
+                i--;
                 continue;
             }
-            if (chunk.update(blockAndTintGetter)) {
+            if (chunk.chunk.update(blockAndTintGetter)) {
                 updatesThisFrame++;
-                if (updatesThisFrame == CHUNK_UPDATES_PER_FRAME) {
-                    break;
-                }
+            }
+            if (!chunk.chunk.dirty) {
+                dirtyChunks.remove(value);
+                i--;
+            }
+            if (updatesThisFrame >= CHUNK_UPDATES_PER_FRAME) {
+                break;
             }
         }
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-        if (updatesThisFrame != CHUNK_UPDATES_PER_FRAME) {
-            dirty = false;
-        }
         
+        if (!allocsDirty) {
+            return;
+        }
+        allocsDirty = false;
         final var tempVec = new Vector3i();
         lookupOffset.set(Integer.MAX_VALUE);
-        for (final var chunk : chunkHandles.long2ObjectEntrySet()) {
+        for (final var chunk : chunkHandles.long2ReferenceEntrySet()) {
             long chunkPos = chunk.getLongKey();
             lookupOffset.min(VectorUtil.fromSectionPos(chunkPos, tempVec));
         }
         lookupData.set((byte) -1);
-        for (final var chunkEntry : chunkHandles.long2ObjectEntrySet()) {
+        for (final var chunkEntry : chunkHandles.long2ReferenceEntrySet()) {
             final long chunkPos = chunkEntry.getLongKey();
             final var chunkHandle = chunkEntry.getValue().get();
             if (chunkHandle == null) {
@@ -266,16 +275,16 @@ public class GL46LightEngine {
     
     public static void sectionDirty(int x, int y, int z) {
         final long pos = SectionPos.asLong(x, y, z);
-        final var softRef = allChunks.get(pos);
-        if (softRef == null) {
+        final var weakRef = chunkHandles.get(pos);
+        if (weakRef == null) {
             return;
         }
-        final var chunk = softRef.get();
+        final var chunk = weakRef.get();
         if (chunk == null) {
             return;
         }
-        chunk.dirty = true;
-        dirty = true;
+        chunk.chunk.dirty = true;
+        dirtyChunks.add(weakRef);
     }
     
     public static ChunkHandle getChunk(long position) {
@@ -289,7 +298,9 @@ public class GL46LightEngine {
         // no or null chunk handle
         final var chunk = getActualChunk(position);
         final var handle = new ChunkHandle(chunk);
-        chunkHandles.put(position, new WeakReference<>(handle));
+        final var reference = new WeakReference<>(handle);
+        chunkHandles.put(position, reference);
+        dirtyChunks.add(reference);
         return handle;
     }
     
@@ -336,7 +347,6 @@ public class GL46LightEngine {
         private Chunk(long pos) {
             this.sectionPos = pos;
             final var lightChunkIndex = allocLightChunk();
-            GL46LightEngine.dirty = true;
             dirty = true;
             final var alloc = rawDataBuffer.alloc(12288, 12288);
             final var lastSync = new long[1];

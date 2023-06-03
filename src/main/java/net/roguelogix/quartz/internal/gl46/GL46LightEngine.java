@@ -212,7 +212,14 @@ public class GL46LightEngine {
     }
     
     public static void update(BlockAndTintGetter blockAndTintGetter) {
-        
+        runLightingUpdates(blockAndTintGetter);
+        runAllocUpdates();
+    }
+    
+    public static void runLightingUpdates(BlockAndTintGetter blockAndTintGetter) {
+        if (dirtyChunks.isEmpty()) {
+            return;
+        }
         for (int i = 0; i < 6; i++) {
             glBindImageTexture(i + 1, intermediateTextures[i], 0, true, 0, GL_WRITE_ONLY, GL_R16UI);
         }
@@ -237,7 +244,12 @@ public class GL46LightEngine {
             }
         }
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-        
+        for (int i = 0; i < 6; i++) {
+            glBindImageTexture(i + 1, 0, 0, true, 0, GL_WRITE_ONLY, GL_R16UI);
+        }
+    }
+    
+    public static void runAllocUpdates() {
         if (!allocsDirty) {
             return;
         }
@@ -267,10 +279,6 @@ public class GL46LightEngine {
             lookupData.putShortIdx(texelIndex, lookupIndex);
         }
         nglTextureSubImage3D(lookupTexture, 0, 0, 0, 0, 64, 24, 64, GL_RED_INTEGER, GL_UNSIGNED_SHORT, lookupData.pointer());
-        
-        for (int i = 0; i < 6; i++) {
-            glBindImageTexture(i + 1, 0, 0, true, 0, GL_WRITE_ONLY, GL_R16UI);
-        }
     }
     
     public static void sectionDirty(int x, int y, int z) {
@@ -299,7 +307,9 @@ public class GL46LightEngine {
         final var chunk = getActualChunk(position);
         final var handle = new ChunkHandle(chunk);
         final var reference = new WeakReference<>(handle);
+        allocsDirty = true;
         chunkHandles.put(position, reference);
+        chunk.dirty = true;
         dirtyChunks.add(reference);
         return handle;
     }
@@ -325,6 +335,7 @@ public class GL46LightEngine {
             this.chunk = chunk;
             long pos = chunk.sectionPos;
             QuartzCore.mainThreadClean(this, () -> {
+                allocsDirty = true;
                 var removedRef = chunkHandles.remove(pos);
                 // if GC ran in the middle of a frame and cleaned a handle that was gotten again later, this can happen
                 if (removedRef.get() != null) {

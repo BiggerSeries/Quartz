@@ -3,6 +3,7 @@ package net.roguelogix.quartz.internal.gl46;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
@@ -136,7 +137,7 @@ public class GL46Core extends QuartzCore {
         if(!GL46FeedbackDrawing.hasBatch()){
             return;
         }
-        RenderSystem.setProjectionMatrix(projectionMatrix);
+        RenderSystem.setProjectionMatrix(projectionMatrix, VertexSorting.DISTANCE_TO_ORIGIN);
         GL46FeedbackDrawing.getActiveRenderTypes().forEach(GL46FeedbackDrawing::drawRenderType);
     }
     

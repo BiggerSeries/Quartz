@@ -6,7 +6,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Material;
 import net.roguelogix.phosphophyllite.registry.CreativeTabBlock;
 import net.roguelogix.phosphophyllite.registry.RegisterBlock;
 
@@ -22,7 +21,7 @@ public class QuartzTestBlock extends Block implements EntityBlock {
     public static final QuartzTestBlock INSTANCE = new QuartzTestBlock();
     
     public QuartzTestBlock() {
-        super(Properties.of(Material.STONE).noLootTable().destroyTime(3.0F).explosionResistance(3.0F));
+        super(Properties.of().noLootTable().destroyTime(3.0F).explosionResistance(3.0F));
     }
     
     @Nullable

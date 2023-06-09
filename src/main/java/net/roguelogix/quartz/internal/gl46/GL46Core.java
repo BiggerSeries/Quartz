@@ -77,8 +77,8 @@ public class GL46Core extends QuartzCore {
     }
     
     @Override
-    public Buffer allocBuffer() {
-        return new GL46Buffer();
+    public Buffer allocBuffer(boolean GPUOnly) {
+        return new GL46Buffer(GPUOnly);
     }
     
     @Override

@@ -39,13 +39,13 @@ public class GL46DrawBatch implements DrawBatchInternal {
     private Vector4f cullVectorMin = new Vector4f();
     private Vector4f cullVectorMax = new Vector4f();
     
-    final MultiBuffer<GL46Buffer> instanceDataBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT + 1);
+    final MultiBuffer<GL46Buffer> instanceDataBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT + 1, false);
     
     final Reference2ReferenceMap<InternalMesh, Gl46InstanceManager> instanceManagers = new Reference2ReferenceOpenHashMap<>();
     final ReferenceSet<Gl46InstanceManager> instanceBatches = new ReferenceOpenHashSet<>();
     final FastArraySet<Gl46InstanceManager> dirtyBatches = new FastArraySet<>();
     
-    final MultiBuffer<GL46Buffer> dynamicMatrixBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT);
+    final MultiBuffer<GL46Buffer> dynamicMatrixBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false);
     final DynamicMatrixManager dynamicMatrixManager = new DynamicMatrixManager(dynamicMatrixBuffer);
     final DynamicMatrix IDENTITY_DYNAMIC_MATRIX = dynamicMatrixManager.createMatrix(null, null);
     
@@ -316,7 +316,7 @@ public class GL46DrawBatch implements DrawBatchInternal {
     
     private boolean indirectDirty = false;
     private int currentIndirectBuffer = 0;
-    private MultiBuffer<GL46Buffer>[] indirectBuffers = new MultiBuffer[]{new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT), new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT)};
+    private MultiBuffer<GL46Buffer>[] indirectBuffers = new MultiBuffer[]{new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false), new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false)};
     private MultiBuffer<GL46Buffer>.Allocation[] indirectBufferAllocs = new MultiBuffer.Allocation[2];
     private long[] indirectBufferFences = new long[2];
     

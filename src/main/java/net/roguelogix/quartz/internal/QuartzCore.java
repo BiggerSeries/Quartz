@@ -162,7 +162,7 @@ public abstract class QuartzCore {
     public DrawBatch entityBatch = null;
     public final WorldEngine worldEngine = new WorldEngine();
     public final LightEngine lightEngine = new LightEngine();
-    public final InternalMesh.Manager meshManager = new InternalMesh.Manager(allocBuffer());
+    public final InternalMesh.Manager meshManager = new InternalMesh.Manager(allocBuffer(false));
     
     public WorldEngine getWorldEngine() {
         return worldEngine;
@@ -177,7 +177,7 @@ public abstract class QuartzCore {
         return entityBatch;
     }
     
-    public abstract Buffer allocBuffer();
+    public abstract Buffer allocBuffer(boolean GPUOnly);
     
     public abstract void frameStart(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection);
     

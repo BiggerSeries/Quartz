@@ -150,7 +150,7 @@ public class GL46FeedbackDrawing {
     
     private static int requiredVertices = 0;
     private static long[] prevousFrameSyncs = new long[GL46Statics.FRAMES_IN_FLIGHT];
-    private static MultiBuffer<GL46Buffer> UBOBuffers = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT);
+    private static MultiBuffer<GL46Buffer> UBOBuffers = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false);
     private static MultiBuffer<GL46Buffer>.Allocation UBOAllocation = UBOBuffers.alloc(64);
     
     public static boolean hasBatch() {

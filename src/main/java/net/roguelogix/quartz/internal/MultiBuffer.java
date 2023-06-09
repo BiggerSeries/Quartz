@@ -27,10 +27,10 @@ public class MultiBuffer<T extends Buffer> {
     private final Buffer[] backingBuffers;
     private int activeFrame;
     
-    public MultiBuffer(int framesInFlight) {
+    public MultiBuffer(int framesInFlight, boolean GPUOnly) {
         backingBuffers = new Buffer[framesInFlight];
         for (int i = 0; i < backingBuffers.length; i++) {
-            backingBuffers[i] = QuartzCore.INSTANCE.allocBuffer();
+            backingBuffers[i] = QuartzCore.INSTANCE.allocBuffer(GPUOnly);
         }
     }
     

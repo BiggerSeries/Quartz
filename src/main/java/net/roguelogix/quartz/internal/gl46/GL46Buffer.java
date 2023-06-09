@@ -108,6 +108,9 @@ public class GL46Buffer implements Buffer {
         
         @Override
         public PointerWrapper address() {
+            if (GPUOnly) {
+                return PointerWrapper.NULLPTR;
+            }
             return new PointerWrapper(mappedMemory + info.offset, info.size);
         }
         
@@ -189,6 +192,7 @@ public class GL46Buffer implements Buffer {
         }
     }
     
+    private final boolean GPUOnly;
     private int glBuffer = 0;
     private final int[] glBufferArray = new int[1];
     private long mappedMemory;
@@ -214,31 +218,37 @@ public class GL46Buffer implements Buffer {
     
     private final ObjectArrayList<Consumer<Buffer>> reallocCallbacks = new ObjectArrayList<>();
     
-    public GL46Buffer() {
-        this(32768);
+    public GL46Buffer(boolean GPUOnly) {
+        this(32768, GPUOnly);
     }
     
-    public GL46Buffer(int initialSize) {
-        this(initialSize, true);
+    public GL46Buffer(int initialSize, boolean GPUOnly) {
+        this(initialSize, true, GPUOnly);
     }
     
-    public GL46Buffer(int initialSize, boolean roundUpPo2) {
+    public GL46Buffer(int initialSize, boolean roundUpPo2, boolean GPUOnly) {
         if (roundUpPo2) {
             initialSize = MathUtil.mathRoundPoT(initialSize);
         }
         createGLBuffer(initialSize);
         freeAllocations.add(new Allocation.Info(0, size));
         
+        this.GPUOnly = GPUOnly;
+        
         // cannot reference 'this'
         final var bufArray = glBufferArray;
         QuartzCore.mainThreadClean(this, () -> {
-            glUnmapNamedBuffer(bufArray[0]);
+            if (!GPUOnly) {
+                glUnmapNamedBuffer(bufArray[0]);
+            }
             glDeleteBuffers(bufArray[0]);
         });
     }
     
     public void delete() {
-        glUnmapNamedBuffer(glBufferArray[0]);
+        if (!GPUOnly) {
+            glUnmapNamedBuffer(glBufferArray[0]);
+        }
         glDeleteBuffers(glBufferArray[0]);
         glBufferArray[0] = 0;
     }
@@ -494,14 +504,19 @@ public class GL46Buffer implements Buffer {
             return;
         }
         final var newBuffer = glCreateBuffers();
-        glNamedBufferStorage(newBuffer, size, GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT);
+        final int flags = GPUOnly ? 0 : GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
+        glNamedBufferStorage(newBuffer, size, flags);
         if (glBuffer != 0) {
-            glUnmapNamedBuffer(glBuffer);
+            if (!GPUOnly) {
+                glUnmapNamedBuffer(glBuffer);
+            }
             glCopyNamedBufferSubData(glBuffer, newBuffer, 0, 0, this.size);
             glDeleteBuffers(glBuffer);
         }
         glBufferArray[0] = glBuffer = newBuffer;
-        mappedMemory = nglMapNamedBufferRange(newBuffer, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+        if (!GPUOnly) {
+            mappedMemory = nglMapNamedBufferRange(newBuffer, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+        }
         this.size = size;
         
     }

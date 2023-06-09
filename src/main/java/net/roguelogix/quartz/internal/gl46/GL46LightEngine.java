@@ -47,7 +47,7 @@ public class GL46LightEngine {
     private static final int[] intermediateTextures = new int[6];
     private static final Vector3i virtualPageSize = new Vector3i();
     
-    private static final GL46Buffer rawDataBuffer = new GL46Buffer();
+    private static final GL46Buffer rawDataBuffer = new GL46Buffer(false);
     
     private static PointerWrapper lookupData = PointerWrapper.alloc(64 * 64 * 24 * 2);
     private static Vector3i lookupOffset = new Vector3i();

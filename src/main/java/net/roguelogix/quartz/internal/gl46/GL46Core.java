@@ -30,10 +30,11 @@ public class GL46Core extends QuartzCore {
     
     static {
         if (GL46Statics.AVAILABLE) {
-            LOGGER.info("Quartz initializing GL46Core");
             try {
-                KHRDebug.glPushDebugGroup(KHRDebug.GL_DEBUG_SOURCE_THIRD_PARTY, 0, "Quartz Renderer setup");
+                LOGGER.info("Quartz initializing GL46Core");
+                KHRDebug.glPushDebugGroup(KHRDebug.GL_DEBUG_SOURCE_THIRD_PARTY, 0, "Quartz GL46 Renderer Setup");
                 INSTANCE = new GL46Core();
+                LOGGER.info("Quartz GL46Core initialized");
             } finally {
                 KHRDebug.glPopDebugGroup();
             }

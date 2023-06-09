@@ -131,7 +131,7 @@ layout(std140, binding = 0) uniform MainUBO {
 };
 
 
-layout(binding = 1) uniform usampler3D intermediateLightChunkIndexLookup;
+layout(binding = 1) uniform usamplerBuffer intermediateLightChunkIndexLookup;
 layout(binding = 2) uniform usampler2DArray intermediateLightDataTexture[6];
 
 // im trusting the linker to yeet as much of the code as it can
@@ -293,7 +293,8 @@ SplitDynamicLightInfo loadLightingInfo(ivec3 blockPos) {
         return toReturn;
     }
 
-    int lightChunkIndex = int(texelFetch(intermediateLightChunkIndexLookup, lookupChunk, 0).r);
+    int lookupIndex = (((lookupChunk.z * 24) + lookupChunk.y) * 64) + lookupChunk.x;
+    int lightChunkIndex = int(texelFetch(intermediateLightChunkIndexLookup, lookupIndex).r);
     ivec3 lightChunkBaseTexel = ivec3((lightChunkIndex >> 11) & 0x1F, (lightChunkIndex >> 10) & 0x1, lightChunkIndex & 0x3FF) * ivec3(17, 320, 1);
 
     for (int i = 0; i < 8; i++) {

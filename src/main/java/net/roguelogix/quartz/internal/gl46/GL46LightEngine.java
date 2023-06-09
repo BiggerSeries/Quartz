@@ -51,6 +51,7 @@ public class GL46LightEngine {
     
     private static PointerWrapper lookupData = PointerWrapper.alloc(64 * 64 * 24 * 2);
     private static Vector3i lookupOffset = new Vector3i();
+    private static GL46Buffer lookupBuffer = new GL46Buffer(64 * 64 * 24 * 2, true);
     private static int lookupTexture;
     public static void startup() {
         int pageSizeIndex = -1;
@@ -107,10 +108,8 @@ public class GL46LightEngine {
             residentLayers.add(false);
         }
         
-        lookupTexture = glCreateTextures(GL_TEXTURE_3D);
-        glTextureParameteri(lookupTexture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(lookupTexture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTextureStorage3D(lookupTexture, 1, GL_R16UI, 64, 24, 64);
+        lookupTexture = glCreateTextures(GL_TEXTURE_BUFFER);
+        glTextureBuffer(lookupTexture, GL_R16UI, lookupBuffer.handle());
     }
     
     public static void shutdown() {
@@ -125,7 +124,7 @@ public class GL46LightEngine {
     
     public static void bind() {
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_3D, lookupTexture);
+        glBindTexture(GL_TEXTURE_BUFFER, lookupTexture);
         for (int i = 0; i < 6; i++) {
             glActiveTexture(GL_TEXTURE2 + i);
             glBindTexture(GL_TEXTURE_2D_ARRAY, intermediateTextures[i]);
@@ -220,6 +219,7 @@ public class GL46LightEngine {
         if (dirtyChunks.isEmpty()) {
             return;
         }
+        //allocsDirty = true;
         for (int i = 0; i < 6; i++) {
             glBindImageTexture(i + 1, intermediateTextures[i], 0, true, 0, GL_WRITE_ONLY, GL_R16UI);
         }
@@ -278,7 +278,8 @@ public class GL46LightEngine {
             texelIndex += tempVec.x;
             lookupData.putShortIdx(texelIndex, lookupIndex);
         }
-        nglTextureSubImage3D(lookupTexture, 0, 0, 0, 0, 64, 24, 64, GL_RED_INTEGER, GL_UNSIGNED_SHORT, lookupData.pointer());
+        // this should be updated rarely enough that mapping and/or using two buffers doesnt really make sense
+        nglNamedBufferSubData(lookupBuffer.handle(), 0, lookupData.size(), lookupData.pointer());
     }
     
     public static void sectionDirty(int x, int y, int z) {
@@ -376,7 +377,7 @@ public class GL46LightEngine {
         
         private boolean update(BlockAndTintGetter blockAndTintGetter) {
             if (!dirty) {
-                return false;
+                //return false;
             }
             dirty = false;
             if (lastSync[0] != 0) {

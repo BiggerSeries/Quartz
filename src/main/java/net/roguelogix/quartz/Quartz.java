@@ -1,5 +1,6 @@
 package net.roguelogix.quartz;
 
+import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.core.BlockPos;
@@ -14,6 +15,7 @@ import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.BusBuilder;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
+import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.registry.Registry;
 import org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -27,7 +29,7 @@ public final class Quartz {
     public static final String modid = "quartz";
     
     public Quartz(){
-        new Registry();
+        new Registry(ReferenceArrayList.of(new ResourceLocation(Phosphophyllite.modid, "creative_tab")), new ReferenceArrayList<>());
     }
     
     public static IEventBus EVENT_BUS = BusBuilder.builder().setTrackPhases(false).build();

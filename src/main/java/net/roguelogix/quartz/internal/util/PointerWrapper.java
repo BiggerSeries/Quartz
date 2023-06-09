@@ -13,6 +13,8 @@ import static net.roguelogix.quartz.internal.QuartzCore.DEBUG;
 
 public record PointerWrapper(long pointer, long size) {
     
+    public static PointerWrapper NULLPTR = new PointerWrapper(0, 0);
+    
     private static class MemoryLeak extends Exception {
         private final PointerWrapper allocated;
         
@@ -70,6 +72,9 @@ public record PointerWrapper(long pointer, long size) {
     }
     
     public static void copy(PointerWrapper src, long srcOffset, PointerWrapper dst, long dstOffset, long size) {
+        if (src.pointer == 0 || dst.pointer == 0) {
+            throw new IllegalStateException("Attempt to use NULLPTR");
+        }
         if (DEBUG) {
             if (size <= 0) {
                 throw new IllegalArgumentException("Attempt to copy pointer with invalid size: " + size);
@@ -134,6 +139,9 @@ public record PointerWrapper(long pointer, long size) {
     }
     
     private void checkRange(long offset, long writeSize, long alignment) {
+        if (this.pointer == 0) {
+            throw new IllegalStateException("Attempt to use NULLPTR");
+        }
         final var dstPtr = pointer + offset;
         if (DEBUG) {
             if (offset < 0) {
@@ -314,6 +322,9 @@ public record PointerWrapper(long pointer, long size) {
     }
     
     public PointerWrapper slice(long offset, long size) {
+        if (this.pointer == 0) {
+            throw new IllegalStateException("Attempt to use NULLPTR");
+        }
         if (DEBUG) {
             if (size <= 0) {
                 throw new IllegalArgumentException("Attempt to slice pointer to invalid size: " + size);

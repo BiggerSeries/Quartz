@@ -227,13 +227,13 @@ public class GL46Buffer implements Buffer {
     }
     
     public GL46Buffer(int initialSize, boolean roundUpPo2, boolean GPUOnly) {
+        this.GPUOnly = GPUOnly;
         if (roundUpPo2) {
             initialSize = MathUtil.mathRoundPoT(initialSize);
         }
         createGLBuffer(initialSize);
         freeAllocations.add(new Allocation.Info(0, size));
         
-        this.GPUOnly = GPUOnly;
         
         // cannot reference 'this'
         final var bufArray = glBufferArray;
@@ -504,7 +504,7 @@ public class GL46Buffer implements Buffer {
             return;
         }
         final var newBuffer = glCreateBuffers();
-        final int flags = GPUOnly ? 0 : GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
+        final int flags = GPUOnly ? GL_DYNAMIC_STORAGE_BIT : GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
         glNamedBufferStorage(newBuffer, size, flags);
         if (glBuffer != 0) {
             if (!GPUOnly) {

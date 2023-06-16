@@ -156,10 +156,11 @@ void main() {
     // TODO: proper handling of overlay values
     overlayOutput = uint(0 * 15.0) | ((uint(int(bool(true))) * 7u + 3u) << 16);
 
-    ivec3 modelIntPos = ivec3(transformedModelPos);
+    ivec3 modelIntPos = ivec3(floor(transformedModelPos));
     vec3 modelSubBlockPos = transformedModelPos - modelIntPos;
 
     ivec3 actualWorldBlockPos = modelIntPos + worldPosition;
+    actualWorldBlockPos += ivec3(notEqual(actualWorldBlockPos, ivec3(-1)));
 
     SplitDynamicLightInfo rawLightInfo = loadLightingInfo(actualWorldBlockPos);
     DynamicLightingIntermediate intermediateLightInfo = calculateDynamicLightingIntermediate(rawLightInfo, normal);

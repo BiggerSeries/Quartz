@@ -29,7 +29,7 @@ public class GL46Instance implements DrawBatch.Instance {
     final Location location;
     public final WeakReference<GL46Instance> selfWeakRef = new WeakReference<>(this);
     
-    private final Gl46InstanceManager manager;
+    private final GL46InstanceManager manager;
     
     private final Vector3i position = new Vector3i();
     private DynamicMatrixManager.Matrix dynamicMatrix;
@@ -41,7 +41,7 @@ public class GL46Instance implements DrawBatch.Instance {
     
     private int dirtyForFrames;
     
-    GL46Instance(Gl46InstanceManager manager, int initialLocation) {
+    GL46Instance(GL46InstanceManager manager, int initialLocation) {
         var location = new Location(initialLocation);
         QuartzCore.mainThreadClean(this, () -> manager.removeInstance(location));
         this.location = location;
@@ -57,6 +57,7 @@ public class GL46Instance implements DrawBatch.Instance {
             return;
         }
         manager.dirtyInstances.add(selfWeakRef);
+        manager.setDirty();
         dirtyForFrames = FRAMES_IN_FLIGHT;
     }
     

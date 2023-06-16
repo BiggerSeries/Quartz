@@ -41,9 +41,9 @@ public class GL46DrawBatch implements DrawBatchInternal {
     
     final MultiBuffer<GL46Buffer> instanceDataBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT + 1, false);
     
-    final Reference2ReferenceMap<InternalMesh, Gl46InstanceManager> instanceManagers = new Reference2ReferenceOpenHashMap<>();
-    final ReferenceSet<Gl46InstanceManager> instanceBatches = new ReferenceOpenHashSet<>();
-    final FastArraySet<Gl46InstanceManager> dirtyBatches = new FastArraySet<>();
+    final Reference2ReferenceMap<InternalMesh, GL46InstanceManager> instanceManagers = new Reference2ReferenceOpenHashMap<>();
+    final ReferenceSet<GL46InstanceManager> instanceBatches = new ReferenceOpenHashSet<>();
+    final FastArraySet<GL46InstanceManager> dirtyBatches = new FastArraySet<>();
     
     final MultiBuffer<GL46Buffer> dynamicMatrixBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false);
     final DynamicMatrixManager dynamicMatrixManager = new DynamicMatrixManager(dynamicMatrixBuffer);
@@ -77,7 +77,7 @@ public class GL46DrawBatch implements DrawBatchInternal {
         if (staticMatrix == null) {
             staticMatrix = IDENTITY_MATRIX;
         }
-        final var instanceManager = instanceManagers.computeIfAbsent(castedMesh, (InternalMesh internalMesh) -> new Gl46InstanceManager(this, internalMesh, true));
+        final var instanceManager = instanceManagers.computeIfAbsent(castedMesh, (InternalMesh internalMesh) -> new GL46InstanceManager(this, internalMesh, true));
         return instanceManager.createInstance(position, castedMatrix, staticMatrix, aabb);
     }
     
@@ -87,7 +87,7 @@ public class GL46DrawBatch implements DrawBatchInternal {
         if (!(mesh instanceof InternalMesh castedMesh)) {
             return null;
         }
-        return new GL46InstanceBatch(new Gl46InstanceManager(this, castedMesh, false));
+        return new GL46InstanceBatch(new GL46InstanceManager(this, castedMesh, false));
     }
     
     @Override

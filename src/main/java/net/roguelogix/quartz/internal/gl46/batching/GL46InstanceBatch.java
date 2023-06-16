@@ -14,9 +14,9 @@ import javax.annotation.Nullable;
 @NonnullDefault
 public class GL46InstanceBatch implements DrawBatch.InstanceBatch {
     
-    private final Gl46InstanceManager manager;
+    private final GL46InstanceManager manager;
     
-    GL46InstanceBatch(Gl46InstanceManager manager){
+    GL46InstanceBatch(GL46InstanceManager manager){
         QuartzCore.mainThreadClean(this, manager::delete);
         this.manager = manager;
     }

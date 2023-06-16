@@ -9,7 +9,7 @@ import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 @NonnullDefault
 public class GL46DrawChunk {
     
-    private final Gl46InstanceManager manager;
+    private final GL46InstanceManager manager;
     final RenderType renderType;
     private final VertexFormatOutput outputFormat;
     
@@ -18,7 +18,7 @@ public class GL46DrawChunk {
     
     int drawIndex;
     
-    GL46DrawChunk(Gl46InstanceManager manager, RenderType renderType, InternalMesh.Manager.TrackedMesh.Component component) {
+    GL46DrawChunk(GL46InstanceManager manager, RenderType renderType, InternalMesh.Manager.TrackedMesh.Component component) {
         this.manager = manager;
         this.renderType = renderType;
         outputFormat = VertexFormatOutput.of(renderType.format());

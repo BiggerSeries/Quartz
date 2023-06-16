@@ -24,7 +24,7 @@ import java.util.function.Consumer;
 import static net.roguelogix.quartz.internal.MagicNumbers.IDENTITY_MATRIX;
 
 @NonnullDefault
-public class Gl46InstanceManager {
+public class GL46InstanceManager {
     
     final GL46DrawBatch drawBatch;
     private final boolean autoDelete;
@@ -41,7 +41,7 @@ public class Gl46InstanceManager {
     final ReferenceArrayList<WeakReference<GL46Instance>> instances = new ReferenceArrayList<>();
     final FastArraySet<WeakReference<GL46Instance>> dirtyInstances = new FastArraySet<>();
     
-    public Gl46InstanceManager(GL46DrawBatch drawBatch, InternalMesh mesh, boolean autoDelete) {
+    public GL46InstanceManager(GL46DrawBatch drawBatch, InternalMesh mesh, boolean autoDelete) {
         this.drawBatch = drawBatch;
         this.autoDelete = autoDelete;
         drawBatch.instanceBatches.add(this);
@@ -111,6 +111,7 @@ public class Gl46InstanceManager {
             drawBatch.addDrawChunk(newChunk);
         }
         setDirty();
+        drawBatch.setIndirectInfoDirty();
     }
     
     @Nullable
@@ -135,6 +136,7 @@ public class Gl46InstanceManager {
         instance.updateAABB(aabb);
         instances.add(instance.selfWeakRef);
         setDirty();
+        drawBatch.setIndirectInfoDirty();
         return instance;
     }
     
@@ -147,6 +149,7 @@ public class Gl46InstanceManager {
         }
         final var lastInstanceRef = instances.pop();
         setDirty();
+        drawBatch.setIndirectInfoDirty();
         if (instances.size() == location.location) {
             // removed last instance, nothing to do
             location.location = -1;
@@ -173,7 +176,6 @@ public class Gl46InstanceManager {
     
     void setDirty() {
         drawBatch.dirtyBatches.add(this);
-        drawBatch.setIndirectInfoDirty();
     }
     
     public int instanceCount() {

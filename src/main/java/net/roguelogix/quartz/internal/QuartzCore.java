@@ -21,6 +21,7 @@ import net.roguelogix.quartz.QuartzConfig;
 import net.roguelogix.quartz.QuartzEvent;
 import net.roguelogix.quartz.internal.common.InternalMesh;
 import net.roguelogix.quartz.internal.common.LightEngine;
+import net.roguelogix.quartz.internal.gl33.GL33Core;
 import net.roguelogix.quartz.internal.gl46.GL46Core;
 import net.roguelogix.quartz.internal.world.WorldEngine;
 import org.apache.logging.log4j.LogManager;
@@ -90,8 +91,8 @@ public abstract class QuartzCore {
 //                    yield null;
 //                }
 //            }
-//            case OpenGL33 -> GLCore.INSTANCE;
             case OpenGL46 -> GL46Core.INSTANCE;
+            case OpenGL33 -> GL33Core.INSTANCE;
             case Automatic -> {
                 for (QuartzConfig.Mode value : QuartzConfig.Mode.values()) {
                     if (value == QuartzConfig.Mode.Automatic) {

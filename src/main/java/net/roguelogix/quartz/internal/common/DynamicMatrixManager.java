@@ -38,9 +38,7 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
             final var ref = new WeakReference<>(this);
             matrixList.add(ref);
             QuartzCore.mainThreadClean(this, () -> {
-                synchronized (matrixList) {
-                    matrixList.remove(ref);
-                };
+                matrixList.remove(ref);
                 allocation.free();
             });
         }
@@ -58,21 +56,19 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
             final var buffer = allocation.activeAllocation().address();
             buffer.putMatrix4fIdx(0, transformMatrix);
             buffer.putMatrix4fIdx(1, normalMatrix);
-            synchronized (childMatrices) {
-                for (int i = 0; i < childMatrices.size(); i++) {
-                    var mat = childMatrices.get(i).get();
-                    if (mat == null || mat.deleted) {
-                        var removed = childMatrices.pop();
-                        if (i != childMatrices.size()) {
-                            // removed non-end elements
-                            childMatrices.set(i, removed);
-                        }
-                        i--;
-                        continue;
+            for (int i = 0; i < childMatrices.size(); i++) {
+                var mat = childMatrices.get(i).get();
+                if (mat == null || mat.deleted) {
+                    var removed = childMatrices.pop();
+                    if (i != childMatrices.size()) {
+                        // removed non-end elements
+                        childMatrices.set(i, removed);
                     }
+                    i--;
+                    continue;
+                }
                     mat.update(nanos, partialTicks, playerBlock, playerPartialBlock, transformMatrix);
                 }
-            }
         }
         
         public int id(int frame) {
@@ -125,12 +121,10 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
     }
     
     public void updateAll(long nanos, float partialTicks, Vector3i playerBlock, Vector3f playerPartialBlock) {
-        synchronized (rootMatrices) {
-            for (int i = 0; i < rootMatrices.size(); i++) {
-                var mat = rootMatrices.get(i).get();
-                if (mat != null) {
-                    mat.update(nanos, partialTicks, playerBlock, playerPartialBlock, MagicNumbers.IDENTITY_MATRIX);
-                }
+        for (int i = 0; i < rootMatrices.size(); i++) {
+            var mat = rootMatrices.get(i).get();
+            if (mat != null) {
+                mat.update(nanos, partialTicks, playerBlock, playerPartialBlock, MagicNumbers.IDENTITY_MATRIX);
             }
         }
         buffer.dirtyAll();

@@ -164,6 +164,12 @@ public class GL46Core extends QuartzCore {
     
     @Override
     public void endOpaque() {
+        if(!GL46FeedbackDrawing.hasBatch()){
+            return;
+        }
+        
+        BufferUploader.invalidate();
+        
         for (final var renderType : GL46FeedbackDrawing.getActiveRenderTypes()) {
             if (!(renderType instanceof RenderType.CompositeRenderType compositeRenderType)) {
                 continue;

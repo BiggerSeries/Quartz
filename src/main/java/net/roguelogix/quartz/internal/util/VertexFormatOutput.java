@@ -58,6 +58,10 @@ public record VertexFormatOutput(VertexFormat format, String[] varyings, int ver
         return list.toArray(new String[]{});
     }
     
+    public static String outputName(VertexFormatElement element) {
+        return elementVaryingNames.get(element);
+    }
+    
     @Override
     public boolean equals(Object obj) {
         return obj instanceof VertexFormatOutput other && format == other.format;

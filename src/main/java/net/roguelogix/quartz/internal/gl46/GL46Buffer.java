@@ -49,6 +49,8 @@ public class GL46Buffer implements Buffer {
         }
         
         private final Info info;
+        @Nullable
+        private PointerWrapper cpuAddress;
         private final boolean[] freed;
         private final CallbackHandle bufferRealloc;
         private final ObjectArrayList<Consumer<Buffer.Allocation>> reallocCallbacks;
@@ -74,6 +76,10 @@ public class GL46Buffer implements Buffer {
             final var weakRef = new WeakReference<>(this);
             final var bufferRealloc = GL46Buffer.this.addReallocCallback(false, e -> {
                 final var ref = weakRef.get();
+                if(ref == null){
+                    return;
+                }
+                ref.cpuAddress = null;
                 for (int i = 0; i < reallocCallbacks.size(); i++) {
                     final var callback = reallocCallbacks.get(i);
                     callback.accept(ref);
@@ -101,6 +107,7 @@ public class GL46Buffer implements Buffer {
             });
             
             this.info = info;
+            
             this.freed = freed;
             this.bufferRealloc = bufferRealloc;
             this.reallocCallbacks = reallocCallbacks;
@@ -108,10 +115,14 @@ public class GL46Buffer implements Buffer {
         
         @Override
         public PointerWrapper address() {
-            if (GPUOnly) {
-                return PointerWrapper.NULLPTR;
+            if (cpuAddress == null) {
+                if (GPUOnly) {
+                    cpuAddress = PointerWrapper.NULLPTR;
+                } else {
+                    cpuAddress = new PointerWrapper(mappedMemory + info.offset, info.size);
+                }
             }
-            return new PointerWrapper(mappedMemory + info.offset, info.size);
+            return cpuAddress;
         }
         
         @Override

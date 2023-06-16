@@ -245,6 +245,7 @@ public class GL46Buffer implements Buffer {
         });
     }
     
+    @Override
     public void delete() {
         if (!GPUOnly) {
             glUnmapNamedBuffer(glBufferArray[0]);
@@ -260,11 +261,6 @@ public class GL46Buffer implements Buffer {
     @Override
     public int size() {
         return size;
-    }
-    
-    @Override
-    public Allocation alloc(int size) {
-        return alloc(size, 1);
     }
     
     @Override

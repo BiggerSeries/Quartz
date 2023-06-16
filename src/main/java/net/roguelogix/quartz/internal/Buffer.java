@@ -80,8 +80,11 @@ public interface Buffer {
         }
     }
     
+    void delete();
+    
     /**
      * Size of the entire buffer, allocations are not considered
+     *
      * @return size of OpenGL buffer
      */
     int size();

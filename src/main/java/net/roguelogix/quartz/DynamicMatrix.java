@@ -21,7 +21,7 @@ public interface DynamicMatrix {
         default DynamicMatrix createMatrix(UpdateFunc updateFunc) {
             return createMatrix(null, updateFunc, null);
         }
-        default DynamicMatrix createMatrix(Matrix4fc initialValue, UpdateFunc updateFunc) {
+        default DynamicMatrix createMatrix(@Nullable Matrix4fc initialValue, @Nullable UpdateFunc updateFunc) {
             return createMatrix(initialValue, updateFunc, null);
         }
         

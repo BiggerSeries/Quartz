@@ -28,7 +28,6 @@ public class GL46FeedbackDrawing {
     }
     
     private static final Reference2IntMap<RenderType> renderTypeUsages = new Reference2IntArrayMap<>();
-    private static final Reference2IntMap<RenderType> renderTypeVAOs = new Reference2IntArrayMap<>();
     private static final Reference2IntMap<RenderType> renderTypeDrawnVertices = new Reference2IntArrayMap<>();
     private static final ReferenceArrayList<RenderType> inUseRenderTypes = new ReferenceArrayList<>();
     
@@ -93,7 +92,7 @@ public class GL46FeedbackDrawing {
 
         glVertexArrayAttribFormat(feedbackVAO, GL46Statics.POSITION_LOCATION, 3, GL_FLOAT, false, 0);
         glVertexArrayAttribIFormat(feedbackVAO, GL46Statics.COLOR_LOCATION, 1, GL_INT, 12);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.TEX_COORD_LOCATION, 3, GL_FLOAT, false, 16);
+        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.TEX_COORD_LOCATION, 2, GL_FLOAT, false, 16);
         glVertexArrayAttribFormat(feedbackVAO, GL46Statics.NORMAL_LOCATION, 3, GL_SHORT, true, 24);
 
         glVertexArrayAttribBinding(feedbackVAO, GL46Statics.WORLD_POSITION_LOCATION, 1);

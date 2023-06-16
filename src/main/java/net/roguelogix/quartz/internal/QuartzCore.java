@@ -58,8 +58,12 @@ public abstract class QuartzCore {
         QuartzCore instance = null;
         try {
             instance = createCore(QuartzConfig.INSTANCE.mode);
+            if (instance == null && QuartzConfig.INSTANCE.mode != QuartzConfig.Mode.Automatic) {
+                LOGGER.error("Failed to create QuartzCore of requested type, attempting automatic creation");
+                instance = createCore(QuartzConfig.Mode.Automatic);
+            }
             if (instance == null) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("QuartzCore failed to load, this shouldn't be possible");
             }
         } catch (NoClassDefFoundError e) {
             if (!e.getMessage().contains("phosphophyllite")) {

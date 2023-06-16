@@ -28,6 +28,8 @@ public class GL46ComputePrograms {
     public static void shutdown() {
         glDeleteProgram(dynamicMatrixProgram);
         dynamicMatrixProgram = 0;
+        glDeleteProgram(lightChunkProgram);
+        lightChunkProgram = 0;
     }
     
     public static void reload() {

@@ -54,6 +54,7 @@ public abstract class QuartzCore {
         if (QuartzConfig.INSTANCE.debug) {
             LOGGER.warn("Debug mode enabled, performance may suffer");
         }
+        DEBUG = QuartzConfig.INSTANCE.debug;
         QuartzCore instance = null;
         try {
             instance = createCore(QuartzConfig.INSTANCE.mode);
@@ -70,7 +71,6 @@ public abstract class QuartzCore {
         // in the event this is null, phos isn't present
         //noinspection ConstantConditions
         INSTANCE = instance;
-        DEBUG = QuartzConfig.INSTANCE.debug;
     }
     
     @Nullable

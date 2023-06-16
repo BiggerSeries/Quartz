@@ -26,30 +26,56 @@ public record PointerWrapper(long pointer, long size) {
     
     private static final Long2ObjectMap<MemoryLeak> liveAllocations = new Long2ObjectOpenHashMap<>();
     
-    public static PointerWrapper alloc(long size) {
-        final long ptr = MemoryUtil.nmemAlloc(size);
-        final var toReturn = new PointerWrapper(ptr, size);
+    private static PointerWrapper trackPointer(PointerWrapper wrapper) {
         if (DEBUG) {
             synchronized (liveAllocations) {
-                liveAllocations.put(ptr, new MemoryLeak(toReturn));
+                liveAllocations.put(wrapper.pointer, new MemoryLeak(wrapper));
             }
         }
-        return toReturn;
+        return wrapper;
+    }
+    
+    private static void untrackPointer(PointerWrapper wrapper) {
+        if (!DEBUG) {
+            return;
+        }
+        synchronized (liveAllocations) {
+            if (liveAllocations.remove(wrapper.pointer) == null) {
+                for (final var value : liveAllocations.values()) {
+                    if (value.allocated.contains(wrapper)) {
+                        throw new IllegalStateException("Attempt to free sub pointer, source pointer originally allocated at cause", value);
+                    }
+                }
+                throw new IllegalStateException("Attempt to free pointer not currently live, potential double free?");
+            }
+        }
+    }
+    
+    public static PointerWrapper alloc(long size) {
+        final long ptr = MemoryUtil.nmemAlloc(size);
+        return trackPointer(new PointerWrapper(ptr, size));
+    }
+    
+    public PointerWrapper realloc(long newSize) {
+        if (size == newSize) {
+            return this;
+        }
+        final var newPtr = MemoryUtil.nmemRealloc(this.pointer, newSize);
+        final var newWrapped = new PointerWrapper(newPtr, newSize);
+        if (pointer != newPtr) {
+            untrackPointer(this);
+        }
+        // retracks to realloc location
+        trackPointer(newWrapped);
+        return newWrapped;
     }
     
     public void free() {
-        if (DEBUG) {
-            synchronized (liveAllocations) {
-                if (liveAllocations.remove(pointer) == null) {
-                    for (final var value : liveAllocations.values()) {
-                        if (value.allocated.contains(this)) {
-                            throw new IllegalStateException("Attempt to free sub pointer, source pointer originally allocated at cause", value);
-                        }
-                    }
-                    throw new IllegalStateException("Attempt to free pointer not currently live, potential double free?");
-                }
-            }
+        if (this == NULLPTR) {
+            // technically, save to call free on a nullptr at the native level, but debug will complain if enabled
+            return;
         }
+        untrackPointer(this);
         MemoryUtil.nmemFree(pointer);
     }
     

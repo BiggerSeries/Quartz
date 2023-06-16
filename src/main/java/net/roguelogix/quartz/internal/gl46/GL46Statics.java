@@ -44,7 +44,6 @@ public class GL46Statics {
     
     // 16 locations available, so, none left, if more are needed, will need to pack values
     // lightInfo and colorIn could be packed together
-    // light/matrix IDs could be packed together
     
     static {
         QuartzCore.LOGGER.debug("Capability checking GL46Core");

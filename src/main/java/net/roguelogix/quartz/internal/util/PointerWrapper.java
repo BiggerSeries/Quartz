@@ -11,7 +11,25 @@ import java.lang.Math;
 
 import static net.roguelogix.quartz.internal.QuartzCore.DEBUG;
 
+@SuppressWarnings("DuplicatedCode")
 public record PointerWrapper(long pointer, long size) {
+    
+    private static final boolean JOML_UNSAFE_AVAILABLE;
+    
+    static {
+        boolean available = false;
+        try {
+            final var memUtilClass = PointerWrapper.class.getClassLoader().loadClass("org.joml.MemUtil");
+            final var memUtilUnsafeClass = PointerWrapper.class.getClassLoader().loadClass("org.joml.MemUtil$MemUtilUnsafe");
+            final var instanceField = memUtilClass.getDeclaredField("INSTANCE");
+            instanceField.setAccessible(true);
+            final var memUtilInstance = instanceField.get(null);
+            available = memUtilUnsafeClass.isInstance(memUtilInstance);
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        JOML_UNSAFE_AVAILABLE = available;
+    }
     
     public static PointerWrapper NULLPTR = new PointerWrapper(0, 0);
     
@@ -214,32 +232,95 @@ public record PointerWrapper(long pointer, long size) {
     
     public void putVector3i(long offset, Vector3ic vector) {
         checkRange(offset, 12, 16);
-        vector.getToAddress(pointer + offset);
+        final var dstPtr = pointer + offset;
+        if (JOML_UNSAFE_AVAILABLE) {
+            vector.getToAddress(pointer + offset);
+        } else {
+            MemoryUtil.memPutInt(dstPtr, vector.x());
+            MemoryUtil.memPutInt(dstPtr + 4, vector.y());
+            MemoryUtil.memPutInt(dstPtr + 8, vector.z());
+        }
     }
     
     public void putVector3f(long offset, Vector3fc vector) {
         checkRange(offset, 12, 16);
-        vector.getToAddress(pointer + offset);
+        final var dstPtr = pointer + offset;
+        if(JOML_UNSAFE_AVAILABLE){
+            vector.getToAddress(pointer + offset);
+        } else {
+            MemoryUtil.memPutFloat(dstPtr, vector.x());
+            MemoryUtil.memPutFloat(dstPtr + 4, vector.y());
+            MemoryUtil.memPutFloat(dstPtr + 8, vector.z());
+        }
     }
     
     public void putVector4i(long offset, Vector4ic vector) {
         checkRange(offset, 16);
-        vector.getToAddress(pointer + offset);
+        final var dstPtr = pointer + offset;
+        if (JOML_UNSAFE_AVAILABLE) {
+            vector.getToAddress(pointer + offset);
+        } else {
+            MemoryUtil.memPutInt(dstPtr, vector.x());
+            MemoryUtil.memPutInt(dstPtr + 4, vector.y());
+            MemoryUtil.memPutInt(dstPtr + 8, vector.z());
+            MemoryUtil.memPutInt(dstPtr + 12, vector.w());
+        }
     }
     
     public void putVector4f(long offset, Vector4fc vector) {
         checkRange(offset, 16);
-        vector.getToAddress(pointer + offset);
+        final var dstPtr = pointer + offset;
+        if (JOML_UNSAFE_AVAILABLE) {
+            vector.getToAddress(pointer + offset);
+        } else {
+            MemoryUtil.memPutFloat(dstPtr, vector.x());
+            MemoryUtil.memPutFloat(dstPtr + 4, vector.y());
+            MemoryUtil.memPutFloat(dstPtr + 8, vector.z());
+            MemoryUtil.memPutFloat(dstPtr + 12, vector.w());
+        }
     }
     
     public void putMatrix4f(long offset, Matrix4fc matrix) {
         checkRange(offset, 64, 16);
-        matrix.getToAddress(pointer + offset);
+        final var dstPtr = pointer + offset;
+        if (JOML_UNSAFE_AVAILABLE) {
+            matrix.getToAddress(dstPtr);
+        } else {
+            MemoryUtil.memPutFloat(dstPtr, matrix.m00());
+            MemoryUtil.memPutFloat(dstPtr + 4, matrix.m01());
+            MemoryUtil.memPutFloat(dstPtr + 8, matrix.m02());
+            MemoryUtil.memPutFloat(dstPtr + 12, matrix.m03());
+            MemoryUtil.memPutFloat(dstPtr + 16, matrix.m10());
+            MemoryUtil.memPutFloat(dstPtr + 20, matrix.m11());
+            MemoryUtil.memPutFloat(dstPtr + 24, matrix.m12());
+            MemoryUtil.memPutFloat(dstPtr + 28, matrix.m13());
+            MemoryUtil.memPutFloat(dstPtr + 32, matrix.m20());
+            MemoryUtil.memPutFloat(dstPtr + 36, matrix.m21());
+            MemoryUtil.memPutFloat(dstPtr + 40, matrix.m22());
+            MemoryUtil.memPutFloat(dstPtr + 44, matrix.m23());
+            MemoryUtil.memPutFloat(dstPtr + 48, matrix.m30());
+            MemoryUtil.memPutFloat(dstPtr + 52, matrix.m31());
+            MemoryUtil.memPutFloat(dstPtr + 56, matrix.m32());
+            MemoryUtil.memPutFloat(dstPtr + 60, matrix.m33());
+        }
     }
     
     public void putMatrix3x4f(long offset, Matrix4fc matrix) {
         checkRange(offset, 48, 16);
-        matrix.getToAddress(pointer + offset);
+        // TODO: check new JOML for getToAddress3x4, or an open issue for it
+        final var dstPtr = pointer + offset;
+        MemoryUtil.memPutFloat(dstPtr, matrix.m00());
+        MemoryUtil.memPutFloat(dstPtr + 4, matrix.m01());
+        MemoryUtil.memPutFloat(dstPtr + 8, matrix.m02());
+        MemoryUtil.memPutFloat(dstPtr + 12, matrix.m03());
+        MemoryUtil.memPutFloat(dstPtr + 16, matrix.m10());
+        MemoryUtil.memPutFloat(dstPtr + 20, matrix.m11());
+        MemoryUtil.memPutFloat(dstPtr + 24, matrix.m12());
+        MemoryUtil.memPutFloat(dstPtr + 28, matrix.m13());
+        MemoryUtil.memPutFloat(dstPtr + 32, matrix.m20());
+        MemoryUtil.memPutFloat(dstPtr + 36, matrix.m21());
+        MemoryUtil.memPutFloat(dstPtr + 40, matrix.m22());
+        MemoryUtil.memPutFloat(dstPtr + 44, matrix.m23());
     }
     
     public void putShortIdx(long index, short val) {

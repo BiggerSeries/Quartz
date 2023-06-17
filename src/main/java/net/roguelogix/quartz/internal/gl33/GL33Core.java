@@ -51,13 +51,18 @@ public class GL33Core extends QuartzCore {
             // this is the backup impl, so this is ok to do
             Minecraft.crash(new CrashReport("Quartz startup failed", new IllegalStateException(builder.toString())));
         }
+        final var hasKHRDebug = GL.getCapabilities().GL_KHR_debug;
         try {
             LOGGER.info("Quartz initializing GL33Core");
-            KHRDebug.glPushDebugGroup(KHRDebug.GL_DEBUG_SOURCE_THIRD_PARTY, 0, "Quartz GL33 Renderer Setup");
+            if (hasKHRDebug) {
+                KHRDebug.glPushDebugGroup(KHRDebug.GL_DEBUG_SOURCE_THIRD_PARTY, 0, "Quartz GL33 Renderer Setup");
+            }
             INSTANCE = new GL33Core();
             LOGGER.info("Quartz GL33Core initialized");
         } finally {
-            KHRDebug.glPopDebugGroup();
+            if (hasKHRDebug) {
+                KHRDebug.glPopDebugGroup();
+            }
         }
     }
     

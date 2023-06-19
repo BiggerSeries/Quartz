@@ -71,6 +71,7 @@ public class GL33Core extends QuartzCore {
     
     @Override
     protected void startupInternal() {
+        BrokenMacDriverWorkaroundFragmentShader.startup();
         GL33ComputePrograms.startup();
         GL33FeedbackPrograms.startup();
         GL33LightEngine.startup();
@@ -83,6 +84,7 @@ public class GL33Core extends QuartzCore {
         GL33LightEngine.shutdown();
         GL33FeedbackPrograms.shutdown();
         GL33ComputePrograms.shutdown();
+        BrokenMacDriverWorkaroundFragmentShader.shutdown();
     }
     
     @Override

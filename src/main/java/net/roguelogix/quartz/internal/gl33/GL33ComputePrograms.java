@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.roguelogix.phosphophyllite.util.Util;
 import net.roguelogix.quartz.Quartz;
 
+import static net.roguelogix.quartz.internal.gl33.BrokenMacDriverWorkaroundFragmentShader.bullshitFragShaderBecauseApple;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.GL_PROGRAM_SEPARABLE;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.glProgramParameteri;
 import static org.lwjgl.opengl.GL33C.*;
@@ -25,8 +26,9 @@ public class GL33ComputePrograms {
         }
         
         int program = glCreateProgram();
-        
         glAttachShader(program, shader);
+        glAttachShader(program, bullshitFragShaderBecauseApple());
+        
         glTransformFeedbackVaryings(program, outputs, GL_INTERLEAVED_ATTRIBS);
         glProgramParameteri(program, GL_PROGRAM_SEPARABLE, GL_TRUE);
         glLinkProgram(program);
@@ -37,6 +39,7 @@ public class GL33ComputePrograms {
             throw new IllegalStateException("Compute program link failed for " + path + '\n' + infoLog + '\n');
         }
         
+        glDetachShader(program, bullshitFragShaderBecauseApple());
         glDetachShader(program, shader);
         glDeleteShader(shader);
         return program;

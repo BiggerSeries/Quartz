@@ -12,6 +12,7 @@ import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 
 import java.util.function.BiConsumer;
 
+import static net.roguelogix.quartz.internal.gl33.BrokenMacDriverWorkaroundFragmentShader.bullshitFragShaderBecauseApple;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.GL_PROGRAM_SEPARABLE;
 import static org.lwjgl.opengl.ARBSeparateShaderObjects.glProgramParameteri;
 import static org.lwjgl.opengl.GL33C.*;
@@ -140,6 +141,8 @@ public class GL33FeedbackPrograms {
     private static int createProgramForFormat(VertexFormatOutput outputFormat) {
         final int vertexProgram = glCreateProgram();
         glAttachShader(vertexProgram, vertexShader);
+        glAttachShader(vertexProgram, bullshitFragShaderBecauseApple());
+        
         glTransformFeedbackVaryings(vertexProgram, outputFormat.varyings(), GL_INTERLEAVED_ATTRIBS);
         glProgramParameteri(vertexProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
         glLinkProgram(vertexProgram);
@@ -150,6 +153,7 @@ public class GL33FeedbackPrograms {
             throw new IllegalStateException("Feedback program link failed for " + outputFormat.format() + '\n' + infoLog + '\n');
         }
         
+        glDetachShader(vertexProgram, bullshitFragShaderBecauseApple());;
         glDetachShader(vertexProgram, vertexShader);
         
         final var UBOLocation = glGetUniformBlockIndex(vertexProgram, "MainUBO");
@@ -166,6 +170,8 @@ public class GL33FeedbackPrograms {
     private static IntIntPair createPostProgramForFormat(VertexFormatOutput outputFormat) {
         final int vertexProgram = glCreateProgram();
         glAttachShader(vertexProgram, postShader);
+        glAttachShader(vertexProgram, bullshitFragShaderBecauseApple());
+        
         glTransformFeedbackVaryings(vertexProgram, outputFormat.varyings(), GL_INTERLEAVED_ATTRIBS);
         glProgramParameteri(vertexProgram, GL_PROGRAM_SEPARABLE, GL_TRUE);
         glLinkProgram(vertexProgram);
@@ -176,6 +182,7 @@ public class GL33FeedbackPrograms {
             throw new IllegalStateException("Feedback program link failed for " + outputFormat.format() + '\n' + infoLog + '\n');
         }
         
+        glDetachShader(vertexProgram, bullshitFragShaderBecauseApple());
         glDetachShader(vertexProgram, postShader);
         
         final var UBOLocation = glGetUniformBlockIndex(vertexProgram, "MainUBO");

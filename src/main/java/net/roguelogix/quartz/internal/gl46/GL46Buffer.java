@@ -515,6 +515,7 @@ public class GL46Buffer implements Buffer {
         glNamedBufferStorage(newBuffer, size, flags);
         if (glBuffer != 0) {
             if (!GPUOnly) {
+                PointerWrapper.removeAccessibleLocation(new PointerWrapper(mappedMemory, this.size));
                 glUnmapNamedBuffer(glBuffer);
             }
             glCopyNamedBufferSubData(glBuffer, newBuffer, 0, 0, this.size);
@@ -523,6 +524,7 @@ public class GL46Buffer implements Buffer {
         glBufferArray[0] = glBuffer = newBuffer;
         if (!GPUOnly) {
             mappedMemory = nglMapNamedBufferRange(newBuffer, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+            PointerWrapper.addAccessibleLocation(new PointerWrapper(mappedMemory, size));
         }
         this.size = size;
         

@@ -2,6 +2,8 @@ package net.roguelogix.quartz.internal.util;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import org.joml.*;
 import net.roguelogix.quartz.internal.MagicNumbers;
 import org.lwjgl.system.MemoryUtil;
@@ -45,11 +47,13 @@ public record PointerWrapper(long pointer, long size) {
     private static final Long2ObjectMap<MemoryLeak> liveAllocations = new Long2ObjectOpenHashMap<>();
     
     private static PointerWrapper trackPointer(PointerWrapper wrapper) {
-        if (DEBUG) {
-            synchronized (liveAllocations) {
-                liveAllocations.put(wrapper.pointer, new MemoryLeak(wrapper));
-            }
+        if (!DEBUG) {
+            return wrapper;
         }
+        synchronized (liveAllocations) {
+            liveAllocations.put(wrapper.pointer, new MemoryLeak(wrapper));
+        }
+        addAccessibleLocation(wrapper);
         return wrapper;
     }
     
@@ -67,6 +71,7 @@ public record PointerWrapper(long pointer, long size) {
                 throw new IllegalStateException("Attempt to free pointer not currently live, potential double free?");
             }
         }
+        removeAccessibleLocation(wrapper);
     }
     
     public static PointerWrapper alloc(long size) {
@@ -105,6 +110,44 @@ public record PointerWrapper(long pointer, long size) {
             }
             System.out.println("Memory leaks logged");
         }
+    }
+    
+    private static final ObjectArraySet<PointerWrapper> validWriteLocations = new ObjectArraySet<>();
+    
+    public static void addAccessibleLocation(PointerWrapper wrapper) {
+        if (!DEBUG) {
+            return;
+        }
+        synchronized (validWriteLocations) {
+            validWriteLocations.add(wrapper);
+        }
+    }
+    
+    public static void removeAccessibleLocation(PointerWrapper wrapper) {
+        if (!DEBUG) {
+            return;
+        }
+        synchronized (validWriteLocations) {
+            validWriteLocations.remove(wrapper);
+        }
+    }
+    
+    public static void verifyCanAccessLocation(long ptr, long size) {
+        if (!DEBUG) {
+            return;
+        }
+        for (final var value : validWriteLocations) {
+            // doesnt start in this range
+            if (value.pointer > ptr || value.pointer + value.size <= ptr) {
+                continue;
+            }
+            if (value.pointer + value.size < ptr + size) {
+                throw new IllegalArgumentException("Attempt to write past end of native buffer");
+            }
+            // starts in a known range, and doesnt attempt to access past the end, its valid
+            return;
+        }
+        throw new NullPointerException("Unable to find a valid write location for attempted write");
     }
     
     public void set(byte data) {
@@ -197,6 +240,7 @@ public record PointerWrapper(long pointer, long size) {
             if ((dstPtr % alignment) != 0) {
                 throw new IllegalArgumentException("Attempt to access unaligned address");
             }
+            verifyCanAccessLocation(dstPtr, writeSize);
         }
     }
     

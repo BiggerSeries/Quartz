@@ -55,6 +55,10 @@ public class GL46LightEngine {
     private static int lookupTexture;
     public static void startup() {
         int pageSizeIndex = -1;
+        // TODO: on the fly realloc instead of sparse texture
+        //       Terrascale doesnt support sparse texture, but does OpenGL 4.5
+        //       Terrascale also has memory size limitations due to being so old
+        //       potentially fine with system paging, but that would still require ~4GB of committed memory to these textures alone
         if (GL46Statics.SPARSE_TEXTURE_ENABLED) {
             try (var stack = MemoryStack.stackPush()) {
                 final var format = GL_RGB32UI;

@@ -4,6 +4,7 @@ import org.joml.Vector3i;
 import org.joml.Vector3ic;
 import net.roguelogix.quartz.internal.QuartzCore;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.NVXGPUMemoryInfo;
 import org.lwjgl.system.MemoryStack;
 
 import static net.roguelogix.quartz.internal.MagicNumbers.*;
@@ -15,7 +16,7 @@ public class GL46Statics {
     
     public static final boolean AVAILABLE;
     public static final boolean ALLOW_SPARSE_TEXTURE = true;
-    public static final boolean REQUIRE_SPARSE_TEXTURE = false;
+    public static final boolean REQUIRE_SPARSE_TEXTURE = shouldRequireSparseTexture();
     public static final boolean SPARSE_TEXTURE_ENABLED;
     
     public static final int FRAMES_IN_FLIGHT = 3;
@@ -68,6 +69,30 @@ public class GL46Statics {
         if (!SPARSE_TEXTURE_ENABLED && REQUIRE_SPARSE_TEXTURE) {
             QuartzCore.LOGGER.debug("Failure, sparse texture not available, but required");
             return false;
+        }
+        
+        return true;
+    }
+    
+    private static boolean shouldRequireSparseTexture() {
+        final var capabilities = GL.getCapabilities();
+        
+        if (capabilities.GL_NVX_gpu_memory_info) {
+            final var totalVRAM = glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX);
+            final var totalDedicatedVRAM = glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX);
+            final var availableVRAM = glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX);
+            
+            // >= ~8GB of dedicated vram
+            // 1000 used to account for potential hardware reserved on an 8GB card
+            if(totalDedicatedVRAM > 8 * 1024 * 1000){
+                return false;
+            }
+            
+            // >= ~10GB of vram available right now, may not be dedicated, but if there is, good enough for me
+            // also needs at least ~20GB total, so, 4GB GPU + 16GB system ram, available, or else it will require sparse texture
+            if (availableVRAM >= 10 * 1024 * 1000 && totalVRAM >= 20 * 1024 * 1000) {
+                return false;
+            }
         }
         
         return true;

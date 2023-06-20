@@ -46,7 +46,7 @@ public class GL33LightEngine {
     
     private static final BooleanArrayList residentLayers = new BooleanArrayList(GL33Statics.LIGHT_TEXTURE_ARRAY_FULL_SIZE.z());
     
-    private static final int[][] intermediateTextures = new int[GL33Statics.LIGHT_TEXTURE_ARRAY_FULL_SIZE.z()][6];
+    private static final int[][] intermediateTextures = new int[GL33Statics.LIGHT_TEXTURE_ARRAY_BLOCK_COUNT.z()][6];
     private static final Vector3i virtualPageSize = new Vector3i();
     
     private static PointerWrapper lookupData = PointerWrapper.alloc(64 * 64 * 24 * 2);
@@ -119,15 +119,15 @@ public class GL33LightEngine {
                 indices.add(j);
             }
             
-            final var layerTextures = intermediateTextures[layerIndex];
+            final var layerTextures = intermediateTextures[layerIndex >> 4];
             
             for (int i = 0; i < layerTextures.length; i++) {
                 layerTextures[i] = glGenTextures();
-                glBindTexture(GL_TEXTURE_2D, layerTextures[i]);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, layerTextures[i]);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D_ARRAY, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                 // just allocated the texture,
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_R16UI, GL33Statics.LIGHT_TEXTURE_ARRAY_FULL_SIZE.x(), GL33Statics.LIGHT_TEXTURE_ARRAY_FULL_SIZE.y(), 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, 0);
+                glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R16UI, GL33Statics.LIGHT_TEXTURE_ARRAY_BLOCK_SIZE.x(), GL33Statics.LIGHT_TEXTURE_ARRAY_BLOCK_SIZE.y(), GL33Statics.LIGHT_TEXTURE_ARRAY_BLOCK_SIZE.z(), 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, 0);
             }
             RenderSystem.bindTexture(0);
             freeCommitedIndices += 60;
@@ -158,7 +158,7 @@ public class GL33LightEngine {
             return;
         }
         
-        final var layerTextures = intermediateTextures[layerIndex];
+        final var layerTextures = intermediateTextures[layerIndex >> 4];
         glDeleteTextures(layerTextures);
         
         freeCommitedIndices -= 60;
@@ -281,14 +281,20 @@ public class GL33LightEngine {
     }
     
     public static int drawForEachLayer(int requiredVertices, int activeLayerLocation, int srcBuffer, int intermediateBuffer, int VAO1, int VAO2) {
-        for (int i = 0; i < residentLayers.size(); i++) {
-            if (!residentLayers.getBoolean(i)) {
-                return srcBuffer;
+        for (int i = 0; i < residentLayers.size(); i += 16) {
+            checkLayers:{
+                // check if any layer in the block is resident
+                for (int j = 0; j < 16; j++) {
+                    if (residentLayers.getBoolean(i + j)) {
+                        break checkLayers;
+                    }
+                }
+                continue;
             }
-            final var textures = intermediateTextures[i];
+            final var textures = intermediateTextures[i >> 4];
             for (int j = 0; j < 6; j++) {
                 RenderSystem.activeTexture(GL_TEXTURE2 + j);
-                RenderSystem.bindTexture(textures[j]);
+                glBindTexture(GL_TEXTURE_2D_ARRAY, textures[j]);
             }
             glUniform1ui(activeLayerLocation, i);
             B3DStateHelper.bindVertexArray(VAO1);
@@ -302,6 +308,11 @@ public class GL33LightEngine {
             VAO1 ^= VAO2;
             VAO2 ^= VAO1;
             VAO1 ^= VAO2;
+        }
+        for (int j = 0; j < 6; j++) {
+            RenderSystem.activeTexture(GL_TEXTURE2 + j);
+            RenderSystem.bindTexture(0);
+            glBindTexture(GL_TEXTURE_2D_ARRAY, 0);
         }
         return srcBuffer;
     }
@@ -386,11 +397,13 @@ public class GL33LightEngine {
             final int lightChunkTexelX = lightChunkX * 17;
             final int lightChunkTexelY = lightChunkY * 320;
             
-            final var lightChunkTextures = intermediateTextures[lightChunkZ];
+            final var lightChunkTextures = intermediateTextures[lightChunkZ >> 4];
             final var lightChunkDirectionIndices = 17 * 320;
             final var lightChunkDirectionSize = lightChunkDirectionIndices * 2;
             final var directionalData = PointerWrapper.alloc(lightChunkDirectionSize * 6 * 2);
             
+            // TODO: move this offthread
+            //       its quite costly to do on the main thread
             final var neighborLevels = new Vector2f[2][2][2];
             final var outputValues = new Vector3i[6];
             for (int x = 0; x < 17; x++) {
@@ -428,8 +441,8 @@ public class GL33LightEngine {
             }
             
             for (int i = 0; i < 6; i++) {
-                glBindTexture(GL_TEXTURE_2D, lightChunkTextures[i]);
-                glTexSubImage2D(GL_TEXTURE_2D, 0, lightChunkTexelX, lightChunkTexelY, 17, 320, GL_RED_INTEGER, GL_UNSIGNED_SHORT, directionalData.pointer() + (lightChunkDirectionSize * i));
+                glBindTexture(GL_TEXTURE_2D_ARRAY, lightChunkTextures[i]);
+                glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, lightChunkTexelX, lightChunkTexelY, lightChunkZ & 0xF, 17, 320, 1, GL_RED_INTEGER, GL_UNSIGNED_SHORT, directionalData.pointer() + (lightChunkDirectionSize * i));
             }
         }
         

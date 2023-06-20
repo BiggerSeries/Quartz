@@ -10,6 +10,8 @@ import static net.roguelogix.quartz.internal.MagicNumbers.*;
 public class GL33Statics {
     public static final boolean AVAILABLE;
     
+    public static final Vector3ic LIGHT_TEXTURE_ARRAY_BLOCK_SIZE = new Vector3i(512, 640, 16);
+    public static final Vector3ic LIGHT_TEXTURE_ARRAY_BLOCK_COUNT = new Vector3i(512, 640, 64);
     public static final Vector3ic LIGHT_TEXTURE_ARRAY_FULL_SIZE = new Vector3i(512, 640, 1024);
     
     public static final int INSTANCE_DATA_BYTE_SIZE = 128;

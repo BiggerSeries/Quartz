@@ -67,7 +67,7 @@ public class WorldEngine {
         }
         if (drawBatch == null) {
             final var newDrawBatch = QuartzCore.INSTANCE.createDrawBatch();
-            newDrawBatch.setCullAABB(new AABB(0, 0, 0, 16, 16, 16).translate(SectionPos.sectionToBlockCoord(SectionPos.x(sectionPos)), SectionPos.sectionToBlockCoord(SectionPos.y(sectionPos)), SectionPos.sectionToBlockCoord(SectionPos.z(sectionPos))));
+            newDrawBatch.setCullAABB(new AABB(0, 0, 0, 15, 15, 15).translate(SectionPos.sectionToBlockCoord(SectionPos.x(sectionPos)), SectionPos.sectionToBlockCoord(SectionPos.y(sectionPos)), SectionPos.sectionToBlockCoord(SectionPos.z(sectionPos))));
             QuartzCore.CLEANER.register(newDrawBatch, () -> {
                 synchronized (this){
                     sectionDrawBatchers.remove(sectionPos);

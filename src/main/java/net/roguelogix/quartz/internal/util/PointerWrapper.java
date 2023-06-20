@@ -162,6 +162,8 @@ public record PointerWrapper(long pointer, long size) {
         if (src.pointer == 0 || dst.pointer == 0) {
             throw new IllegalStateException("Attempt to use NULLPTR");
         }
+        final var srcPtr = src.pointer + srcOffset;
+        final var dstPtr = dst.pointer + dstOffset;
         if (DEBUG) {
             if (size <= 0) {
                 throw new IllegalArgumentException("Attempt to copy pointer with invalid size: " + size);
@@ -180,9 +182,9 @@ public record PointerWrapper(long pointer, long size) {
             if (dstEndIndex > dst.size) {
                 throw new IllegalArgumentException("Attempt to copy pointer would read past end of destination. dest size: " + dst.size + ", dest offset: " + dstOffset + ", copy size: " + size);
             }
+            verifyCanAccessLocation(srcPtr, size);
+            verifyCanAccessLocation(dstPtr, size);
         }
-        final var srcPtr = src.pointer + srcOffset;
-        final var dstPtr = dst.pointer + dstOffset;
         boolean overlaps = srcOffset == dstOffset;
         overlaps |= srcPtr < dstPtr && dstPtr < srcPtr + size;
         overlaps |= dstPtr < srcPtr && srcPtr < dstPtr + size;

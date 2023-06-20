@@ -7,6 +7,7 @@ import net.roguelogix.phosphophyllite.config.ConfigType;
 import net.roguelogix.phosphophyllite.config.ConfigValue;
 import net.roguelogix.phosphophyllite.registry.IgnoreRegistration;
 import net.roguelogix.phosphophyllite.registry.RegisterConfig;
+import net.roguelogix.quartz.internal.gl46.GL46Config;
 import net.roguelogix.quartz.internal.vk.VKConfig;
 
 public class QuartzConfig {
@@ -79,4 +80,7 @@ public class QuartzConfig {
     
     @ConfigValue(advanced = ConfigValue.BoolOption.True)
     public final VKConfig VK = VKConfig.INSTANCE;
+    
+    @ConfigValue(advanced = ConfigValue.BoolOption.True)
+    public final GL46Config GL46 = GL46Config.INSTANCE;
 }

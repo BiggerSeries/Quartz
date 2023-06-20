@@ -4,6 +4,7 @@ import org.joml.Vector3i;
 import org.joml.Vector3ic;
 import net.roguelogix.quartz.internal.QuartzCore;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL46C;
 import org.lwjgl.opengl.NVXGPUMemoryInfo;
 import org.lwjgl.system.MemoryStack;
 
@@ -15,7 +16,7 @@ import static org.lwjgl.opengl.GL45C.*;
 public class GL46Statics {
     
     public static final boolean AVAILABLE;
-    public static final boolean ALLOW_SPARSE_TEXTURE = true;
+    public static final boolean ALLOW_SPARSE_TEXTURE = GL46Config.INSTANCE.ALLOW_SPARSE_TEXTURE;
     public static final boolean REQUIRE_SPARSE_TEXTURE = shouldRequireSparseTexture();
     public static final boolean SPARSE_TEXTURE_ENABLED;
     
@@ -95,7 +96,7 @@ public class GL46Statics {
             }
         }
         
-        return true;
+        return ALLOW_SPARSE_TEXTURE;
     }
     
     private static boolean checkSparseTextureSupport() {

@@ -13,7 +13,7 @@ import java.util.function.Supplier;
 
 @Mixin(NoVizFallback.class)
 public class NoVizFallbackMixin {
-    @Inject(method = "fallback",at = @At("HEAD"), remap = false, cancellable = true)
+    @Inject(method = "windowHandoff",at = @At("HEAD"), remap = false, cancellable = true)
     private static void fallback(IntSupplier width, IntSupplier height, Supplier<String> title, LongSupplier monitor, CallbackInfoReturnable<LongSupplier> cir) {
 //        boolean doGlSearch = Boolean.parseBoolean(System.getProperty("phosphophyllite.glsearch", "true"));
 //        if(!doGlSearch) {

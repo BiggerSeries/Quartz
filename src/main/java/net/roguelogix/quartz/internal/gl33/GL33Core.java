@@ -22,6 +22,8 @@ import org.joml.Vector3d;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.KHRDebug;
 
+import java.util.List;
+
 import static org.lwjgl.opengl.GL33C.*;
 
 @NonnullDefault
@@ -215,5 +217,10 @@ public class GL33Core extends QuartzCore {
     @Override
     public void sectionDirty(int x, int y, int z) {
         GL33LightEngine.sectionDirty(x, y, z);
+    }
+    
+    @Override
+    public void addDebugText(List<String> list) {
+        list.add("Quartz backend: OpenGL 3.3");
     }
 }

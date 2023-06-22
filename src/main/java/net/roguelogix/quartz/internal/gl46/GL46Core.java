@@ -20,6 +20,8 @@ import net.roguelogix.quartz.internal.common.DrawInfo;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.KHRDebug;
 
+import java.util.List;
+
 import static org.lwjgl.opengl.GL11C.glDepthMask;
 import static org.lwjgl.opengl.GL46C.glFinish;
 
@@ -201,5 +203,11 @@ public class GL46Core extends QuartzCore {
     @Override
     public void sectionDirty(int x, int y, int z) {
         GL46LightEngine.sectionDirty(x, y, z);
+    }
+    
+    @Override
+    public void addDebugText(List<String> list) {
+        list.add("Quartz backend: OpenGL");
+        list.add("Spare texture: " + (GL46Statics.SPARSE_TEXTURE_ENABLED ? "enabled" : "disabled"));
     }
 }

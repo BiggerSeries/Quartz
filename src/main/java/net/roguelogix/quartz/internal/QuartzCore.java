@@ -8,6 +8,7 @@ import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -31,6 +32,7 @@ import org.joml.Matrix4f;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
+import java.util.List;
 
 @NonnullDefault
 public abstract class QuartzCore {
@@ -118,6 +120,14 @@ public abstract class QuartzCore {
         INSTANCE.startupInternal();
         Quartz.EVENT_BUS.post(new QuartzEvent.Startup());
         wasInit = true;
+        MinecraftForge.EVENT_BUS.addListener(QuartzCore::addDebugTextEvent);
+    }
+    
+    private static void addDebugTextEvent(CustomizeGuiOverlayEvent.DebugText debugTextEvent) {
+        final var list = debugTextEvent.getRight();
+        list.add("");
+        INSTANCE.addDebugText(list);
+        list.add("");
     }
     
     private static final ReferenceSet<ResourceLocation> modelsToRegister = new ReferenceArraySet<>();
@@ -206,4 +216,6 @@ public abstract class QuartzCore {
     public abstract int frameInFlight();
     
     public abstract void sectionDirty(int x, int y, int z);
+    
+    public abstract void addDebugText(List<String> list);
 }

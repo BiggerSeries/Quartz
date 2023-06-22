@@ -154,8 +154,20 @@ public class GL33LightEngine {
         if (freeIndices.size() != 60) {
             return;
         }
-        if (freeCommitedIndices <= 120) {
+        // blocks are 32 layers, so, 1920 per block
+        // TODO: find a way to avoid freeing it just to realloc if jumping between chunk counts
+        //       that can happen either way too
+        if (freeCommitedIndices <= 1920) {
             return;
+        }
+        
+        // check if any layer in the block is resident
+        var blockBaseIndex = (layerIndex >> 4) << 4;
+        for (int j = 0; j < 16; j++) {
+            if (residentLayers.getBoolean(blockBaseIndex + j)) {
+                // another is resident, dont free it
+                return;
+            }
         }
         
         final var layerTextures = intermediateTextures[layerIndex >> 4];

@@ -141,7 +141,7 @@ dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     compileOnly project(':Phosphophyllite')
-//    library "org.lwjgl:lwjgl-vulkan:3.2.2"
+    library "org.lwjgl:lwjgl-vulkan:3.3.1"
 
     compileOnly fg.deobf('curse.maven:Oculus-581495:4299147')
 }

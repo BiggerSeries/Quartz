@@ -21,6 +21,13 @@ public class VKConfig {
         }
     }
     
+    @ConfigValue
+    public final boolean enable;
+    
+    {
+        enable = false;
+    }
+    
     @ConfigValue(comment = """
             Debug and development options
             May hurt performance

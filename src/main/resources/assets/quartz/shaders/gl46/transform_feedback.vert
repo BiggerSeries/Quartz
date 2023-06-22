@@ -105,8 +105,6 @@ vec4 unpackColorABGR(uint color);
 
 uint packColorABGR(vec4 color);
 
-DynamicMatrixPair getDynamicMatrix(int matrixID);
-
 uint packNormal(vec3 normal);
 
 uint packLightPos(vec2 lightPos);
@@ -194,25 +192,6 @@ uint packColorABGR(vec4 color) {
     abgr |= (iColor.g & 0xFFu) << 8;
     abgr |= (iColor.r & 0xFFu) << 0;
     return abgr;
-}
-
-struct DynamicMatrixSSBOPair {
-    mat4 modelMatrix;
-    mat4 normalMatrix;
-};
-
-layout(std430, binding = 0) buffer dynamicMatrixBuffer {
-    DynamicMatrixSSBOPair dynamicMatricesSSBO[];
-};
-
-DynamicMatrixPair getDynamicMatrix(int matrixID) {
-    DynamicMatrixSSBOPair ssboPair = dynamicMatricesSSBO[matrixID];
-
-    DynamicMatrixPair pair;
-    pair.modelMatrix = ssboPair.modelMatrix;
-    pair.normalMatrix = mat3(ssboPair.normalMatrix);
-
-    return pair;
 }
 
 uint packNormal(vec3 normal){

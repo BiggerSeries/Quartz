@@ -17,12 +17,12 @@ public class GL46Statics {
     
     public static final boolean AVAILABLE;
     public static final boolean ALLOW_SPARSE_TEXTURE = GL46Config.INSTANCE.ALLOW_SPARSE_TEXTURE;
-    public static final boolean REQUIRE_SPARSE_TEXTURE = shouldRequireSparseTexture();
     public static final boolean SPARSE_TEXTURE_ENABLED;
     
     public static final int FRAMES_IN_FLIGHT = 3;
     
     public static final Vector3ic LIGHT_SPARE_TEXTURE_SIZE = new Vector3i(512, 640, 1024);
+    public static final int LIGHT_TEXTURE_BLOCK_DEPTH = 32;
     
     
     public static final int INSTANCE_DATA_BYTE_SIZE = 128;
@@ -67,36 +67,11 @@ public class GL46Statics {
             return false;
         }
         
-        if (!SPARSE_TEXTURE_ENABLED && REQUIRE_SPARSE_TEXTURE) {
-            QuartzCore.LOGGER.debug("Failure, sparse texture not available, but required");
-            return false;
+        if(!SPARSE_TEXTURE_ENABLED){
+            QuartzCore.LOGGER.info("Sparse texture disabled");
         }
         
         return true;
-    }
-    
-    private static boolean shouldRequireSparseTexture() {
-        final var capabilities = GL.getCapabilities();
-        
-        if (capabilities.GL_NVX_gpu_memory_info) {
-            final var totalVRAM = glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_TOTAL_AVAILABLE_MEMORY_NVX);
-            final var totalDedicatedVRAM = glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_DEDICATED_VIDMEM_NVX);
-            final var availableVRAM = glGetInteger(NVXGPUMemoryInfo.GL_GPU_MEMORY_INFO_CURRENT_AVAILABLE_VIDMEM_NVX);
-            
-            // >= ~8GB of dedicated vram
-            // 1000 used to account for potential hardware reserved on an 8GB card
-            if(totalDedicatedVRAM > 8 * 1024 * 1000){
-                return false;
-            }
-            
-            // >= ~10GB of vram available right now, may not be dedicated, but if there is, good enough for me
-            // also needs at least ~20GB total, so, 4GB GPU + 16GB system ram, available, or else it will require sparse texture
-            if (availableVRAM >= 10 * 1024 * 1000 && totalVRAM >= 20 * 1024 * 1000) {
-                return false;
-            }
-        }
-        
-        return ALLOW_SPARSE_TEXTURE;
     }
     
     private static boolean checkSparseTextureSupport() {

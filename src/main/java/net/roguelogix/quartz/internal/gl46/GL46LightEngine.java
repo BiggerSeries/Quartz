@@ -45,6 +45,7 @@ public class GL46LightEngine {
     private static final BooleanArrayList residentLayers = new BooleanArrayList(GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.z());
     
     private static final int[] intermediateTextures = new int[6];
+    private static int intermediateTextureDepth = GL46Statics.LIGHT_TEXTURE_BLOCK_DEPTH;
     private static final Vector3i virtualPageSize = new Vector3i();
     
     private static final GL46Buffer rawDataBuffer = new GL46Buffer(false);
@@ -106,7 +107,7 @@ public class GL46LightEngine {
             glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
             glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
             // large sparse texture, 60 renderchunks per 2d layer, size is to be a multiple of the page size, at least as it is on AMD hardware
-            glTextureStorage3D(texture, 1, GL_R16UI, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.z());
+            glTextureStorage3D(texture, 1, GL_R16UI, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), GL46Statics.LIGHT_TEXTURE_BLOCK_DEPTH);
         }
         for (int i = GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.z() - 1; i >= 0; i--) {
             residentLayers.add(false);
@@ -176,6 +177,25 @@ public class GL46LightEngine {
             if (GL46Statics.SPARSE_TEXTURE_ENABLED) {
                 for (int i = 0; i < intermediateTextures.length; i++) {
                     SparseTextureHelper.glTexturePageCommitmentEXT(intermediateTextures[i], 0, 0, 0, layerIndex, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), 1, true);
+                }
+            } else {
+                if (layerIndex >= intermediateTextureDepth) {
+                    final int newTextureDepth = intermediateTextureDepth + GL46Statics.LIGHT_TEXTURE_BLOCK_DEPTH;
+                    
+                    final var newTextures = new int[6];
+                    glCreateTextures(GL_TEXTURE_2D_ARRAY, newTextures);
+                    for (int i = 0; i < newTextures.length; i++) {
+                        final var texture = newTextures[i];
+                        glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                        glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                        glTextureStorage3D(texture, 1, GL_R16UI, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), newTextureDepth);
+                        glCopyImageSubData(intermediateTextures[i], GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, newTextures[i], GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,  GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), intermediateTextureDepth);
+                    }
+                    glDeleteTextures(intermediateTextures);
+                    for (int i = 0; i < intermediateTextures.length; i++) {
+                        intermediateTextures[i] = newTextures[i];
+                    }
+                    intermediateTextureDepth = newTextureDepth;
                 }
             }
             freeCommitedIndices += 60;

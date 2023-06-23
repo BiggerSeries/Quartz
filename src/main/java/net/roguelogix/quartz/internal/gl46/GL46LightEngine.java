@@ -139,7 +139,7 @@ public class GL46LightEngine {
     
     public static void unbind() {
         glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_3D, 0);
+        glBindTexture(GL_TEXTURE_BUFFER, 0);
         for (int i = 0; i < 6; i++) {
             glActiveTexture(GL_TEXTURE2 + i);
             glBindTexture(GL_TEXTURE_2D_ARRAY, 0);

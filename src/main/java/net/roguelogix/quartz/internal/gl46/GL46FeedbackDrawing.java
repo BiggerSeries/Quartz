@@ -167,6 +167,14 @@ public class GL46FeedbackDrawing {
     }
     
     public static void beginFrame() {
+        for (int i = 0; i < 2; i++) {
+            RenderSystem.activeTexture(GL_TEXTURE0 + i);
+            RenderSystem.bindTexture(0);
+        }
+        RenderSystem.activeTexture(GL_TEXTURE0);
+        B3DStateHelper.bindVertexArray(0);
+        B3DStateHelper.bindElementBuffer(0);
+        
         glUseProgram(GL46ComputePrograms.dynamicMatrixProgram());
         for (final var batchRef : drawBatches) {
             final var batch = batchRef.get();
@@ -235,7 +243,8 @@ public class GL46FeedbackDrawing {
             glEndTransformFeedback();
         }
         B3DStateHelper.bindVertexArray(0);
-
+        glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+        
         GL46LightEngine.unbind();
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);

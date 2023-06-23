@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import net.minecraft.client.Camera;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.resources.ResourceLocation;
@@ -116,6 +117,9 @@ public abstract class QuartzCore {
     }
     
     private static void addDebugTextEvent(CustomizeGuiOverlayEvent.DebugText debugTextEvent) {
+        if (!Minecraft.getInstance().options.renderDebug) {
+            return;
+        }
         final var list = debugTextEvent.getRight();
         list.add("");
         INSTANCE.addDebugText(list);

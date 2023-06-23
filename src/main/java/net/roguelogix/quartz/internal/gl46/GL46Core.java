@@ -207,7 +207,7 @@ public class GL46Core extends QuartzCore {
     
     @Override
     public void addDebugText(List<String> list) {
-        list.add("Quartz backend: OpenGL");
+        list.add("Quartz backend: OpenGL 4.6");
         list.add("Spare texture: " + (GL46Statics.SPARSE_TEXTURE_ENABLED ? "enabled" : "disabled"));
     }
 }

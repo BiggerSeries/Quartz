@@ -8,7 +8,6 @@
   ],
   "client": [
     "QuartzStartupMixin",
-    "NoVizFallbackMixin",
     "LevelRendererMixin",
     "MinecraftShutdownMixin",
     "ResourceReloadListener"

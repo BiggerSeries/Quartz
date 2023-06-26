@@ -54,6 +54,9 @@ public class GL46LightEngine {
     private static Vector3i lookupOffset = new Vector3i();
     private static GL46Buffer lookupBuffer = new GL46Buffer(64 * 64 * 24 * 2, true);
     private static int lookupTexture;
+    private static GL46Buffer unpackBuffer = new GL46Buffer(CHUNK_UPDATES_PER_FRAME * 17 * 320 * 4 * 6 * 2, true);
+    private static GL46Buffer.Allocation[] unpackBufferAllocs = new GL46Buffer.Allocation[CHUNK_UPDATES_PER_FRAME];
+    private static long lastLightUpdateFence = 0;
     public static void startup() {
         int pageSizeIndex = -1;
         // TODO: on the fly realloc instead of sparse texture
@@ -115,6 +118,10 @@ public class GL46LightEngine {
         
         lookupTexture = glCreateTextures(GL_TEXTURE_BUFFER);
         glTextureBuffer(lookupTexture, GL_R16UI, lookupBuffer.handle());
+        
+        for (int i = 0; i < CHUNK_UPDATES_PER_FRAME; i++) {
+            unpackBufferAllocs[i] = unpackBuffer.alloc(17 * 320 * 4 * 6 * 4,  17 * 320 * 4 * 6 * 4);
+        }
     }
     
     public static void shutdown() {
@@ -243,6 +250,10 @@ public class GL46LightEngine {
         if (dirtyChunks.isEmpty()) {
             return;
         }
+        if(lastLightUpdateFence != 0){
+            glWaitSync(lastLightUpdateFence, 0, GL_TIMEOUT_IGNORED);
+            glDeleteSync(lastLightUpdateFence);
+        }
         //allocsDirty = true;
         for (int i = 0; i < 6; i++) {
             glBindImageTexture(i + 1, intermediateTextures[i], 0, true, 0, GL_WRITE_ONLY, GL_R16UI);
@@ -256,7 +267,7 @@ public class GL46LightEngine {
                 i--;
                 continue;
             }
-            if (chunk.chunk.update(blockAndTintGetter)) {
+            if (chunk.chunk.update(blockAndTintGetter, unpackBufferAllocs[updatesThisFrame])) {
                 updatesThisFrame++;
             }
             if (!chunk.chunk.dirty) {
@@ -268,9 +279,11 @@ public class GL46LightEngine {
             }
         }
         glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
         for (int i = 0; i < 6; i++) {
             glBindImageTexture(i + 1, 0, 0, true, 0, GL_WRITE_ONLY, GL_R16UI);
         }
+        lastLightUpdateFence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
     }
     
     public static void runAllocUpdates() {
@@ -399,7 +412,7 @@ public class GL46LightEngine {
             this.lastSync = lastSync;
         }
         
-        private boolean update(BlockAndTintGetter blockAndTintGetter) {
+        private boolean update(BlockAndTintGetter blockAndTintGetter, GL46Buffer.Allocation unpackAllocation) {
             if (!dirty) {
                 //return false;
             }
@@ -451,12 +464,20 @@ public class GL46LightEngine {
             }
             
             glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 0, alloc.allocator().handle(), alloc.offset(), alloc.size());
+            glBindBufferRange(GL_SHADER_STORAGE_BUFFER, 1, unpackAllocation.allocator().handle(), unpackAllocation.offset(), unpackAllocation.size());
             int lightChunkX = (lightChunkIndex >> 11) & 0x1F;
             int lightChunkY = (lightChunkIndex >> 10) & 0x1;
             int lightChunkZ = lightChunkIndex & 0x3FF;
             glProgramUniform3ui(GL46ComputePrograms.lightChunkProgram(), 0, lightChunkX * 17, lightChunkY * 320, lightChunkZ);
             glUseProgram(GL46ComputePrograms.lightChunkProgram());
             glDispatchCompute(17, 17, 17);
+            glMemoryBarrier(GL_PIXEL_BUFFER_BARRIER_BIT);
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, unpackAllocation.allocator().handle());
+            for (int i = 0; i < intermediateTextures.length; i++) {
+                final var lightChunkDirectionIndices = 17 * 320 * 4;
+                final var offset = unpackAllocation.offset() + (lightChunkDirectionIndices * i);
+                glTextureSubImage3D(intermediateTextures[i], 0, lightChunkX * 17, lightChunkY * 320, lightChunkZ, 17, 320, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, offset);
+            }
             
             lastSync[0] = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
             return true;

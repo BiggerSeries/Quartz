@@ -6,10 +6,12 @@ layout(std430, binding = 0) buffer rawLightDataBuffer {
     int rawLightDataSSBO[];
 };
 
+layout(std430, binding = 1) buffer lightDataOutputBuffer {
+    uint lightDataOutput[];
+};
+
 layout(location = 0) uniform uvec3 lightChunkBaseTexel;
 layout(location = 1) uniform uint rawLightDataBaseInt;
-
-layout(binding = 1) writeonly uniform uimage2DArray intermediateLightDataTexture[6];
 
 struct NeighboringLightLevels {
     uvec2 level[2][2][2];
@@ -62,7 +64,6 @@ uvec3 averageValues(uvec2 a, uvec2 b, uvec2 c, uvec2 d) {
     }
     barrier();
     return uvec3(outputLevel * 4.0, validLevels);
-    //    return uvec2((gl_GlobalInvocationID.xx + vec2(1.0)) * (15.0/17.0) * 4.0);
 }
 
 uint packLightAOuint16(uvec3 lightAO) {
@@ -80,6 +81,13 @@ uvec3 unpackLightAOuint16(uint packedInt) {
     lightAO.y = packedInt & 0x3Fu;
     lightAO.z = (packedInt  >> 12) & 0x3u;
     return lightAO;
+}
+
+uint lightChunkDirectionIndices = 17 * 320;
+
+void writeLightData(int direction, uint lightData){
+    uint bufferIndex = ((((gl_GlobalInvocationID.z * 17) + gl_GlobalInvocationID.y) * 17) + gl_GlobalInvocationID.x) + (lightChunkDirectionIndices * direction);
+    lightDataOutput[bufferIndex] = lightData;
 }
 
 void main() {
@@ -107,6 +115,6 @@ void main() {
         }
         toPack.z = 4u - toPack.z;
         uint packedLight = packLightAOuint16(toPack);
-        imageStore(intermediateLightDataTexture[i], ivec3(outputTexelPos), uvec4(packedLight, 0, 0, 0));
+        writeLightData(i, packedLight);
     }
 }

@@ -1,7 +1,6 @@
 package net.roguelogix.quartz.internal;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import net.minecraft.client.Camera;
@@ -13,7 +12,6 @@ import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -22,7 +20,6 @@ import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.QuartzConfig;
 import net.roguelogix.quartz.QuartzEvent;
 import net.roguelogix.quartz.internal.common.InternalMesh;
-import net.roguelogix.quartz.internal.common.LightEngine;
 import net.roguelogix.quartz.internal.gl33.GL33Core;
 import net.roguelogix.quartz.internal.gl46.GL46Core;
 import net.roguelogix.quartz.internal.vk.VKCore;
@@ -172,7 +169,6 @@ public abstract class QuartzCore {
     @Nullable
     public DrawBatch entityBatch = null;
     public final WorldEngine worldEngine = new WorldEngine();
-    public final LightEngine lightEngine = new LightEngine();
     public final InternalMesh.Manager meshManager = new InternalMesh.Manager(allocBuffer(false));
     
     public WorldEngine getWorldEngine() {

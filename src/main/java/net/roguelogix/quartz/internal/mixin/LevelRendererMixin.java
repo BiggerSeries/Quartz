@@ -96,7 +96,7 @@ public class LevelRendererMixin {
     
     @Inject(method = "renderChunkLayer", at = @At(value = "HEAD"))
     void invokeRenderChunkLayer(RenderType renderType, PoseStack modelView, double cameraX, double cameraY, double cameraZ, Matrix4f projectionMatrix, CallbackInfo ci) {
-        if (renderType == RenderType.solid() && IrisDetection.areShadersActive()) {
+        if (renderType == RenderType.solid() && IrisDetection.isRenderingShadows()) {
             QuartzCore.INSTANCE.shadowPass(modelView, projectionMatrix);
         }
     }

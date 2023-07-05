@@ -107,10 +107,6 @@ public class GL46FeedbackPrograms {
         return vertexProgram;
     }
     
-    public static void setupDrawInfo(DrawInfo drawInfo) {
-    
-    }
-    
     public static int getProgramForOutputFormat(VertexFormatOutput formatOutput) {
         return programs.computeIfAbsent(formatOutput, GL46FeedbackPrograms::createProgramForFormat);
     }

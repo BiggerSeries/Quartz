@@ -43,7 +43,7 @@ public final class IrisDetection {
         }
         
         public static void bindIrisFramebuffer() {
-            Iris.getPipelineManager().getPipeline().ifPresent(pipe -> pipe.getSodiumTerrainPipeline().getTerrainFramebuffer().bind());
+            Iris.getPipelineManager().getPipeline().ifPresent(pipe -> pipe.getSodiumTerrainPipeline().getTerrainSolidFramebuffer().bind());
         }
         
         public static boolean isRenderingShadows() {

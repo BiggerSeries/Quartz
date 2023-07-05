@@ -3,14 +3,12 @@ package net.roguelogix.quartz.internal.gl46;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraftforge.client.event.ScreenEvent;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.internal.Buffer;
@@ -22,7 +20,6 @@ import org.lwjgl.opengl.KHRDebug;
 
 import java.util.List;
 
-import static org.lwjgl.opengl.GL11C.glDepthMask;
 import static org.lwjgl.opengl.GL46C.glFinish;
 
 @NonnullDefault
@@ -121,18 +118,16 @@ public class GL46Core extends QuartzCore {
     @Override
     public void lightUpdated() {
         GL46LightEngine.update(Minecraft.getInstance().level);
-    }
-    
-    @Override
-    public void preTerrainSetup() {
-
+        
         if(!GL46FeedbackDrawing.hasBatch()){
             return;
         }
         
-        GL46FeedbackPrograms.setupDrawInfo(drawInfo);
-        
         GL46FeedbackDrawing.collectAllFeedback(IrisDetection.areShadersActive());
+    }
+    
+    @Override
+    public void preTerrainSetup() {
     }
     
     @Override
@@ -140,7 +135,7 @@ public class GL46Core extends QuartzCore {
         if(!GL46FeedbackDrawing.hasBatch()){
             return;
         }
-        RenderSystem.setProjectionMatrix(projectionMatrix, VertexSorting.DISTANCE_TO_ORIGIN);
+        GL46FeedbackDrawing.setMatrices(projectionMatrix, modelView.last().pose());
         GL46FeedbackDrawing.getActiveRenderTypes().forEach(GL46FeedbackDrawing::drawRenderType);
     }
     
@@ -152,6 +147,8 @@ public class GL46Core extends QuartzCore {
         
         BufferUploader.invalidate();
         IrisDetection.bindIrisFramebuffer();
+        
+        GL46FeedbackDrawing.setMatrices(RenderSystem.getProjectionMatrix(), drawInfo.mojPose.pose());
         
         for (final var renderType : GL46FeedbackDrawing.getActiveRenderTypes()) {
             if (!(renderType instanceof RenderType.CompositeRenderType compositeRenderType)) {

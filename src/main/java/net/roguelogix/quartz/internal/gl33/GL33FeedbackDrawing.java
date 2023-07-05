@@ -9,7 +9,9 @@ import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.gl33.batching.GL33DrawBatch;
+import net.roguelogix.quartz.internal.gl46.GL46FeedbackDrawing;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
+import org.joml.Matrix4f;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -258,6 +260,14 @@ public class GL33FeedbackDrawing {
         B3DStateHelper.bindVertexArray(0);
     }
     
+    public static Matrix4f projection;
+    public static Matrix4f modelView;
+    
+    public static void setMatrices(Matrix4f projection, Matrix4f modelView) {
+        GL46FeedbackDrawing.projection = projection;
+        GL46FeedbackDrawing.modelView = modelView;
+    }
+    
     public static void drawRenderType(RenderType renderType) {
         final var feedbackBuffer = renderTypeDrawBuffer.getInt(renderType);
         if (feedbackBuffer == 0) {
@@ -269,6 +279,6 @@ public class GL33FeedbackDrawing {
         }
         
         B3DStateHelper.bindArrayBuffer(renderTypeDrawBuffer.getInt(renderType));
-        drawRenderTypePreboundVertexBuffer(GL33Core.INSTANCE.drawInfo.mojPose.pose(), RenderSystem.getProjectionMatrix(), renderType, drawnVertices);
+        drawRenderTypePreboundVertexBuffer(modelView, projection, renderType, drawnVertices);
     }
 }

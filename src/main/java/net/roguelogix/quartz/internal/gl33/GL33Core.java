@@ -3,7 +3,6 @@ package net.roguelogix.quartz.internal.gl33;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferUploader;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexSorting;
 import net.minecraft.CrashReport;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
@@ -140,14 +139,15 @@ public class GL33Core extends QuartzCore {
     @Override
     public void lightUpdated() {
         GL33LightEngine.update(Minecraft.getInstance().level);
+        if(!GL33FeedbackDrawing.hasBatch()){
+            return;
+        }
+        
+        GL33FeedbackDrawing.collectAllFeedback(IrisDetection.areShadersActive());
     }
     
     @Override
     public void preTerrainSetup() {
-        if(!GL33FeedbackDrawing.hasBatch()){
-            return;
-        }
-        GL33FeedbackDrawing.collectAllFeedback(IrisDetection.areShadersActive());
     }
     
     @Override
@@ -155,7 +155,7 @@ public class GL33Core extends QuartzCore {
         if(!GL33FeedbackDrawing.hasBatch()){
             return;
         }
-        RenderSystem.setProjectionMatrix(projectionMatrix, VertexSorting.DISTANCE_TO_ORIGIN);
+        GL33FeedbackDrawing.setMatrices(projectionMatrix, modelView.last().pose());
         GL33FeedbackDrawing.getActiveRenderTypes().forEach(GL33FeedbackDrawing::drawRenderType);
     }
     
@@ -167,6 +167,8 @@ public class GL33Core extends QuartzCore {
         
         BufferUploader.invalidate();
         IrisDetection.bindIrisFramebuffer();
+        
+        GL33FeedbackDrawing.setMatrices(RenderSystem.getProjectionMatrix(), drawInfo.mojPose.pose());
         
         for (final var renderType : GL33FeedbackDrawing.getActiveRenderTypes()) {
             if (!(renderType instanceof RenderType.CompositeRenderType compositeRenderType)) {

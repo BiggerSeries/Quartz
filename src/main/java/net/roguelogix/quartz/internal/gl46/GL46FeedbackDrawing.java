@@ -8,6 +8,7 @@ import net.roguelogix.quartz.internal.*;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.gl46.batching.GL46DrawBatch;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
+import org.joml.Matrix4f;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -261,6 +262,14 @@ public class GL46FeedbackDrawing {
         prevousFrameSyncs[frameInFlight] = frameSync;
     }
     
+    public static Matrix4f projection;
+    public static Matrix4f modelView;
+    
+    public static void setMatrices(Matrix4f projection, Matrix4f modelView) {
+        GL46FeedbackDrawing.projection = projection;
+        GL46FeedbackDrawing.modelView = modelView;
+    }
+    
     public static void drawRenderType(RenderType renderType) {
         final var feedbackBuffer = renderTypeFeedbackBuffers.get(renderType);
         if (feedbackBuffer == null) {
@@ -272,6 +281,6 @@ public class GL46FeedbackDrawing {
         }
         
         B3DStateHelper.bindArrayBuffer(feedbackBuffer.buffer);
-        drawRenderTypePreboundVertexBuffer(GL46Core.INSTANCE.drawInfo.mojPose.pose(), RenderSystem.getProjectionMatrix(), renderType, drawnVertices);
+        drawRenderTypePreboundVertexBuffer(modelView, projection, renderType, drawnVertices);
     }
 }

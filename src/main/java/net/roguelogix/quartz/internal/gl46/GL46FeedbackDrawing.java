@@ -65,56 +65,61 @@ public class GL46FeedbackDrawing {
         }
         
         feedbackVAO = glCreateVertexArrays();
+        B3DStateHelper.bindVertexArray(feedbackVAO);
+        
         rebuildCallbackHandle = QuartzCore.INSTANCE.meshManager.vertexBuffer.addReallocCallback(true, buffer -> {
             glVertexArrayVertexBuffer(feedbackVAO, 0, buffer.as(GL46Buffer.class).handle(), 0, MagicNumbers.VERTEX_BYTE_SIZE);
         });
-        // instance data is bound per drawbatch feedback draw
-        glVertexArrayBindingDivisor(feedbackVAO, 1, 1);
+        
+        // instance data is bound per drawbatch feedback draw, so no buffer binding here
+        glVertexAttribDivisor(1, 1);
 
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.POSITION_LOCATION);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.COLOR_LOCATION);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.TEX_COORD_LOCATION);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.NORMAL_LOCATION);
+        glEnableVertexAttribArray(GL46Statics.POSITION_LOCATION);
+        glEnableVertexAttribArray(GL46Statics.COLOR_LOCATION);
+        glEnableVertexAttribArray(GL46Statics.TEX_COORD_LOCATION);
+        glEnableVertexAttribArray(GL46Statics.NORMAL_LOCATION);
 
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.WORLD_POSITION_LOCATION);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.DYNAMIC_MATRIX_ID_LOCATION);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 1);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 2);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 3);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 1);
-        glEnableVertexArrayAttrib(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 2);
+        glEnableVertexAttribArray(GL46Statics.WORLD_POSITION_LOCATION);
+        glEnableVertexAttribArray(GL46Statics.DYNAMIC_MATRIX_ID_LOCATION);
+        glEnableVertexAttribArray(GL46Statics.STATIC_MATRIX_LOCATION);
+        glEnableVertexAttribArray(GL46Statics.STATIC_MATRIX_LOCATION + 1);
+        glEnableVertexAttribArray(GL46Statics.STATIC_MATRIX_LOCATION + 2);
+        glEnableVertexAttribArray(GL46Statics.STATIC_MATRIX_LOCATION + 3);
+        glEnableVertexAttribArray(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION);
+        glEnableVertexAttribArray(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 1);
+        glEnableVertexAttribArray(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 2);
 
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.POSITION_LOCATION, 0);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.COLOR_LOCATION, 0);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.TEX_COORD_LOCATION, 0);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.NORMAL_LOCATION, 0);
+        glVertexAttribBinding(GL46Statics.POSITION_LOCATION, 0);
+        glVertexAttribBinding(GL46Statics.COLOR_LOCATION, 0);
+        glVertexAttribBinding(GL46Statics.TEX_COORD_LOCATION, 0);
+        glVertexAttribBinding(GL46Statics.NORMAL_LOCATION, 0);
 
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.POSITION_LOCATION, 3, GL_FLOAT, false, 0);
-        glVertexArrayAttribIFormat(feedbackVAO, GL46Statics.COLOR_LOCATION, 1, GL_INT, 12);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.TEX_COORD_LOCATION, 2, GL_FLOAT, false, 16);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.NORMAL_LOCATION, 3, GL_SHORT, true, 24);
+        glVertexAttribFormat(GL46Statics.POSITION_LOCATION, 3, GL_FLOAT, false, 0);
+        glVertexAttribIFormat(GL46Statics.COLOR_LOCATION, 1, GL_INT, 12);
+        glVertexAttribFormat(GL46Statics.TEX_COORD_LOCATION, 2, GL_FLOAT, false, 16);
+        glVertexAttribFormat(GL46Statics.NORMAL_LOCATION, 3, GL_SHORT, true, 24);
 
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.WORLD_POSITION_LOCATION, 1);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.DYNAMIC_MATRIX_ID_LOCATION, 1);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION, 1);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 1, 1);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 2, 1);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 3, 1);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION, 1);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 1, 1);
-        glVertexArrayAttribBinding(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 2, 1);
+        glVertexAttribBinding(GL46Statics.WORLD_POSITION_LOCATION, 1);
+        glVertexAttribBinding(GL46Statics.DYNAMIC_MATRIX_ID_LOCATION, 1);
+        glVertexAttribBinding(GL46Statics.STATIC_MATRIX_LOCATION, 1);
+        glVertexAttribBinding(GL46Statics.STATIC_MATRIX_LOCATION + 1, 1);
+        glVertexAttribBinding(GL46Statics.STATIC_MATRIX_LOCATION + 2, 1);
+        glVertexAttribBinding(GL46Statics.STATIC_MATRIX_LOCATION + 3, 1);
+        glVertexAttribBinding(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION, 1);
+        glVertexAttribBinding(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 1, 1);
+        glVertexAttribBinding(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 2, 1);
 
-        glVertexArrayAttribIFormat(feedbackVAO, GL46Statics.WORLD_POSITION_LOCATION, 3, GL_INT, GL46Statics.WORLD_POSITION_OFFSET);
-        glVertexArrayAttribIFormat(feedbackVAO, GL46Statics.DYNAMIC_MATRIX_ID_LOCATION, 1, GL_INT, GL46Statics.DYNAMIC_MATRIX_ID_OFFSET);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 1, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET + 16);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 2, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET + 32);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.STATIC_MATRIX_LOCATION + 3, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET + 48);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION, 4, GL_FLOAT, false, GL46Statics.STATIC_NORMAL_MATRIX_OFFSET);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 1, 4, GL_FLOAT, false, GL46Statics.STATIC_NORMAL_MATRIX_OFFSET + 16);
-        glVertexArrayAttribFormat(feedbackVAO, GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 2, 4, GL_FLOAT, false, GL46Statics.STATIC_NORMAL_MATRIX_OFFSET + 32);
+        glVertexAttribIFormat(GL46Statics.WORLD_POSITION_LOCATION, 3, GL_INT, GL46Statics.WORLD_POSITION_OFFSET);
+        glVertexAttribIFormat(GL46Statics.DYNAMIC_MATRIX_ID_LOCATION, 1, GL_INT, GL46Statics.DYNAMIC_MATRIX_ID_OFFSET);
+        glVertexAttribFormat(GL46Statics.STATIC_MATRIX_LOCATION, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET);
+        glVertexAttribFormat(GL46Statics.STATIC_MATRIX_LOCATION + 1, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET + 16);
+        glVertexAttribFormat(GL46Statics.STATIC_MATRIX_LOCATION + 2, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET + 32);
+        glVertexAttribFormat(GL46Statics.STATIC_MATRIX_LOCATION + 3, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET + 48);
+        glVertexAttribFormat(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION, 4, GL_FLOAT, false, GL46Statics.STATIC_NORMAL_MATRIX_OFFSET);
+        glVertexAttribFormat(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 1, 4, GL_FLOAT, false, GL46Statics.STATIC_NORMAL_MATRIX_OFFSET + 16);
+        glVertexAttribFormat(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 2, 4, GL_FLOAT, false, GL46Statics.STATIC_NORMAL_MATRIX_OFFSET + 32);
+        
+        B3DStateHelper.bindVertexArray(0);
     }
     
     public static void shutdown() {

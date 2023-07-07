@@ -267,8 +267,8 @@ public class GL46FeedbackDrawing {
         prevousFrameSyncs[frameInFlight] = frameSync;
     }
     
-    public static Matrix4f projection;
-    public static Matrix4f modelView;
+    private static Matrix4f projection;
+    private static Matrix4f modelView;
     
     public static void setMatrices(Matrix4f projection, Matrix4f modelView) {
         GL46FeedbackDrawing.projection = projection;

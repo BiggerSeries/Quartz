@@ -260,12 +260,12 @@ public class GL33FeedbackDrawing {
         B3DStateHelper.bindVertexArray(0);
     }
     
-    public static Matrix4f projection;
-    public static Matrix4f modelView;
+    private static Matrix4f projection;
+    private static Matrix4f modelView;
     
     public static void setMatrices(Matrix4f projection, Matrix4f modelView) {
-        GL46FeedbackDrawing.projection = projection;
-        GL46FeedbackDrawing.modelView = modelView;
+        GL33FeedbackDrawing.projection = projection;
+        GL33FeedbackDrawing.modelView = modelView;
     }
     
     public static void drawRenderType(RenderType renderType) {

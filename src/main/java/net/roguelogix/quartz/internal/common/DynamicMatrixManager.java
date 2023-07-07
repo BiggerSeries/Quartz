@@ -1,6 +1,8 @@
 package net.roguelogix.quartz.internal.common;
 
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.roguelogix.phosphophyllite.Phosphophyllite;
+import net.roguelogix.phosphophyllite.threading.Queues;
 import org.joml.Matrix4f;
 import org.joml.Matrix4fc;
 import org.joml.Vector3f;
@@ -14,6 +16,7 @@ import net.roguelogix.quartz.internal.QuartzCore;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @NonnullDefault
 public class DynamicMatrixManager implements DynamicMatrix.Manager {
@@ -44,15 +47,19 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
         }
         
         public void update(long nanos, float partialTicks, Vector3i playerBlock, Vector3f playerPartialBlock, Matrix4fc parentTransform) {
-            if(deleted) {
+            if (deleted) {
                 return;
             }
             if (updateFunc != null) {
                 updateFunc.accept(localTransformMatrix, nanos, partialTicks, playerBlock, playerPartialBlock);
             }
-            transformMatrix.set(localTransformMatrix);
-            parentTransform.mul(transformMatrix, transformMatrix);
-            transformMatrix.normal(normalMatrix);
+            if (!transformMatrix.equals(localTransformMatrix)) {
+                transformMatrix.set(localTransformMatrix);
+                if ((parentTransform.properties() & Matrix4fc.PROPERTY_IDENTITY) == 0) {
+                    transformMatrix.mulLocal(parentTransform);
+                }
+                transformMatrix.normal(normalMatrix);
+            }
             final var buffer = allocation.activeAllocation().address();
             buffer.putMatrix4fIdx(0, transformMatrix);
             buffer.putMatrix4fIdx(1, normalMatrix);
@@ -67,8 +74,8 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
                     i--;
                     continue;
                 }
-                    mat.update(nanos, partialTicks, playerBlock, playerPartialBlock, transformMatrix);
-                }
+                mat.update(nanos, partialTicks, playerBlock, playerPartialBlock, transformMatrix);
+            }
         }
         
         public int id(int frame) {
@@ -120,6 +127,17 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
         return false;
     }
     
+    boolean updateRunning;
+    long nanos;
+    float partialTicks;
+    Vector3i playerBlock;
+    Vector3f playerPartialBlock;
+    
+    private final Runnable updateRunner = () -> {
+        updateAll(nanos, partialTicks, playerBlock, playerPartialBlock);
+        updateRunning = false;
+    };
+    
     public void updateAll(long nanos, float partialTicks, Vector3i playerBlock, Vector3f playerPartialBlock) {
         for (int i = 0; i < rootMatrices.size(); i++) {
             var mat = rootMatrices.get(i).get();
@@ -129,4 +147,24 @@ public class DynamicMatrixManager implements DynamicMatrix.Manager {
         }
         buffer.dirtyAll();
     }
+    
+    public void enqueueUpdate(long nanos, float partialTicks, Vector3i playerBlock, Vector3f playerPartialBlock) {
+        while (updateRunning) {
+            Thread.onSpinWait();
+        }
+        this.nanos = nanos;
+        this.partialTicks = partialTicks;
+        this.playerBlock = playerBlock;
+        this.playerPartialBlock = playerPartialBlock;
+        updateRunning = true;
+//        updateRunner.run();
+        Queues.offThread.enqueueUntracked(updateRunner);
+    }
+    
+    public void waitUpdate() {
+        while (updateRunning) {
+            Thread.onSpinWait();
+        }
+    }
+    
 }

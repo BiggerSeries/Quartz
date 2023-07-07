@@ -153,6 +153,8 @@ public class GL46FeedbackDrawing {
         return inUseRenderTypes;
     }
     
+    public static boolean collectedFeedback = false;
+    
     private static int requiredVertices = 0;
     private static long[] prevousFrameSyncs = new long[GL46Statics.FRAMES_IN_FLIGHT];
     private static MultiBuffer<GL46Buffer> UBOBuffers = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false);
@@ -194,9 +196,15 @@ public class GL46FeedbackDrawing {
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, 0);
         glUseProgram(0);
         glMemoryBarrier(GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
+        
+        collectedFeedback = false;
     }
     
     public static void collectAllFeedback(boolean shadowsEnabled) {
+        if(collectedFeedback){
+            return;
+        }
+        collectedFeedback = true;
         final int frameInFlight = GL46Core.INSTANCE.frameInFlight();
         
         UBOBuffers.setActiveFrame(frameInFlight);

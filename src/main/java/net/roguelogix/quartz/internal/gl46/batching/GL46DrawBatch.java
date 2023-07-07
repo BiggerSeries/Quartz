@@ -177,7 +177,7 @@ public class GL46DrawBatch implements DrawBatchInternal {
         dynamicMatrixBuffer.setActiveFrame(currentFrame);
         
         // these updates are global frame specific, so they must be checked and done every frame
-        dynamicMatrixManager.updateAll(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
+        dynamicMatrixManager.enqueueUpdate(drawInfo.deltaNano, drawInfo.partialTicks, drawInfo.playerPosition, drawInfo.playerSubBlock);
         if (!dirtyBatches.isEmpty()) {
             if (instanceDataFences[currentFrame] != 0 && glIsSync(instanceDataFences[currentFrame])) {
                 glClientWaitSync(instanceDataFences[currentFrame], GL_SYNC_FLUSH_COMMANDS_BIT, -1);
@@ -372,6 +372,8 @@ public class GL46DrawBatch implements DrawBatchInternal {
         }
         final int indirectOffset = (int) (offsets >> 32);
         final int draws = (int) (offsets);
+        
+        dynamicMatrixManager.waitUpdate();
         
         // updating vertex buffer bindings is pretty quick to do
         // changing the format, isn't

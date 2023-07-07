@@ -7,9 +7,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.roguelogix.phosphophyllite.modular.tile.PhosphophylliteTile;
 import net.roguelogix.phosphophyllite.registry.RegisterTile;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import org.joml.Vector3i;
+import org.joml.*;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.Quartz;
@@ -39,7 +37,18 @@ public class QuartzTestBlockTile extends PhosphophylliteTile {
     }
 
     private DrawBatch.Instance instance = null;
-
+    
+    private static final Quaternionf quaternion = new Quaternionf();
+    
+    private static void matrixRotation(Matrix4f matrix, long nanoSinceLastFrame, float partialTicks, Vector3ic playerBlock, Vector3fc playerPartialBlock) {
+        final var rotation = nanoSinceLastFrame / 1_000_000_000f;
+        matrix.translate(0.5f, 0.5f, 0.5f);
+        quaternion.identity();
+        quaternion.rotateAxis(rotation, 1, 1, 1);
+        matrix.rotate(quaternion);
+        matrix.translate(-0.5f, -0.5f, -0.5f);
+    }
+    
     @Override
     public void onAdded() {
         assert level != null;
@@ -53,12 +62,7 @@ public class QuartzTestBlockTile extends PhosphophylliteTile {
             final var initialValueMatrix = new Matrix4f();
             initialValueMatrix.scale(0.5f);
             initialValueMatrix.translate(0.5f, 0.5f, 0.5f);
-            final var quartzMatrix = batcher.createDynamicMatrix(initialValueMatrix, (matrix, nanoSinceLastFrame, partialTicks, playerBlock, playerPartialBlock) -> {
-                final var rotation = nanoSinceLastFrame / 1_000_000_000f;
-                matrix.translate(0.5f, 0.5f, 0.5f);
-                matrix.rotate(rotation, new Vector3f(1, 1, 1).normalize());
-                matrix.translate(-0.5f, -0.5f, -0.5f);
-            });
+            final var quartzMatrix = batcher.createDynamicMatrix(initialValueMatrix, QuartzTestBlockTile::matrixRotation);
             instance = batcher.createInstance(modelPos, mesh, quartzMatrix, null, null);
         }
     }

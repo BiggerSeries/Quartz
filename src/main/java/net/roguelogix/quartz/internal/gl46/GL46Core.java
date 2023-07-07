@@ -118,12 +118,6 @@ public class GL46Core extends QuartzCore {
     @Override
     public void lightUpdated() {
         GL46LightEngine.update(Minecraft.getInstance().level);
-        
-        if(!GL46FeedbackDrawing.hasBatch()){
-            return;
-        }
-        
-        GL46FeedbackDrawing.collectAllFeedback(IrisDetection.areShadersActive());
     }
     
     @Override
@@ -135,6 +129,8 @@ public class GL46Core extends QuartzCore {
         if(!GL46FeedbackDrawing.hasBatch()){
             return;
         }
+        GL46FeedbackDrawing.collectAllFeedback(IrisDetection.areShadersActive());
+        
         GL46FeedbackDrawing.setMatrices(projectionMatrix, modelView.last().pose());
         GL46FeedbackDrawing.getActiveRenderTypes().forEach(GL46FeedbackDrawing::drawRenderType);
     }
@@ -144,6 +140,7 @@ public class GL46Core extends QuartzCore {
         if(!GL46FeedbackDrawing.hasBatch()){
             return;
         }
+        GL46FeedbackDrawing.collectAllFeedback(IrisDetection.areShadersActive());
         
         BufferUploader.invalidate();
         IrisDetection.bindIrisFramebuffer();

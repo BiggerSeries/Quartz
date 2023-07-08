@@ -10,20 +10,16 @@ import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.LightLayer;
 import net.roguelogix.phosphophyllite.util.FastArraySet;
-import net.roguelogix.quartz.internal.common.B3DStateHelper;
-import org.joml.Vector2f;
-import org.joml.Vector3f;
-import org.joml.Vector3i;
-import org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.VectorUtil;
 import net.roguelogix.quartz.internal.QuartzCore;
+import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.util.PointerWrapper;
-import org.lwjgl.system.MemoryStack;
+import org.joml.Vector2f;
+import org.joml.Vector3i;
+import org.joml.Vector3ic;
 
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
-import java.util.Vector;
-import java.util.function.IntConsumer;
 
 import static org.lwjgl.opengl.GL33C.*;
 
@@ -40,7 +36,7 @@ public class GL33LightEngine {
     
     static {
         for (int i = 0; i < GL33Statics.LIGHT_TEXTURE_ARRAY_FULL_SIZE.z(); i++) {
-            freeIndices.add(new ShortArrayList(60));
+            freeIndices.add(new ShortArrayList(56));
         }
     }
     
@@ -54,6 +50,10 @@ public class GL33LightEngine {
     private static GL33Buffer lookupBuffer = new GL33Buffer(64 * 64 * 24 * 2, true);
     private static int lookupTexture;
     
+    private static GL33Buffer unpackBuffer = new GL33Buffer(CHUNK_UPDATES_PER_FRAME * 18 * 320 * 6 * 2, true);
+    
+    private static GL33Buffer.Allocation[] unpackBufferAllocs = new GL33Buffer.Allocation[CHUNK_UPDATES_PER_FRAME];
+    
     public static void startup() {
         int pageSizeIndex = -1;
         
@@ -65,6 +65,10 @@ public class GL33LightEngine {
         glBindTexture(GL_TEXTURE_BUFFER, lookupTexture);
         glTexBuffer(GL_TEXTURE_BUFFER, GL_R16UI, lookupBuffer.handle());
         glBindTexture(GL_TEXTURE_BUFFER, 0);
+        
+        for (int i = 0; i < CHUNK_UPDATES_PER_FRAME; i++) {
+            unpackBufferAllocs[i] = unpackBuffer.alloc(18 * 320 * 6 * 2, 2);
+        }
     }
     
     public static void shutdown() {
@@ -115,7 +119,7 @@ public class GL33LightEngine {
             }
             final var indices = freeIndices.get(layerIndex);
             indices.clear();
-            for (short j = 59; j >= 0; j--) {
+            for (short j = 5; j >= 0; j--) {
                 indices.add(j);
             }
             
@@ -130,7 +134,7 @@ public class GL33LightEngine {
                 glTexImage3D(GL_TEXTURE_2D_ARRAY, 0, GL_R16UI, GL33Statics.LIGHT_TEXTURE_ARRAY_BLOCK_SIZE.x(), GL33Statics.LIGHT_TEXTURE_ARRAY_BLOCK_SIZE.y(), GL33Statics.LIGHT_TEXTURE_ARRAY_BLOCK_SIZE.z(), 0, GL_RED_INTEGER, GL_UNSIGNED_BYTE, 0);
             }
             RenderSystem.bindTexture(0);
-            freeCommitedIndices += 60;
+            freeCommitedIndices += 56;
             residentLayers.set(layerIndex, true);
             
             short index = indices.popShort();
@@ -151,13 +155,13 @@ public class GL33LightEngine {
         }
         final var indices = freeIndices.get(layerIndex);
         indices.add(subIndex);
-        if (freeIndices.size() != 60) {
+        if (freeIndices.size() != 56) {
             return;
         }
         // blocks are 32 layers, so, 1920 per block
         // TODO: find a way to avoid freeing it just to realloc if jumping between chunk counts
         //       that can happen either way too
-        if (freeCommitedIndices <= 1920) {
+        if (freeCommitedIndices <= 56 * 32) {
             return;
         }
         
@@ -173,7 +177,7 @@ public class GL33LightEngine {
         final var layerTextures = intermediateTextures[layerIndex >> 4];
         glDeleteTextures(layerTextures);
         
-        freeCommitedIndices -= 60;
+        freeCommitedIndices -= 56;
         residentLayers.set(layerIndex, false);
     }
     
@@ -196,7 +200,7 @@ public class GL33LightEngine {
                 continue;
             }
             
-            chunk.chunk.update(blockAndTintGetter);
+            chunk.chunk.update(blockAndTintGetter, unpackBufferAllocs[updatesThisFrame]);
             updatesThisFrame++;
             
             if (!chunk.chunk.dirty) {
@@ -367,9 +371,9 @@ public class GL33LightEngine {
             this.lightChunkIndex = lightChunkIndex;
         }
         
-        private void update(BlockAndTintGetter blockAndTintGetter) {
+        private boolean update(BlockAndTintGetter blockAndTintGetter, GL33Buffer.Allocation unpackAlloc) {
             if (!dirty) {
-                //return false;
+                return false;
             }
             dirty = false;
             
@@ -406,13 +410,13 @@ public class GL33LightEngine {
             final int lightChunkX = (lightChunkIndex >> 11) & 0x1F;
             final int lightChunkY = (lightChunkIndex >> 10) & 0x1;
             final int lightChunkZ = lightChunkIndex & 0x3FF;
-            final int lightChunkTexelX = lightChunkX * 17;
+            final int lightChunkTexelX = lightChunkX * 18;
             final int lightChunkTexelY = lightChunkY * 320;
             
             final var lightChunkTextures = intermediateTextures[lightChunkZ >> 4];
-            final var lightChunkDirectionIndices = 17 * 320;
+            final var lightChunkDirectionIndices = 18 * 320;
             final var lightChunkDirectionSize = lightChunkDirectionIndices * 2;
-            final var directionalData = PointerWrapper.alloc(lightChunkDirectionSize * 6 * 2);
+            final var directionalData = PointerWrapper.alloc(lightChunkDirectionSize * 6);
             
             // TODO: move this offthread
             //       its quite costly to do on the main thread
@@ -443,19 +447,28 @@ public class GL33LightEngine {
                                 val = outputValues[(i + 3) % 6];
                             }
                             
-                            final var bufferIndex = ((((z * 17) + y) * 18) + x) + (lightChunkDirectionIndices * i);
+                            final var bufferIndex = ((((z * 18) + y) * 18) + x) + (lightChunkDirectionIndices * i);
                             directionalData.putShortIdx(bufferIndex, packLightAOuint16(val));
-//                            directionalData.putShortIdx(bufferIndex, packLightAOuint16(new Vector3i(x * 3, z * 3, 0)));
-//                            directionalData.putShortIdx(bufferIndex, packLightAOuint16(new Vector3i(48, 48, 0)));
+//                            directionalData.putShortIdx(bufferIndex, packLightAOuint16(new Vector3i(60, 0, 0)));
                         }
                     }
                 }
             }
             
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, unpackAlloc.allocator().handle());
+            nglBufferSubData(GL_PIXEL_UNPACK_BUFFER, unpackAlloc.offset(), Math.min(unpackAlloc.size(), directionalData.size()), directionalData.pointer());
+            
             for (int i = 0; i < 6; i++) {
+                final var offset = unpackAlloc.offset() + lightChunkDirectionSize * i;
                 glBindTexture(GL_TEXTURE_2D_ARRAY, lightChunkTextures[i]);
-                glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, lightChunkTexelX, lightChunkTexelY, lightChunkZ & 0xF, 17, 320, 1, GL_RED_INTEGER, GL_UNSIGNED_SHORT, directionalData.pointer() + (lightChunkDirectionSize * i));
+                glTexSubImage3D(GL_TEXTURE_2D_ARRAY, 0, lightChunkTexelX, lightChunkTexelY, lightChunkZ & 0xF, 18, 320, 1, GL_RED_INTEGER, GL_UNSIGNED_SHORT, offset);
             }
+            
+            glBindBuffer(GL_PIXEL_UNPACK_BUFFER, 0);
+            
+            directionalData.free();
+            
+            return true;
         }
         
         private static Vector2f scratchVec = new Vector2f();

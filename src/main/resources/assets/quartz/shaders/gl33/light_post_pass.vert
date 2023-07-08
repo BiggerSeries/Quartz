@@ -231,7 +231,7 @@ uint packLightPos(vec2 lightPos) {
 }
 
 SplitDynamicLightVertexInfo getLightVertexInfo(ivec3 baseTexel, ivec3 lightChunkPos){
-    ivec3 lookupTexel = baseTexel + ivec3(lightChunkPos.x, lightChunkPos.y + lightChunkPos.z * 17, 0);
+    ivec3 lookupTexel = baseTexel + ivec3(lightChunkPos.x, lightChunkPos.y + lightChunkPos.z * 18, 0);
     SplitDynamicLightVertexInfo toReturn;
     {
         uint packedData = texelFetch(intermediateLightDataTexture[0], lookupTexel, 0).r;
@@ -290,7 +290,7 @@ SplitDynamicLightInfo loadLightingInfo(ivec3 blockPos) {
     ivec3 worldChunk = blockPos >> 4;
     ivec3 subChunkPos = blockPos - (worldChunk << 4);
 
-    ivec3 lightChunkBaseTexel = ivec3((lightChunkIndex >> 11) & 0x1F, (lightChunkIndex >> 10) & 0x1, lightChunkIndex & 0xF) * ivec3(17, 320, 1);
+    ivec3 lightChunkBaseTexel = ivec3((lightChunkIndex >> 11) & 0x1F, (lightChunkIndex >> 10) & 0x1, lightChunkIndex & 0xF) * ivec3(18, 320, 1);
     for (int i = 0; i < 8; i++) {
         toReturn.vertexInfo[i] = getLightVertexInfo(lightChunkBaseTexel, subChunkPos + lightPositions[i]);
     }

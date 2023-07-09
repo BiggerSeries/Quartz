@@ -32,6 +32,5 @@ description='''
     ordering="NONE"
     side="BOTH"
 
-# https://github.com/MinecraftForge/MinecraftForge/issues/9600
-# [[features.quartz]]
-#     openGLVersion="[3.3,)"
+[features.quartz]
+    openGLVersion = "[3.3,)"

@@ -262,9 +262,11 @@ SplitDynamicLightInfo loadLightingInfo(ivec3 blockPos) {
     ivec3 lookupChunk = worldChunk - lightCunkLookupOffset.xyz;
     SplitDynamicLightInfo toReturn;
     for (int i = 0; i < 8; i++) {
+        SplitDynamicLightVertexInfo splitDynamicLightVertexInfo;
         for (int j = 0; j < 8; j++) {
-            toReturn.vertexInfo[i].directionInfo[j].directionLight = vec2(0);
+            splitDynamicLightVertexInfo.directionInfo[j].directionLight = vec2(0);
         }
+        toReturn.vertexInfo[i] = splitDynamicLightVertexInfo;
     }
 
     if (lookupChunk.x < 0 || lookupChunk.y < 0 || lookupChunk.z < 0 || lookupChunk.x >= 64 || lookupChunk.y >= 24 || lookupChunk.z >= 64) {

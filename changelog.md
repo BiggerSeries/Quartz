@@ -1,3 +1,11 @@
+# 1.20.1-0.2.0-alpha
+ - rewrite everything
+   - well, not quite, but the entire business end was
+ - lighting system is automatic behind the scenes
+ - iris shader support via transform feedback
+ - transparent rendertype "support", its not sorted correctly
+ - matrix updates handled slightly differently
+
 # 1.19.2-0.1.0-beta.2.1
  - ensure b3d state cache is always cleared, fixes interaction bug
 

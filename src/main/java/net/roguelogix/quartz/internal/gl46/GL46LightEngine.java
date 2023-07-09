@@ -54,7 +54,7 @@ public class GL46LightEngine {
     private static Vector3i lookupOffset = new Vector3i();
     private static GL46Buffer lookupBuffer = new GL46Buffer(64 * 64 * 24 * 2, true);
     private static int lookupTexture;
-    private static GL46Buffer unpackBuffer = new GL46Buffer(CHUNK_UPDATES_PER_FRAME * 17 * 320 * 4 * 6 * 2, true);
+    private static GL46Buffer unpackBuffer = new GL46Buffer(CHUNK_UPDATES_PER_FRAME * 17 * 320 * 4 * 6, true);
     private static GL46Buffer.Allocation[] unpackBufferAllocs = new GL46Buffer.Allocation[CHUNK_UPDATES_PER_FRAME];
     private static long lastLightUpdateFence = 0;
     public static void startup() {
@@ -120,7 +120,7 @@ public class GL46LightEngine {
         glTextureBuffer(lookupTexture, GL_R16UI, lookupBuffer.handle());
         
         for (int i = 0; i < CHUNK_UPDATES_PER_FRAME; i++) {
-            unpackBufferAllocs[i] = unpackBuffer.alloc(17 * 320 * 4 * 6 * 4,  17 * 320 * 4 * 6 * 4);
+            unpackBufferAllocs[i] = unpackBuffer.alloc(17 * 320 * 4 * 6 * 4,  2);
         }
     }
     
@@ -414,7 +414,7 @@ public class GL46LightEngine {
         
         private boolean update(BlockAndTintGetter blockAndTintGetter, GL46Buffer.Allocation unpackAllocation) {
             if (!dirty) {
-                //return false;
+                return false;
             }
             dirty = false;
             if (lastSync[0] != 0) {

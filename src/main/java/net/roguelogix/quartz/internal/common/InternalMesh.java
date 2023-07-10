@@ -8,6 +8,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.roguelogix.quartz.SodiumBullshit;
 import org.joml.Vector3f;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.Mesh;
@@ -175,7 +176,7 @@ public class InternalMesh implements Mesh {
             if (!(renderType instanceof RenderType.CompositeRenderType)) {
                 throw new IllegalArgumentException("RenderType must be composite type");
             }
-            return buffers.computeIfAbsent(renderType, e -> new BufferBuilder());
+            return SodiumBullshit.wrap(buffers.computeIfAbsent(renderType, e -> new BufferBuilder()));
         }
         
         int bytesRequired() {

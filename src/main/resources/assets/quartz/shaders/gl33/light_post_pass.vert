@@ -165,8 +165,6 @@ void main() {
         return;
     }
 
-    positionOutput = positionInput - playerSubBlock.xyz;
-
     ivec3 integerPosition = ivec3(floor(positionInput));
     vec3 floatPosition = positionInput + integerPosition;
 
@@ -187,6 +185,8 @@ void main() {
     vec4 unpackedColor = unpackColorABGR(colorInput);
     unpackedColor *= lightingInfo.colorMultiplier;
     colorOutput = packColorABGR(unpackedColor);
+
+    positionOutput = positionInput - playerSubBlock.xyz;
 }
 
 float calcuateDiffuseMultiplier(vec3 normal) {

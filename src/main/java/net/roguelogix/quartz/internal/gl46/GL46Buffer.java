@@ -525,6 +525,9 @@ public class GL46Buffer implements Buffer {
         if (!GPUOnly) {
             mappedMemory = nglMapNamedBufferRange(newBuffer, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
             PointerWrapper.addAccessibleLocation(new PointerWrapper(mappedMemory, size));
+            // because you could want to write over memory that was just copied, until that copy is finishes, its invalid to do so
+            // may be faster do to the copy on the CPU instead of waiting
+            glFinish();
         }
         this.size = size;
         

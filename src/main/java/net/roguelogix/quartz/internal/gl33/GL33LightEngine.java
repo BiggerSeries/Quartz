@@ -443,7 +443,7 @@ public class GL33LightEngine {
                         
                         for (int i = 0; i < 6; i++) {
                             var val = outputValues[i];
-                            if (val.z == 0) {
+                            if (val.z == 4) {
                                 val = outputValues[(i + 3) % 6];
                             }
                             

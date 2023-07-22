@@ -5,10 +5,10 @@ layout(location = 4) in mat3 staticNormalMatrix;
 layout(location = 7) in ivec3 worldPosition;
 layout(location = 8) in int dynamicMatrixID;
 
-out mat4 modelMatrixOut;
-out mat3x4 normalMatrixOut;
-out ivec3 worldPositionOut;
-out int dynamicMatrixIDOut;
+flat out mat4 modelMatrixOut;
+flat out mat3x4 normalMatrixOut;
+flat out ivec3 worldPositionOut;
+flat out int dynamicMatrixIDOut;
 
 uniform samplerBuffer dynamicMatrices;
 

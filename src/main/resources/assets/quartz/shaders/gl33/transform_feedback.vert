@@ -54,12 +54,12 @@ uniform usamplerBuffer intermediateLightChunkIndexLookup;
 
 // im trusting the linker to yeet as much of the code as it can
 // it probably will
-out vec3 positionOutput;
-out uint normalOutput;
-out uint colorOutput;
-out vec2 textureOutput;
-out uint overlayOutput;
-out uint lightmapOutput;
+flat out vec3 positionOutput;
+flat out uint normalOutput;
+flat out uint colorOutput;
+flat out vec2 textureOutput;
+flat out uint overlayOutput;
+flat out uint lightmapOutput;
 
 void main() {
     ivec3 worldTransform = worldPosition - playerBlock.xyz;

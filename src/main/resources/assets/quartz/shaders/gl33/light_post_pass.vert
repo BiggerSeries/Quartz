@@ -9,12 +9,12 @@ layout(location = 3) in vec2 textureInput;
 layout(location = 4) in uint overlayInput;
 layout(location = 5) in uint lightmapInput;
 
-out vec3 positionOutput;
-out uint normalOutput;
-out uint colorOutput;
-out vec2 textureOutput;
-out uint overlayOutput;
-out uint lightmapOutput;
+flat out vec3 positionOutput;
+flat out uint normalOutput;
+flat out uint colorOutput;
+flat out vec2 textureOutput;
+flat out uint overlayOutput;
+flat out uint lightmapOutput;
 
 layout(std140) uniform MainUBO {
     ivec4 playerBlock;
@@ -92,9 +92,7 @@ struct DynamicLightingOutput {
  */
 vec3 average3D(vec3 vals[8], vec3 position);
 
-SplitDynamicLightInfo loadLightingInfo(ivec3 blockPos);
-
-DynamicLightingIntermediate calculateDynamicLightingIntermediate(SplitDynamicLightInfo lightingInfo, vec3 normal);
+DynamicLightingIntermediate loadAndCalculateDynamicLightingIntermediate(ivec3 blockPos, vec3 normal);
 
 DynamicLightingOutput calculateDynamicLighting(DynamicLightingIntermediate intermediate, vec3 position);
 
@@ -177,8 +175,7 @@ void main() {
     vec3 modelSubBlockPos = positionInput;
     modelSubBlockPos -= floor(modelSubBlockPos);
 
-    SplitDynamicLightInfo rawLightInfo = loadLightingInfo(actualWorldBlockPos);
-    DynamicLightingIntermediate intermediateLightInfo = calculateDynamicLightingIntermediate(rawLightInfo, normal);
+    DynamicLightingIntermediate intermediateLightInfo = loadAndCalculateDynamicLightingIntermediate(actualWorldBlockPos, normal);
     DynamicLightingOutput lightingInfo = calculateDynamicLighting(intermediateLightInfo, modelSubBlockPos);
 
     lightmapOutput = packLightPos(vec2(lightingInfo.lightmap));
@@ -273,41 +270,26 @@ SplitDynamicLightVertexInfo getLightVertexInfo(ivec3 baseTexel, ivec3 lightChunk
 }
 
 
-SplitDynamicLightInfo loadLightingInfo(ivec3 blockPos) {
-
-    SplitDynamicLightInfo toReturn;
+DynamicLightingIntermediate loadAndCalculateDynamicLightingIntermediate(ivec3 blockPos, vec3 normal) {
+    DynamicLightingIntermediate intermediate;
     for (int i = 0; i < 8; i++) {
-        SplitDynamicLightVertexInfo splitDynamicLightVertexInfo;
-        for (int j = 0; j < 8; j++) {
-            splitDynamicLightVertexInfo.directionInfo[j].directionLight = vec2(0);
-        }
-        toReturn.vertexInfo[i] = splitDynamicLightVertexInfo;
+        intermediate.cornerLightLevels[i] = vec3(0);
     }
 
     int lightChunkIndex = int(lightmapInput);
     if (lightChunkIndex < 0){
-        return toReturn;
+        return intermediate;
     }
 
     ivec3 worldChunk = blockPos >> 4;
     ivec3 subChunkPos = blockPos - (worldChunk << 4);
 
     ivec3 lightChunkBaseTexel = ivec3((lightChunkIndex >> 11) & 0x1F, (lightChunkIndex >> 10) & 0x1, lightChunkIndex & 0xF) * ivec3(18, 320, 1);
-    for (int i = 0; i < 8; i++) {
-        toReturn.vertexInfo[i] = getLightVertexInfo(lightChunkBaseTexel, subChunkPos + lightPositions[i]);
-    }
-
-    return toReturn;
-}
-
-DynamicLightingIntermediate calculateDynamicLightingIntermediate(SplitDynamicLightInfo lightingInfo, vec3 normal) {
-    DynamicLightingIntermediate intermediate;
 
     for (int i = 0; i < 8; i++) {
-        intermediate.cornerLightLevels[i] = vec3(0);
-        SplitDynamicLightVertexInfo vertexInfo = lightingInfo.vertexInfo[i];
+        SplitDynamicLightVertexInfo vertexInfo = getLightVertexInfo(lightChunkBaseTexel, subChunkPos + lightPositions[i]);
         for (int j = 0; j < 6; j++){
-            vec3 lightDirection = lightDirections[j];
+            vec3 lightDirection = vec3(lightDirections[j]);
             float multiplier = dot(lightDirection, normal);
             multiplier *= float(multiplier > 0);
             multiplier *= multiplier;

@@ -85,7 +85,7 @@ public class InternalMesh implements Mesh {
                     @SuppressWarnings("unchecked")
                     final var set = (Collection<Class<? extends VertexConsumer>>) field.get(null);
                     set.add(BufferBuilder.class);
-                } catch (NoSuchFieldException | IllegalAccessException | ClassCastException ignored) {
+                } catch (NoClassDefFoundError | NoSuchFieldException | IllegalAccessException | ClassCastException ignored) {
                 }
             }
             

@@ -143,6 +143,7 @@ dependencies {
     compileOnly project(':Phosphophyllite')
     compileOnly "org.lwjgl:lwjgl-vulkan:3.3.1"
 
+    compileOnly fg.deobf('curse.maven:Rubidium-574856:4684247')
     compileOnly fg.deobf('curse.maven:Oculus-581495:4578741')
 }
 

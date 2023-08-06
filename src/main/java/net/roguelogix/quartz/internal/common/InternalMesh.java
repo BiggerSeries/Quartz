@@ -2,23 +2,22 @@ package net.roguelogix.quartz.internal.common;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 import it.unimi.dsi.fastutil.objects.Object2LongArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import me.jellysquid.mods.sodium.client.render.vertex.VertexConsumerTracker;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import org.joml.Vector3f;
+import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.Mesh;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.util.PointerWrapper;
+import org.joml.Vector3f;
 
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -77,6 +76,19 @@ public class InternalMesh implements Mesh {
         }
         
         private static class BufferBuilder implements VertexConsumer {
+            
+            @OnModLoad
+            private static void onModLoad() {
+                try {
+                    final var field = VertexConsumerTracker.class.getDeclaredField("BAD_CONSUMERS");
+                    field.setAccessible(true);
+                    @SuppressWarnings("unchecked")
+                    final var set = (Collection<Class<? extends VertexConsumer>>) field.get(null);
+                    set.add(BufferBuilder.class);
+                } catch (NoSuchFieldException | IllegalAccessException | ClassCastException ignored) {
+                }
+            }
+            
             Vertex currentVertex = new Vertex();
             final LinkedList<Vertex> vertices = new LinkedList<>();
             

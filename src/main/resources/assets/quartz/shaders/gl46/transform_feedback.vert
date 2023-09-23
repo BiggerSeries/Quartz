@@ -151,6 +151,7 @@ void main() {
     positionOutput = transformedModelPos + worldTransform;
     normalOutput = packNormal(normal);
     textureOutput = texCoordIn;
+    lightmapOutput = 0;
     // TODO: proper handling of overlay values
     overlayOutput = uint(0 * 15.0) | ((uint(int(bool(true))) * 7u + 3u) << 16);
 

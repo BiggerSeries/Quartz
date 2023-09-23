@@ -49,7 +49,7 @@ public class GL33DrawBatch implements DrawBatchInternal {
     final ReferenceSet<GL33InstanceManager> instanceBatches = new ReferenceOpenHashSet<>();
     final FastArraySet<GL33InstanceManager> dirtyBatches = new FastArraySet<>();
     
-    final MultiBuffer<GL33Buffer> dynamicMatrixBuffer = new MultiBuffer<>(1, false);
+    final MultiBuffer<GL33Buffer> dynamicMatrixBuffer = new MultiBuffer<>(1, 0);
     
     final DynamicMatrixManager dynamicMatrixManager = new DynamicMatrixManager(dynamicMatrixBuffer);
     final int dynamicMatrixTexture;

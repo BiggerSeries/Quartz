@@ -1,17 +1,15 @@
 package net.roguelogix.quartz.internal.gl46;
 
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ReferenceOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
-import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.LightLayer;
 import net.roguelogix.phosphophyllite.util.FastArraySet;
+import net.roguelogix.quartz.internal.Buffer;
 import org.joml.Vector3i;
 import org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.VectorUtil;
@@ -48,15 +46,16 @@ public class GL46LightEngine {
     private static int intermediateTextureDepth = GL46Statics.LIGHT_TEXTURE_BLOCK_DEPTH;
     private static final Vector3i virtualPageSize = new Vector3i();
     
-    private static final GL46Buffer rawDataBuffer = new GL46Buffer(false);
+    private static final GL46Buffer rawDataBuffer = new GL46Buffer(0);
     
     private static PointerWrapper lookupData = PointerWrapper.alloc(64 * 64 * 24 * 2);
     private static Vector3i lookupOffset = new Vector3i();
-    private static GL46Buffer lookupBuffer = new GL46Buffer(64 * 64 * 24 * 2, true);
+    private static GL46Buffer lookupBuffer = new GL46Buffer(64 * 64 * 24 * 2, Buffer.Options.GPU_ONLY);
     private static int lookupTexture;
-    private static GL46Buffer unpackBuffer = new GL46Buffer(CHUNK_UPDATES_PER_FRAME * 17 * 320 * 4 * 6, true);
+    private static GL46Buffer unpackBuffer = new GL46Buffer(CHUNK_UPDATES_PER_FRAME * 17 * 320 * 4 * 6, Buffer.Options.GPU_ONLY);
     private static GL46Buffer.Allocation[] unpackBufferAllocs = new GL46Buffer.Allocation[CHUNK_UPDATES_PER_FRAME];
     private static long lastLightUpdateFence = 0;
+    
     public static void startup() {
         int pageSizeIndex = -1;
         // TODO: on the fly realloc instead of sparse texture
@@ -120,7 +119,7 @@ public class GL46LightEngine {
         glTextureBuffer(lookupTexture, GL_R16UI, lookupBuffer.handle());
         
         for (int i = 0; i < CHUNK_UPDATES_PER_FRAME; i++) {
-            unpackBufferAllocs[i] = unpackBuffer.alloc(17 * 320 * 4 * 6 * 4,  2);
+            unpackBufferAllocs[i] = unpackBuffer.alloc(17 * 320 * 4 * 6 * 4, 2);
         }
     }
     
@@ -196,7 +195,7 @@ public class GL46LightEngine {
                         glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                         glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
                         glTextureStorage3D(texture, 1, GL_R16UI, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), newTextureDepth);
-                        glCopyImageSubData(intermediateTextures[i], GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, newTextures[i], GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0,  GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), intermediateTextureDepth);
+                        glCopyImageSubData(intermediateTextures[i], GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, newTextures[i], GL_TEXTURE_2D_ARRAY, 0, 0, 0, 0, GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.x(), GL46Statics.LIGHT_SPARE_TEXTURE_SIZE.y(), intermediateTextureDepth);
                     }
                     glDeleteTextures(intermediateTextures);
                     for (int i = 0; i < intermediateTextures.length; i++) {
@@ -250,7 +249,7 @@ public class GL46LightEngine {
         if (dirtyChunks.isEmpty()) {
             return;
         }
-        if(lastLightUpdateFence != 0){
+        if (lastLightUpdateFence != 0) {
             glWaitSync(lastLightUpdateFence, 0, GL_TIMEOUT_IGNORED);
             glDeleteSync(lastLightUpdateFence);
         }
@@ -331,6 +330,17 @@ public class GL46LightEngine {
         }
         chunk.chunk.dirty = true;
         dirtyChunks.add(weakRef);
+    }
+    
+        public static void dirtyAll() {
+        for (WeakReference<ChunkHandle> weakRef : chunkHandles.values()) {
+            final var chunk = weakRef.get();
+            if (chunk == null) {
+                return;
+            }
+            chunk.chunk.dirty = true;
+            dirtyChunks.add(weakRef);
+        }
     }
     
     public static ChunkHandle getChunk(long position) {

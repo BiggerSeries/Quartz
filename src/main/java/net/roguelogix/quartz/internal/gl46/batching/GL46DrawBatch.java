@@ -4,6 +4,7 @@ import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.SectionPos;
 import net.roguelogix.quartz.AABB;
+import net.roguelogix.quartz.internal.*;
 import org.joml.Matrix4fc;
 import org.joml.Vector3ic;
 import org.joml.Vector4f;
@@ -11,16 +12,14 @@ import net.roguelogix.phosphophyllite.util.FastArraySet;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DynamicMatrix;
 import net.roguelogix.quartz.Mesh;
-import net.roguelogix.quartz.internal.DrawBatchInternal;
-import net.roguelogix.quartz.internal.IrisDetection;
-import net.roguelogix.quartz.internal.MultiBuffer;
-import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.common.DrawInfo;
 import net.roguelogix.quartz.internal.common.DynamicMatrixManager;
 import net.roguelogix.quartz.internal.common.InternalMesh;
 import net.roguelogix.quartz.internal.gl46.*;
 
 import javax.annotation.Nullable;
+
+import java.util.Arrays;
 
 import static net.roguelogix.quartz.internal.MagicNumbers.IDENTITY_MATRIX;
 import static net.roguelogix.quartz.internal.MagicNumbers.INT_BYTE_SIZE;
@@ -39,13 +38,20 @@ public class GL46DrawBatch implements DrawBatchInternal {
     private Vector4f cullVectorMin = new Vector4f();
     private Vector4f cullVectorMax = new Vector4f();
     
-    final MultiBuffer<GL46Buffer> instanceDataBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT + 1, false);
+    private static int[] instanceDataOptions(int framesInFlight){
+        var toReturn = new int[framesInFlight + 1];
+        Arrays.fill(toReturn, Buffer.Options.CPU_MEMORY);
+        toReturn[framesInFlight] = Buffer.Options.GPU_ONLY;
+        return toReturn;
+    }
+    
+    final MultiBuffer<GL46Buffer> instanceDataBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT + 1, instanceDataOptions(GL46Statics.FRAMES_IN_FLIGHT));
     
     final Reference2ReferenceMap<InternalMesh, GL46InstanceManager> instanceManagers = new Reference2ReferenceOpenHashMap<>();
     final ReferenceSet<GL46InstanceManager> instanceBatches = new ReferenceOpenHashSet<>();
     final FastArraySet<GL46InstanceManager> dirtyBatches = new FastArraySet<>();
     
-    final MultiBuffer<GL46Buffer> dynamicMatrixBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false);
+    final MultiBuffer<GL46Buffer> dynamicMatrixBuffer = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, 0);
     final DynamicMatrixManager dynamicMatrixManager = new DynamicMatrixManager(dynamicMatrixBuffer);
     final DynamicMatrix IDENTITY_DYNAMIC_MATRIX = dynamicMatrixManager.createMatrix(null, null);
     
@@ -316,7 +322,7 @@ public class GL46DrawBatch implements DrawBatchInternal {
     
     private boolean indirectDirty = false;
     private int currentIndirectBuffer = 0;
-    private MultiBuffer<GL46Buffer>[] indirectBuffers = new MultiBuffer[]{new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false), new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false)};
+    private MultiBuffer<GL46Buffer>[] indirectBuffers = new MultiBuffer[]{new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, Buffer.Options.CPU_MEMORY), new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, Buffer.Options.CPU_MEMORY)};
     private MultiBuffer<GL46Buffer>.Allocation[] indirectBufferAllocs = new MultiBuffer.Allocation[2];
     private long[] indirectBufferFences = new long[2];
     
@@ -383,5 +389,12 @@ public class GL46DrawBatch implements DrawBatchInternal {
         glBindVertexBuffer(1, instanceDataBuffer.buffer(GL46Statics.FRAMES_IN_FLIGHT).handle(), 0, GL46Statics.INSTANCE_DATA_BYTE_SIZE);
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffers[currentIndirectBuffer].activeBuffer().handle());
         glMultiDrawArraysIndirect(GL_POINTS, indirectOffset, draws, 0);
+    }
+    
+    public void dirtyAll() {
+        setIndirectInfoDirty();
+        for (GL46InstanceManager instanceBatch : instanceBatches) {
+            instanceBatch.dirtyAll();
+        }
     }
 }

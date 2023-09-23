@@ -99,8 +99,8 @@ public class GL33Core extends QuartzCore {
     }
     
     @Override
-    public Buffer allocBuffer(boolean GPUOnly) {
-        return new GL33Buffer(GPUOnly);
+    public Buffer allocBuffer(int options) {
+        return new GL33Buffer(Buffer.Options.isGPUOnly(options));
     }
     
     @Override
@@ -219,6 +219,10 @@ public class GL33Core extends QuartzCore {
     @Override
     public void sectionDirty(int x, int y, int z) {
         GL33LightEngine.sectionDirty(x, y, z);
+    }
+    
+    public void allSectionsDirty() {
+        GL33LightEngine.allDirty();
     }
     
     @Override

@@ -16,6 +16,23 @@ import java.util.function.Consumer;
 @NonnullDefault
 public interface Buffer {
     
+    class Options {
+        private Options() {
+        }
+        
+        public static int GPU_ONLY = 1;
+        
+        public static boolean isGPUOnly(int options) {
+            return (options & GPU_ONLY) != 0;
+        }
+        
+        public static int CPU_MEMORY = 2;
+        
+        public static boolean isCPUMemory(int options) {
+            return (options & CPU_MEMORY) != 0;
+        }
+    }
+    
     @FunctionalInterface
     interface CallbackHandle {
         void delete();
@@ -24,10 +41,9 @@ public interface Buffer {
     interface Allocation {
         
         /**
-         * @apiNote buffer reflects CPU side of allocation, may be a coherent mapped buffer
-         *          reading is not allowed
-         *
          * @return memory address for this allocation
+         * @apiNote buffer reflects CPU side of allocation, may be a coherent mapped buffer
+         * reading is not allowed
          */
         PointerWrapper address();
         
@@ -68,7 +84,7 @@ public interface Buffer {
         /**
          * Called when this allocation is reallocated, allocation fed to consumer is the new allocation
          * Callback is fed this allocation immediately at add when added
-         *
+         * <p>
          * WARNING: these callbacks must only weakly refer to this allocation object, else you will cause a memory leak
          *
          * @param consumer: callback
@@ -127,19 +143,19 @@ public interface Buffer {
     void free(Allocation allocation);
     
     void dirtyAll();
-
+    
     /**
      * Called when the CPU side buffer is changed
-     *
+     * <p>
      * WARNING: these callbacks must only weakly refer to this buffer object, else you will cause a memory leak
      *
      * @param consumer: callback
      */
     CallbackHandle addReallocCallback(boolean callImmediately, Consumer<Buffer> consumer);
     
-    default <T extends Buffer> T as(Class<T> ignored){
+    default <T extends Buffer> T as(Class<T> ignored) {
         //noinspection unchecked
-        return (T)this;
+        return (T) this;
     }
 }
 

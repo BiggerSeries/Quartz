@@ -263,6 +263,17 @@ public class GL33LightEngine {
         dirtyChunks.add(weakRef);
     }
     
+    public static void allDirty() {
+        for (WeakReference<ChunkHandle> weakRef : chunkHandles.values()) {
+            final var chunk = weakRef.get();
+            if (chunk == null) {
+                return;
+            }
+            chunk.chunk.dirty = true;
+            dirtyChunks.add(weakRef);
+        }
+    }
+    
     public static ChunkHandle getChunk(long position) {
         final var existingHandleRef = chunkHandles.get(position);
         if (existingHandleRef != null) {

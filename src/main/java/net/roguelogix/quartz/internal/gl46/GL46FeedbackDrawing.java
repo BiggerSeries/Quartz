@@ -34,6 +34,15 @@ public class GL46FeedbackDrawing {
     
     private static int feedbackVAO;
     
+    public static void dirtyAll() {
+        for (WeakReference<GL46DrawBatch> drawBatch : drawBatches) {
+            final var batch = drawBatch.get();
+            if (batch != null) {
+                batch.dirtyAll();
+            }
+        }
+    }
+    
     private record FeedbackBuffer(int buffer, int size) {
         private FeedbackBuffer(int size) {
             this(glCreateBuffers(), roundUpPo2(size));
@@ -59,7 +68,7 @@ public class GL46FeedbackDrawing {
     private static Buffer.CallbackHandle rebuildCallbackHandle;
     
     public static void startup() {
-        if(rebuildCallbackHandle != null){
+        if (rebuildCallbackHandle != null) {
             rebuildCallbackHandle.delete();
             rebuildCallbackHandle = null;
         }
@@ -73,12 +82,12 @@ public class GL46FeedbackDrawing {
         
         // instance data is bound per drawbatch feedback draw, so no buffer binding here
         glVertexAttribDivisor(1, 1);
-
+        
         glEnableVertexAttribArray(GL46Statics.POSITION_LOCATION);
         glEnableVertexAttribArray(GL46Statics.COLOR_LOCATION);
         glEnableVertexAttribArray(GL46Statics.TEX_COORD_LOCATION);
         glEnableVertexAttribArray(GL46Statics.NORMAL_LOCATION);
-
+        
         glEnableVertexAttribArray(GL46Statics.WORLD_POSITION_LOCATION);
         glEnableVertexAttribArray(GL46Statics.DYNAMIC_MATRIX_ID_LOCATION);
         glEnableVertexAttribArray(GL46Statics.STATIC_MATRIX_LOCATION);
@@ -88,17 +97,17 @@ public class GL46FeedbackDrawing {
         glEnableVertexAttribArray(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION);
         glEnableVertexAttribArray(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 1);
         glEnableVertexAttribArray(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 2);
-
+        
         glVertexAttribBinding(GL46Statics.POSITION_LOCATION, 0);
         glVertexAttribBinding(GL46Statics.COLOR_LOCATION, 0);
         glVertexAttribBinding(GL46Statics.TEX_COORD_LOCATION, 0);
         glVertexAttribBinding(GL46Statics.NORMAL_LOCATION, 0);
-
+        
         glVertexAttribFormat(GL46Statics.POSITION_LOCATION, 3, GL_FLOAT, false, 0);
         glVertexAttribIFormat(GL46Statics.COLOR_LOCATION, 1, GL_INT, 12);
         glVertexAttribFormat(GL46Statics.TEX_COORD_LOCATION, 2, GL_FLOAT, false, 16);
         glVertexAttribFormat(GL46Statics.NORMAL_LOCATION, 3, GL_SHORT, true, 24);
-
+        
         glVertexAttribBinding(GL46Statics.WORLD_POSITION_LOCATION, 1);
         glVertexAttribBinding(GL46Statics.DYNAMIC_MATRIX_ID_LOCATION, 1);
         glVertexAttribBinding(GL46Statics.STATIC_MATRIX_LOCATION, 1);
@@ -108,7 +117,7 @@ public class GL46FeedbackDrawing {
         glVertexAttribBinding(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION, 1);
         glVertexAttribBinding(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 1, 1);
         glVertexAttribBinding(GL46Statics.STATIC_NORMAL_MATRIX_LOCATION + 2, 1);
-
+        
         glVertexAttribIFormat(GL46Statics.WORLD_POSITION_LOCATION, 3, GL_INT, GL46Statics.WORLD_POSITION_OFFSET);
         glVertexAttribIFormat(GL46Statics.DYNAMIC_MATRIX_ID_LOCATION, 1, GL_INT, GL46Statics.DYNAMIC_MATRIX_ID_OFFSET);
         glVertexAttribFormat(GL46Statics.STATIC_MATRIX_LOCATION, 4, GL_FLOAT, false, GL46Statics.STATIC_MATRIX_OFFSET);
@@ -155,7 +164,7 @@ public class GL46FeedbackDrawing {
     
     private static int requiredVertices = 0;
     private static long[] prevousFrameSyncs = new long[GL46Statics.FRAMES_IN_FLIGHT];
-    private static MultiBuffer<GL46Buffer> UBOBuffers = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, false);
+    private static MultiBuffer<GL46Buffer> UBOBuffers = new MultiBuffer<>(GL46Statics.FRAMES_IN_FLIGHT, 0);
     private static MultiBuffer<GL46Buffer>.Allocation UBOAllocation = UBOBuffers.alloc(64);
     
     public static boolean hasBatch() {
@@ -208,7 +217,7 @@ public class GL46FeedbackDrawing {
         UBOPointer.putInt(44, IrisDetection.areShadersActive() ? 1 : 0);
         
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, UBOBuffers.activeBuffer().handle());
-
+        
         GL46LightEngine.bind();
         
         B3DStateHelper.bindVertexArray(feedbackVAO);

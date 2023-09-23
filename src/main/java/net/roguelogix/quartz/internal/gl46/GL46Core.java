@@ -77,8 +77,8 @@ public class GL46Core extends QuartzCore {
     }
     
     @Override
-    public Buffer allocBuffer(boolean GPUOnly) {
-        return new GL46Buffer(GPUOnly);
+    public Buffer allocBuffer(int options) {
+        return new GL46Buffer(options);
     }
     
     @Override
@@ -200,6 +200,12 @@ public class GL46Core extends QuartzCore {
     @Override
     public void sectionDirty(int x, int y, int z) {
         GL46LightEngine.sectionDirty(x, y, z);
+    }
+    
+    @Override
+    public void allSectionsDirty() {
+        GL46LightEngine.dirtyAll();
+        GL46FeedbackDrawing.dirtyAll();
     }
     
     @Override

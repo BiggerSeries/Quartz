@@ -220,4 +220,18 @@ public class GL46InstanceManager {
         }
         return !dirtyInstances.isEmpty();
     }
+    
+    public void dirtyAll() {
+        setDirty();
+        for (WeakReference<GL46Instance> instanceRef : instances) {
+            final var instance = instanceRef.get();
+            if (instance == null) {
+                continue;
+            }
+            if (instance.location.location == -1) {
+                continue;
+            }
+            instance.setDirty();
+        }
+    }
 }

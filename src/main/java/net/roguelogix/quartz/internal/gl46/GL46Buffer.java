@@ -76,7 +76,7 @@ public class GL46Buffer implements Buffer {
             final var weakRef = new WeakReference<>(this);
             final var bufferRealloc = GL46Buffer.this.addReallocCallback(false, e -> {
                 final var ref = weakRef.get();
-                if(ref == null){
+                if (ref == null) {
                     return;
                 }
                 ref.cpuAddress = null;
@@ -204,6 +204,7 @@ public class GL46Buffer implements Buffer {
     }
     
     private final boolean GPUOnly;
+    private final boolean CPUMem;
     private int glBuffer = 0;
     private final int[] glBufferArray = new int[1];
     private long mappedMemory;
@@ -229,16 +230,17 @@ public class GL46Buffer implements Buffer {
     
     private final ObjectArrayList<Consumer<Buffer>> reallocCallbacks = new ObjectArrayList<>();
     
-    public GL46Buffer(boolean GPUOnly) {
-        this(32768, GPUOnly);
+    public GL46Buffer(int options) {
+        this(32768, options);
     }
     
-    public GL46Buffer(int initialSize, boolean GPUOnly) {
-        this(initialSize, true, GPUOnly);
+    public GL46Buffer(int initialSize, int options) {
+        this(initialSize, true, options);
     }
     
-    public GL46Buffer(int initialSize, boolean roundUpPo2, boolean GPUOnly) {
-        this.GPUOnly = GPUOnly;
+    public GL46Buffer(int initialSize, boolean roundUpPo2, int options) {
+        this.GPUOnly = Options.isGPUOnly(options);
+        this.CPUMem = Options.isCPUMemory(options);
         if (roundUpPo2) {
             initialSize = MathUtil.mathRoundPoT(initialSize);
         }
@@ -511,24 +513,38 @@ public class GL46Buffer implements Buffer {
             return;
         }
         final var newBuffer = glCreateBuffers();
-        final int flags = GPUOnly ? GL_DYNAMIC_STORAGE_BIT : GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT;
+        final int flags = GPUOnly ? GL_DYNAMIC_STORAGE_BIT : ((CPUMem ? GL_CLIENT_STORAGE_BIT | GL_MAP_READ_BIT : 0) | GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT);
         glNamedBufferStorage(newBuffer, size, flags);
-        if (glBuffer != 0) {
-            if (!GPUOnly) {
-                PointerWrapper.removeAccessibleLocation(new PointerWrapper(mappedMemory, this.size));
+        if (!GPUOnly) {
+            final var newMappedMemory = nglMapNamedBufferRange(newBuffer, 0, size, ((CPUMem ? GL_MAP_READ_BIT : 0) | GL_MAP_PERSISTENT_BIT | GL_MAP_WRITE_BIT | GL_MAP_COHERENT_BIT));
+            final var newMappingPointer = new PointerWrapper(newMappedMemory, size);
+            PointerWrapper.addAccessibleLocation(newMappingPointer);
+            
+            if (glBuffer != 0) {
+                final var oldMappingPointer = new PointerWrapper(mappedMemory, this.size);
+                if (CPUMem) {
+                    // if memory is on the CPU anyway, do the copy here, avoid the need to wait
+                    oldMappingPointer.copyTo(newMappingPointer);
+                }
+                PointerWrapper.removeAccessibleLocation(oldMappingPointer);
                 glUnmapNamedBuffer(glBuffer);
             }
-            glCopyNamedBufferSubData(glBuffer, newBuffer, 0, 0, this.size);
-            glDeleteBuffers(glBuffer);
+            
+            mappedMemory = newMappedMemory;
         }
+        if (glBuffer != 0) {
+            if (!CPUMem) {
+                glCopyNamedBufferSubData(glBuffer, newBuffer, 0, 0, this.size);
+            }
+            if (!GPUOnly && !CPUMem) {
+                // because you could want to write over memory that was just copied, until that copy is finishes, its invalid to do so
+                // only matters for CPU writable memory though
+                glFinish();
+            }
+        }
+        glDeleteBuffers(glBuffer);
+        
         glBufferArray[0] = glBuffer = newBuffer;
-        if (!GPUOnly) {
-            mappedMemory = nglMapNamedBufferRange(newBuffer, 0, size, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
-            PointerWrapper.addAccessibleLocation(new PointerWrapper(mappedMemory, size));
-            // because you could want to write over memory that was just copied, until that copy is finishes, its invalid to do so
-            // may be faster do to the copy on the CPU instead of waiting
-            glFinish();
-        }
         this.size = size;
         
     }

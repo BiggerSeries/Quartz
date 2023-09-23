@@ -47,7 +47,7 @@ public class VKCore extends QuartzCore {
     }
     
     @Override
-    public Buffer allocBuffer(boolean GPUOnly) {
+    public Buffer allocBuffer(int options) {
         return null;
     }
     
@@ -98,6 +98,11 @@ public class VKCore extends QuartzCore {
     
     @Override
     public void sectionDirty(int x, int y, int z) {
+    
+    }
+    
+    @Override
+    public void allSectionsDirty() {
     
     }
     

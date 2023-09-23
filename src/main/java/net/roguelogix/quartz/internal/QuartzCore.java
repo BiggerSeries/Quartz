@@ -11,6 +11,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.data.loading.DatagenModLoader;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
@@ -49,30 +50,35 @@ public abstract class QuartzCore {
     }
     
     static {
-        if (!Thread.currentThread().getStackTrace()[2].getClassName().equals(EventListener.class.getName())) {
-            throw new IllegalStateException("Attempt to init quartz before it is ready");
-        }
-        LOGGER.info("Quartz Init");
-        if (QuartzConfig.INSTANCE.debug) {
-            LOGGER.warn("Debug mode enabled, performance may suffer");
-        }
-        DEBUG = QuartzConfig.INSTANCE.debug;
         QuartzCore instance = null;
-        try {
-            instance = createCore(QuartzConfig.INSTANCE.mode);
-            if (instance == null && QuartzConfig.INSTANCE.mode != QuartzConfig.Mode.Automatic) {
-                LOGGER.error("Failed to create QuartzCore of requested type, attempting automatic creation");
-                instance = createCore(QuartzConfig.Mode.Automatic);
+        if (DatagenModLoader.isRunningDataGen()) {
+            DEBUG = false;
+        } else {
+            if (!Thread.currentThread().getStackTrace()[2].getClassName().equals(EventListener.class.getName())) {
+                throw new IllegalStateException("Attempt to init quartz before it is ready");
             }
-            if (instance == null) {
-                throw new IllegalStateException("QuartzCore failed to load, this shouldn't be possible");
+            LOGGER.info("Quartz Init");
+            DEBUG = QuartzConfig.INSTANCE.debug;
+            if (DEBUG) {
+                LOGGER.warn("Debug mode enabled, performance may suffer");
             }
-        } catch (NoClassDefFoundError e) {
-            if (!e.getMessage().contains("phosphophyllite")) {
-                throw e;
+            
+            try {
+                instance = createCore(QuartzConfig.INSTANCE.mode);
+                if (instance == null && QuartzConfig.INSTANCE.mode != QuartzConfig.Mode.Automatic) {
+                    LOGGER.error("Failed to create QuartzCore of requested type, attempting automatic creation");
+                    instance = createCore(QuartzConfig.Mode.Automatic);
+                }
+                if (instance == null) {
+                    throw new IllegalStateException("QuartzCore failed to load, this shouldn't be possible");
+                }
+            } catch (NoClassDefFoundError e) {
+                if (!e.getMessage().contains("phosphophyllite")) {
+                    throw e;
+                }
+                // Phosphophyllite isn't present, print but ignore
+                e.printStackTrace();
             }
-            // Phosphophyllite isn't present, print but ignore
-            e.printStackTrace();
         }
         // in the event this is null, phos isn't present
         //noinspection ConstantConditions
@@ -169,7 +175,7 @@ public abstract class QuartzCore {
     @Nullable
     public DrawBatch entityBatch = null;
     public final WorldEngine worldEngine = new WorldEngine();
-    public final InternalMesh.Manager meshManager = new InternalMesh.Manager(allocBuffer(false));
+    public final InternalMesh.Manager meshManager = new InternalMesh.Manager(allocBuffer(0));
     
     public WorldEngine getWorldEngine() {
         return worldEngine;
@@ -178,13 +184,13 @@ public abstract class QuartzCore {
     public abstract DrawBatch createDrawBatch();
     
     public DrawBatch getEntityBatcher() {
-        if (entityBatch == null){
+        if (entityBatch == null) {
             entityBatch = createDrawBatch();
         }
         return entityBatch;
     }
     
-    public abstract Buffer allocBuffer(boolean GPUOnly);
+    public abstract Buffer allocBuffer(int options);
     
     public abstract void frameStart(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection);
     
@@ -208,6 +214,8 @@ public abstract class QuartzCore {
     public abstract int frameInFlight();
     
     public abstract void sectionDirty(int x, int y, int z);
+    
+    public abstract void allSectionsDirty();
     
     public abstract void addDebugText(List<String> list);
 }

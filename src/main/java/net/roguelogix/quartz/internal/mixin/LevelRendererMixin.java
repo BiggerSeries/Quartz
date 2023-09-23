@@ -94,6 +94,11 @@ public class LevelRendererMixin {
         QuartzCore.INSTANCE.sectionDirty(x, y, z);
     }
     
+    @Inject(method = "allChanged()V", at = @At("HEAD"))
+    public void quartzAllChanged(CallbackInfo ci) {
+        QuartzCore.INSTANCE.allSectionsDirty();
+    }
+    
     @Inject(method = "renderChunkLayer", at = @At(value = "HEAD"))
     void invokeRenderChunkLayer(RenderType renderType, PoseStack modelView, double cameraX, double cameraY, double cameraZ, Matrix4f projectionMatrix, CallbackInfo ci) {
         if (renderType == RenderType.solid() && IrisDetection.isRenderingShadows()) {

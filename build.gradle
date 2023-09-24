@@ -188,7 +188,7 @@ publishing {
     }
     repositories {
         maven {
-            file "PublishLocal"
+            url "file://${project.projectDir}/publishlocal"
         }
     }
 }

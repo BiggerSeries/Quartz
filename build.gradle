@@ -20,9 +20,9 @@ if (!"${postfix}".isEmpty()) {
     }
 }
 
-group = 'net.roguelogix.quartz'
+group = "net.roguelogix.${mod_id}"
 base {
-    archivesName = "quartz-${mc_version}"
+    archivesName = "${mod_id}-${mc_version}"
 }
 
 
@@ -103,6 +103,7 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 mixin {
     add sourceSets.main, "quartz.refmap.json"
     config 'quartz.mixins.json'
+    config 'phosphophyllite.mixins.json'
 }
 
 repositories {

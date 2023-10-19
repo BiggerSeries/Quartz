@@ -13,6 +13,7 @@ import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.data.loading.DatagenModLoader;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -49,9 +50,17 @@ public abstract class QuartzCore {
         CLEANER.register(referent, () -> deletionQueue.enqueueUntracked(cleanFunc));
     }
     
+    public static boolean doesForgeExist(){
+        try{
+            return FMLLoader.getLoadingModList() != null;
+        } catch (Throwable e){
+            return true;
+        }
+    }
+    
     static {
         QuartzCore instance = null;
-        if (DatagenModLoader.isRunningDataGen()) {
+        if (DatagenModLoader.isRunningDataGen() || !doesForgeExist()) {
             DEBUG = false;
         } else {
             if (!Thread.currentThread().getStackTrace()[2].getClassName().equals(EventListener.class.getName())) {

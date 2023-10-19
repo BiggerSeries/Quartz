@@ -2,19 +2,19 @@ package net.roguelogix.quartz.internal.util;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
-import org.joml.*;
 import net.roguelogix.quartz.internal.MagicNumbers;
+import org.joml.*;
 import org.lwjgl.system.MemoryUtil;
 import org.lwjgl.system.libc.LibCString;
 
+import javax.annotation.Nonnull;
 import java.lang.Math;
 
 import static net.roguelogix.quartz.internal.QuartzCore.DEBUG;
 
 @SuppressWarnings("DuplicatedCode")
-public record PointerWrapper(long pointer, long size) {
+public record PointerWrapper(long pointer, long size) implements Comparable<PointerWrapper> {
     
     private static final boolean JOML_UNSAFE_AVAILABLE;
     
@@ -497,5 +497,15 @@ public record PointerWrapper(long pointer, long size) {
     
     public boolean contains(PointerWrapper that) {
         return this.pointer <= that.pointer && that.pointer + that.size <= pointer + size;
+    }
+    
+    @Override
+    public int compareTo(@Nonnull PointerWrapper other) {
+        var ptrCompare = Long.compare(this.pointer, other.pointer);
+        if (ptrCompare != 0) {
+            return ptrCompare;
+        }
+        // this is backwards so that child allocations are placed afterward
+        return Long.compare(other.size, this.size);
     }
 }

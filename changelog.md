@@ -1,3 +1,7 @@
+# 1.20.1-0.2.0-alpha.1
+ - migrate to Neo
+ - F3+A now reloads lighting data and reloads all instance data
+
 # 1.20.1-0.2.0-alpha
  - rewrite everything
    - well, not quite, but the entire business end was

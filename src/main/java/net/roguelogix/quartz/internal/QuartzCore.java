@@ -35,11 +35,12 @@ import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
 import java.util.List;
 
+import static net.roguelogix.quartz.internal.QuartzDebug.doesForgeExist;
+
 @NonnullDefault
 public abstract class QuartzCore {
     
     public static final Logger LOGGER = LogManager.getLogger("Quartz");
-    public static final boolean DEBUG;
     
     @Nonnull
     public static final QuartzCore INSTANCE;
@@ -50,25 +51,14 @@ public abstract class QuartzCore {
         CLEANER.register(referent, () -> deletionQueue.enqueueUntracked(cleanFunc));
     }
     
-    public static boolean doesForgeExist(){
-        try{
-            return FMLLoader.getLoadingModList() != null;
-        } catch (Throwable e){
-            return true;
-        }
-    }
-    
     static {
         QuartzCore instance = null;
-        if (DatagenModLoader.isRunningDataGen() || !doesForgeExist()) {
-            DEBUG = false;
-        } else {
+        if (!DatagenModLoader.isRunningDataGen() && doesForgeExist()) {
             if (!Thread.currentThread().getStackTrace()[2].getClassName().equals(EventListener.class.getName())) {
                 throw new IllegalStateException("Attempt to init quartz before it is ready");
             }
             LOGGER.info("Quartz Init");
-            DEBUG = QuartzConfig.INSTANCE.debug;
-            if (DEBUG) {
+            if (QuartzDebug.DEBUG) {
                 LOGGER.warn("Debug mode enabled, performance may suffer");
             }
             

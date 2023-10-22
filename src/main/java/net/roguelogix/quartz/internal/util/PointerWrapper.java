@@ -11,7 +11,7 @@ import org.lwjgl.system.libc.LibCString;
 import javax.annotation.Nonnull;
 import java.lang.Math;
 
-import static net.roguelogix.quartz.internal.QuartzCore.DEBUG;
+import static net.roguelogix.quartz.internal.QuartzDebug.DEBUG;
 
 @SuppressWarnings("DuplicatedCode")
 public record PointerWrapper(long pointer, long size) implements Comparable<PointerWrapper> {

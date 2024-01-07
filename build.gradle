@@ -131,11 +131,19 @@ mixin {
     config 'quartz.mixins.json'
 }
 
+repositories {
+    maven {
+        url = "https://www.cursemaven.com"
+    }
+}
+
 dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     compileOnly project(':Phosphophyllite')
     library "org.lwjgl:lwjgl-vulkan:3.2.2"
+//    runtimeOnly fg.deobf('curse.maven:rubidium-574856:4763255')
+//    runtimeOnly fg.deobf('curse.maven:lodestone-616457:4636991')
 }
 
 jar {

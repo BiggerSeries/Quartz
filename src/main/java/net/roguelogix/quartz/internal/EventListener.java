@@ -8,6 +8,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
+import net.roguelogix.quartz.QuartzConfig;
 
 @ClientOnly
 @NonnullDefault
@@ -25,7 +26,7 @@ public class EventListener {
     }
     
     static {
-        if (!DatagenModLoader.isRunningDataGen()) {
+        if (!DatagenModLoader.isRunningDataGen() && QuartzConfig.INIT_COMPLETED) {
             try {
                 QuartzCore.init();
             } catch (Throwable e) {

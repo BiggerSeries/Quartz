@@ -1,6 +1,6 @@
 package net.roguelogix.quartz;
 
-import net.minecraftforge.eventbus.api.Event;
+import net.neoforged.bus.api.Event;
 
 public abstract class QuartzEvent extends Event {
     public QuartzEvent() {

@@ -6,14 +6,17 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.QuartzEvent;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import org.joml.Matrix4f;
 
-import static org.lwjgl.opengl.GL33C.*;
+import static org.lwjgl.opengl.GL33C.glDeleteVertexArrays;
+import static org.lwjgl.opengl.GL33C.glGenVertexArrays;
 
+@ClientOnly
 public class ShitMojangShouldHaveButDoesnt {
     private static int drawVAO = 0;
     

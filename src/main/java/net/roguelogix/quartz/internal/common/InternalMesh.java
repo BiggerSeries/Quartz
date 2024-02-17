@@ -8,6 +8,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import me.jellysquid.mods.sodium.client.render.vertex.VertexConsumerTracker;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
+import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.Mesh;
@@ -75,6 +76,7 @@ public class InternalMesh implements Mesh {
             int lightmapU = 0, lightmapV = 0;
         }
         
+        @ClientOnly
         private static class BufferBuilder implements VertexConsumer {
             
             @OnModLoad

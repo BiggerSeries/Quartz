@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Camera;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.QuartzCore;
@@ -11,6 +12,7 @@ import org.joml.Matrix4f;
 
 import java.util.List;
 
+@NonnullDefault
 public class VKCore extends QuartzCore {
     
     public static final VKCore INSTANCE;

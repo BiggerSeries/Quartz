@@ -14,23 +14,26 @@ description='''
 '''
 
 [[dependencies.quartz]]
-    modId="forge"
-    mandatory=true
+    modId="neoforge"
+    required=true
     versionRange="[${neo_version},)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.quartz]]
     modId="minecraft"
-    mandatory=true
+    required=true
     versionRange="[${minecraft_version}]"
     ordering="NONE"
     side="BOTH"
 [[dependencies.quartz]]
     modId="phosphophyllite"
-    mandatory=true
+required=true
     versionRange="${phos_version_range}"
     ordering="NONE"
     side="BOTH"
 
 [features.quartz]
     openGLVersion = "[3.3,)"
+
+[[mixins]]
+    config="quartz.mixins.json"

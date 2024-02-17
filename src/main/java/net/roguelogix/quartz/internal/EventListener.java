@@ -2,9 +2,9 @@ package net.roguelogix.quartz.internal;
 
 import net.minecraft.CrashReport;
 import net.minecraft.client.Minecraft;
-import net.minecraftforge.data.loading.DatagenModLoader;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -12,9 +12,10 @@ import net.roguelogix.phosphophyllite.util.NonnullDefault;
 @ClientOnly
 @NonnullDefault
 public class EventListener {
+    
     @OnModLoad
     private static void onModLoad() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(EventListener::clientSetup);
+        ModLoadingContext.get().getActiveContainer().getEventBus().addListener(EventListener::clientSetup);
     }
 
     private static void clientSetup(FMLClientSetupEvent event) {
@@ -22,7 +23,7 @@ public class EventListener {
             try {
                 QuartzCore.startup();
             } catch (Throwable e){
-                Minecraft.crash(new CrashReport("Quartz startup exception", e));
+                Minecraft.getInstance().emergencySaveAndCrash(new CrashReport("Quartz startup exception", e));
             }
         });
     }
@@ -35,7 +36,7 @@ public class EventListener {
             try {
                 QuartzCore.init();
             } catch (Throwable e) {
-                Minecraft.crash(new CrashReport("Quartz failed to startup", e));
+                Minecraft.getInstance().emergencySaveAndCrash(new CrashReport("Quartz failed to startup", e));
             }
         }
     }

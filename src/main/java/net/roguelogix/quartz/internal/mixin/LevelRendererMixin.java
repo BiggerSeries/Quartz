@@ -19,7 +19,7 @@ public class LevelRendererMixin {
     
     // line 1124-1125
     @Inject(method = "renderLevel", at = @At(value = "HEAD"))
-    public void frameStart(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
+    public void quartz$frameStart(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
         QuartzCore.INSTANCE.frameStart(pMatrixStack, pPartialTicks, pFinishTimeNano, pDrawBlockOutline, pActiveRenderInfo, pGameRenderer, pLightmap, pProjection);
     }
     
@@ -32,7 +32,7 @@ public class LevelRendererMixin {
                     ordinal = 0
             )
     )
-    public void lightUpdated(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
+    public void quartz$lightUpdated(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
         QuartzCore.INSTANCE.lightUpdated();
     }
     
@@ -45,7 +45,7 @@ public class LevelRendererMixin {
                     ordinal = 0
             )
     )
-    public void preTerrainSetup(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
+    public void quartz$preTerrainSetup(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
         QuartzCore.INSTANCE.preTerrainSetup();
     }
     
@@ -54,11 +54,11 @@ public class LevelRendererMixin {
             method = "renderLevel",
             at = @At(
                     value = "INVOKE",
-                    target = "Lnet/minecraft/client/renderer/LevelRenderer;renderChunkLayer(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/PoseStack;DDDLorg/joml/Matrix4f;)V",
+                    target = "Lnet/minecraft/client/renderer/LevelRenderer;renderSectionLayer(Lnet/minecraft/client/renderer/RenderType;Lcom/mojang/blaze3d/vertex/PoseStack;DDDLorg/joml/Matrix4f;)V",
                     ordinal = 0
             )
     )
-    public void preOpaque(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
+    public void quartz$preOpaque(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
         QuartzCore.INSTANCE.preOpaque();
     }
     
@@ -71,7 +71,7 @@ public class LevelRendererMixin {
                     ordinal = 0
             )
     )
-    public void endOpaque(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
+    public void quartz$endOpaque(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
         QuartzCore.INSTANCE.endOpaque();
     }
     
@@ -84,23 +84,23 @@ public class LevelRendererMixin {
                     ordinal = 0
             )
     )
-    public void endTranslucent(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
+    public void quartz$endTranslucent(PoseStack pMatrixStack, float pPartialTicks, long pFinishTimeNano, boolean pDrawBlockOutline, Camera pActiveRenderInfo, GameRenderer pGameRenderer, LightTexture pLightmap, Matrix4f pProjection, CallbackInfo ci) {
         QuartzCore.INSTANCE.endTranslucent();
     }
     
     // line 2414-2415
     @Inject(method = "setSectionDirty(IIIZ)V", at = @At("HEAD"))
-    public void setSectionDirty(int x, int y, int z, boolean updateNow, CallbackInfo ci) {
+    public void quartz$setSectionDirty(int x, int y, int z, boolean updateNow, CallbackInfo ci) {
         QuartzCore.INSTANCE.sectionDirty(x, y, z);
     }
     
     @Inject(method = "allChanged()V", at = @At("HEAD"))
-    public void quartzAllChanged(CallbackInfo ci) {
+    public void quartz$quartzAllChanged(CallbackInfo ci) {
         QuartzCore.INSTANCE.allSectionsDirty();
     }
     
-    @Inject(method = "renderChunkLayer", at = @At(value = "HEAD"))
-    void invokeRenderChunkLayer(RenderType renderType, PoseStack modelView, double cameraX, double cameraY, double cameraZ, Matrix4f projectionMatrix, CallbackInfo ci) {
+    @Inject(method = "renderSectionLayer", at = @At(value = "HEAD"))
+    public void quartz$irisShaderPass(RenderType renderType, PoseStack modelView, double cameraX, double cameraY, double cameraZ, Matrix4f projectionMatrix, CallbackInfo ci) {
         if (renderType == RenderType.solid() && IrisDetection.isRenderingShadows()) {
             QuartzCore.INSTANCE.shadowPass(modelView, projectionMatrix);
         }

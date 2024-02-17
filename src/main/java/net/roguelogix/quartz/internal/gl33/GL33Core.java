@@ -50,7 +50,7 @@ public class GL33Core extends QuartzCore {
             }
             
             // this is the backup impl, so this is ok to do
-            Minecraft.crash(new CrashReport("Quartz startup failed", new IllegalStateException(builder.toString())));
+            Minecraft.getInstance().emergencySaveAndCrash(new CrashReport("Quartz startup failed", new IllegalStateException(builder.toString())));
         }
         final var hasKHRDebug = GL.getCapabilities().GL_KHR_debug;
         try {

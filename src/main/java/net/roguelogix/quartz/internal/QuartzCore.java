@@ -3,17 +3,18 @@ package net.roguelogix.quartz.internal;
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.ReferenceArraySet;
 import it.unimi.dsi.fastutil.objects.ReferenceSet;
+import net.minecraft.CrashReport;
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
-import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.data.loading.DatagenModLoader;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.fml.ModLoadingContext;
+import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
+import net.neoforged.neoforge.client.event.ModelEvent;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.data.loading.DatagenModLoader;
+import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -37,6 +38,7 @@ import java.util.List;
 
 import static net.roguelogix.quartz.internal.QuartzDebug.doesForgeExist;
 
+@ClientOnly
 @NonnullDefault
 public abstract class QuartzCore {
     
@@ -115,11 +117,11 @@ public abstract class QuartzCore {
         INSTANCE.startupInternal();
         Quartz.EVENT_BUS.post(new QuartzEvent.Startup());
         wasInit = true;
-        MinecraftForge.EVENT_BUS.addListener(QuartzCore::addDebugTextEvent);
+        NeoForge.EVENT_BUS.addListener(QuartzCore::addDebugTextEvent);
     }
     
     private static void addDebugTextEvent(CustomizeGuiOverlayEvent.DebugText debugTextEvent) {
-        if (!Minecraft.getInstance().options.renderDebug) {
+        if (!Minecraft.getInstance().gui.getDebugOverlay().showDebugScreen()) {
             return;
         }
         final var list = debugTextEvent.getRight();
@@ -140,7 +142,7 @@ public abstract class QuartzCore {
     
     @OnModLoad
     private static void onModLoad() {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(QuartzCore::onModelRegisterEvent);
+        ModLoadingContext.get().getActiveContainer().getEventBus().addListener(QuartzCore::onModelRegisterEvent);
     }
     
     protected abstract void startupInternal();
@@ -165,8 +167,12 @@ public abstract class QuartzCore {
         if (!wasInit) {
             return;
         }
-        INSTANCE.meshManager.buildAllMeshes();
-        INSTANCE.resourcesReloadedInternal();
+        try {
+            INSTANCE.meshManager.buildAllMeshes();
+            INSTANCE.resourcesReloadedInternal();
+        } catch (Exception e) {
+            Minecraft.getInstance().emergencySaveAndCrash(new CrashReport("Quartz resource reload failed", e));
+        }
     }
     
     protected abstract void resourcesReloadedInternal();

@@ -1,6 +1,6 @@
 package net.roguelogix.quartz;
 
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.FMLLoader;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.config.ConfigManager;
 import net.roguelogix.phosphophyllite.config.ConfigType;

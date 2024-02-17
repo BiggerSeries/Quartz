@@ -2,24 +2,21 @@ package net.roguelogix.quartz;
 
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.event.ModelEvent;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.eventbus.api.BusBuilder;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.fml.common.Mod;
+import net.neoforged.bus.api.BusBuilder;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.neoforge.client.model.data.ModelData;
 import net.roguelogix.phosphophyllite.Phosphophyllite;
 import net.roguelogix.phosphophyllite.registry.Registry;
-import org.joml.Vector3ic;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.internal.QuartzCore;
+import org.joml.Vector3ic;
 
 import java.util.function.Consumer;
 
@@ -32,7 +29,7 @@ public final class Quartz {
         new Registry(ReferenceArrayList.of(new ResourceLocation(Phosphophyllite.modid, "creative_tab")), new ReferenceArrayList<>());
     }
     
-    public static IEventBus EVENT_BUS = BusBuilder.builder().setTrackPhases(false).build();
+    public static IEventBus EVENT_BUS = BusBuilder.builder().allowPerPhasePost().build();
     
     public static Mesh createStaticMesh(BlockState blockState) {
         return createStaticMesh(builder -> {

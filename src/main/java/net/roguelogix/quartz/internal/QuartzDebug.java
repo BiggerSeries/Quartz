@@ -1,7 +1,7 @@
 package net.roguelogix.quartz.internal;
 
-import net.minecraftforge.data.loading.DatagenModLoader;
-import net.minecraftforge.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.neoforge.data.loading.DatagenModLoader;
 import net.roguelogix.quartz.QuartzConfig;
 
 public class QuartzDebug {

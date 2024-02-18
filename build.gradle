@@ -7,7 +7,7 @@ plugins {
     id 'net.neoforged.gradle.mixin' version '7.0.+'
 }
 
-evaluationDependsOnChildren()
+evaluationDependsOn(':Phosphophyllite')
 
 version = "${majorVersion}.${minorVersion}.${patchVersion}"
 if (!"${postfix}".isEmpty()) {
@@ -25,15 +25,14 @@ base {
     archivesName = "${mod_id}-${mc_version}"
 }
 
-
 // allows you to override quartz's forge version, just have to use the same key i use
 neo_version = project.rootProject.property("neo_version")
 
-setProperty("compatibility", "[" + version + ", ${majorVersion}." + ("${minorVersion}".toInteger() + 1).toString() + ".${patchVersion}-alpha)")
+setProperty("compatibility", "[" + version + ", ${majorVersion}." + ("${minorVersion}".toInteger() + 1).toString() + ".0-alpha)")
 if (version.contains("alpha") || version.contains("beta")) {
     def nextIncompatibleVersion = "${majorVersion}.${minorVersion}.${patchVersion}-${postfix}"
     if (!"$postfixMajorVersion".isEmpty()) {
-        nextIncompatibleVersion += "." + ("${postfixMajorVersion}".toInteger() + 1).toString();
+        nextIncompatibleVersion += "." + ("${postfixMajorVersion}".toInteger() + 1).toString()
     } else {
         nextIncompatibleVersion += ".1"
     }
@@ -104,25 +103,30 @@ dependencies {
 }
 
 gradle.projectsEvaluated {
-    var phosVersionRange = project.project(":Phosphophyllite").property("compatibility").toString().split(',')
-    var phosMinVersion = phosVersionRange[0].substring(1)
-    var phosMaxVersion = phosVersionRange[1].substring(1, phosVersionRange[1].length() - 1)
-    var phosRequirementString = "Requires [Phosphophyllite](https://www.curseforge.com/minecraft/mc-mods/phosphophyllite) version of at least " + phosMinVersion + " but less than " + phosMaxVersion
+    var phosVersionRangeString = project.rootProject.project('Phosphophyllite').property("compatibility").toString();
+    // if this fails, phos was not configured immediately before, and this is IDEA running idePostSync
+    // doesnt need to be run, but whatever, it gets run, and i cant find a way to stop it, this keeps it from failing though
+    if(!phosVersionRangeString.isEmpty()) {
+        var phosVersionRange = phosVersionRangeString.split(',')
+        var phosMinVersion = phosVersionRange[0].substring(1)
+        var phosMaxVersion = phosVersionRange[1].substring(1, phosVersionRange[1].length() - 1)
+        var phosRequirementString = "Requires [Phosphophyllite](https://www.curseforge.com/minecraft/mc-mods/phosphophyllite) version of at least " + phosMinVersion + " but less than " + phosMaxVersion
 
-    println("::set-output name=phos_version_range::" + phosRequirementString)
+        println("::set-output name=phos_version_range::" + phosRequirementString)
 
-    tasks.withType(ProcessResources).configureEach {
-        var replaceProperties = [
-                minecraft_version : mc_version,
-                neo_version       : neo_version,
-                loader_version    : loader_version,
-                version           : version,
-                phos_version_range: project.project(":Phosphophyllite").property("compatibility").toString(),
-        ]
-        inputs.properties replaceProperties
+        tasks.withType(ProcessResources).configureEach {
+            var replaceProperties = [
+                    minecraft_version : mc_version,
+                    neo_version       : neo_version,
+                    loader_version    : loader_version,
+                    version           : version,
+                    phos_version_range: phosVersionRangeString,
+            ]
+            inputs.properties replaceProperties
 
-        filesMatching(['META-INF/mods.toml']) {
-            expand replaceProperties + [project: project]
+            filesMatching(['META-INF/mods.toml']) {
+                expand replaceProperties + [project: project]
+            }
         }
     }
 }
@@ -172,7 +176,7 @@ publishing {
 
 // NeoGradle bug, this works around it
 gradle.projectsEvaluated {
-    var subProject = project('Phosphophyllite')
+    var subProject = project.project(':Phosphophyllite')
 
     var neoFormJoinDownloadAssetsTaskName = null
     for (final def taskName in project.tasks.getNames()) {
@@ -182,7 +186,8 @@ gradle.projectsEvaluated {
         }
     }
 
-    println(neoFormJoinDownloadAssetsTaskName)
-
+    try {
     project.tasks.getByPath(neoFormJoinDownloadAssetsTaskName).mustRunAfter(subProject.tasks.getByPath(neoFormJoinDownloadAssetsTaskName))
+    } catch (UnknownTaskException e){
+    }
 }

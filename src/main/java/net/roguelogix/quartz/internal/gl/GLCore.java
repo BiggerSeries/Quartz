@@ -240,6 +240,7 @@ public class GLCore extends QuartzCore {
             glActiveTexture(GL_TEXTURE0 + i);
             glBindTexture(GL_TEXTURE_BUFFER, 0);
         }
+        glActiveTexture(GL_TEXTURE0);
         RenderSystem.activeTexture(GL_TEXTURE0);
         if (DRAW_INDIRECT) {
             glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);

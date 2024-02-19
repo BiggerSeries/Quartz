@@ -24,6 +24,7 @@ import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.util.Locale;
 import java.util.function.IntSupplier;
 
 import static org.lwjgl.opengl.ARBDrawIndirect.GL_DRAW_INDIRECT_BUFFER;
@@ -71,9 +72,14 @@ public class GLCore extends QuartzCore {
         return new GLCore();
     }
     
+    // intel Xe has issue with my indirect drawing
+    // 1.20+ rework doesn't have this issue, idfk
+    // generates a GL_INVALID_OPERATION on the draw
+    private static final boolean IS_INTEL_Xe = glGetString(GL_VENDOR).toLowerCase(Locale.ROOT).equals("intel") && (glGetString(GL_RENDERER).toLowerCase(Locale.ROOT).contains("xe") || glGetString(GL_RENDERER).toLowerCase(Locale.ROOT).contains("arc"));
+    
     public static final boolean BASE_INSTANCE = GL.getCapabilities().GL_ARB_base_instance && GLConfig.INSTANCE.ALLOW_BASE_INSTANCE;
     public static final boolean ATTRIB_BINDING = GL.getCapabilities().GL_ARB_vertex_attrib_binding && GLConfig.INSTANCE.ALLOW_ATTRIB_BINDING;
-    public static final boolean DRAW_INDIRECT = GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_DRAW_INDIRECT;
+    public static final boolean DRAW_INDIRECT = !IS_INTEL_Xe && GL.getCapabilities().GL_ARB_draw_indirect && GLConfig.INSTANCE.ALLOW_DRAW_INDIRECT;
     public static final boolean MULTIDRAW_INDIRECT = DRAW_INDIRECT && GL.getCapabilities().GL_ARB_multi_draw_indirect && GLConfig.INSTANCE.ALLOW_MULTIDRAW_INDIRECT;
     public static final boolean SSBO = GL.getCapabilities().GL_ARB_shader_storage_buffer_object && GLConfig.INSTANCE.ALLOW_SSBO;
     public static final int SSBO_VERTEX_BLOCK_LIMIT = GL11.glGetInteger(ARBShaderStorageBufferObject.GL_MAX_VERTEX_SHADER_STORAGE_BLOCKS);

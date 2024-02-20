@@ -12,6 +12,7 @@ import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 import net.roguelogix.phosphophyllite.threading.WorkQueue;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
@@ -33,6 +34,7 @@ import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
 import java.util.List;
 
+@ClientOnly
 @NonnullDefault
 public abstract class QuartzCore {
     

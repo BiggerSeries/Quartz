@@ -2,6 +2,7 @@ package net.roguelogix.quartz.internal;
 
 import net.coderbot.iris.Iris;
 import net.irisshaders.iris.api.v0.IrisApi;
+import net.roguelogix.phosphophyllite.registry.ClientOnly;
 import net.roguelogix.phosphophyllite.registry.OnModLoad;
 
 public final class IrisDetection {
@@ -29,6 +30,7 @@ public final class IrisDetection {
         return false;
     }
     
+    @ClientOnly
     private static final class Detector {
         
         private static final IrisApi irisApi = IrisApi.getInstance();

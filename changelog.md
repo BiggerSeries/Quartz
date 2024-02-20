@@ -1,3 +1,6 @@
+# 1.20.1-0.2.0-alpha.0.1
+ - tag classes as ClientOnly to prevent loading them on a server
+
 # 1.20.1-0.2.0-alpha
  - rewrite everything
    - well, not quite, but the entire business end was

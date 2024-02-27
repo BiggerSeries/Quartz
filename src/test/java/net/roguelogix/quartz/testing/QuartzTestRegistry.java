@@ -28,10 +28,10 @@ public class QuartzTestRegistry {
     public static void onModLoad() {
         NeoForge.EVENT_BUS.addListener(QuartzTestRegistry::registerCommands);
         Quartz.EVENT_BUS.addListener(QuartzTestRegistry::onTestingStatusEvent);
-        registerTests();
     }
     
     public static void registerCommands(RegisterClientCommandsEvent event) {
+        registerTests();
         event.getDispatcher().register(Commands.literal("quartz").then(Commands.literal("recreate_tests").executes(ctx -> {
             registerTests();
             sendChatMessage("Tests recreated " + testRegistry.size());

@@ -29,7 +29,8 @@ testConfig = """
 if __name__ == '__main__':
     print(mainConfig)
     print(testConfig)
-    shutil.rmtree(runDirectory)
+    if os.path.exists(runDirectory):
+        shutil.rmtree(runDirectory)
     os.makedirs(configDirectory)
 
     mainConfigFile = open(configDirectory + mainConfigName, "w")

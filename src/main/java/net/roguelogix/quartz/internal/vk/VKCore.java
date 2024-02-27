@@ -94,6 +94,11 @@ public class VKCore extends QuartzCore {
     }
     
     @Override
+    public void fullSyncWait() {
+    
+    }
+    
+    @Override
     public int frameInFlight() {
         return 0;
     }

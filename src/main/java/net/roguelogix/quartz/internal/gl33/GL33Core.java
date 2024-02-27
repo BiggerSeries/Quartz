@@ -212,6 +212,11 @@ public class GL33Core extends QuartzCore {
     }
     
     @Override
+    public void fullSyncWait() {
+        // no syncing needed
+    }
+    
+    @Override
     public int frameInFlight() {
         return 0;
     }

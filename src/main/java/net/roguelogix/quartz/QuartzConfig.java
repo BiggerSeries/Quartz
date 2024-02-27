@@ -42,7 +42,7 @@ public class QuartzConfig {
     }
     
     private static boolean setup() {
-        if (!QuartzDebug.doesForgeExist()) {
+        if (!QuartzDebug.Util.doesForgeExist()) {
             // loading without forge present
             return false;
         }

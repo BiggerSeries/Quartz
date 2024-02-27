@@ -19,7 +19,8 @@ public abstract class QuartzEvent extends Event {
     }
     
     public static class FrameStart extends QuartzEvent {
-        public FrameStart() {
-        }
+    }
+    
+    public static class FrameEnd extends QuartzEvent {
     }
 }

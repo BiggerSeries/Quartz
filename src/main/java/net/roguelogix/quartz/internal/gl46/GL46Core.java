@@ -11,6 +11,8 @@ import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
+import net.roguelogix.quartz.Quartz;
+import net.roguelogix.quartz.QuartzEvent;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.QuartzCore;
@@ -20,7 +22,7 @@ import org.lwjgl.opengl.KHRDebug;
 
 import java.util.List;
 
-import static org.lwjgl.opengl.GL46C.glFinish;
+import static org.lwjgl.opengl.GL45C.*;
 
 @NonnullDefault
 public class GL46Core extends QuartzCore {
@@ -112,6 +114,8 @@ public class GL46Core extends QuartzCore {
         drawInfo.deltaNano = deltaNano;
         drawInfo.partialTicks = pPartialTicks;
         
+        Quartz.EVENT_BUS.post(new QuartzEvent.FrameStart());
+        
         GL46FeedbackDrawing.beginFrame();
     }
     
@@ -184,11 +188,17 @@ public class GL46Core extends QuartzCore {
     
     @Override
     public void endTranslucent() {
-    
+        Quartz.EVENT_BUS.post(new QuartzEvent.FrameEnd());
     }
     
     @Override
     public void waitIdle() {
+        glFinish();
+    }
+    
+    @Override
+    public void fullSyncWait() {
+        glMemoryBarrier(GL_ALL_BARRIER_BITS);
         glFinish();
     }
     

@@ -8,26 +8,28 @@ public class QuartzDebug {
     public static final boolean DEBUG;
     
     static {
-        if (!doesForgeExist() || runningDatagen()) {
+        if (!Util.doesForgeExist() || Util.runningDatagen()) {
             DEBUG = false;
         } else {
-            DEBUG = QuartzConfig.INSTANCE.debug;
+            DEBUG = QuartzCore.TESTING_ALLOWED || QuartzConfig.INSTANCE.debug;
         }
     }
     
-    public static boolean runningDatagen(){
-        try{
-            return DatagenModLoader.isRunningDataGen();
-        } catch (Throwable e){
-            return false;
+    public static class Util {
+        public static boolean runningDatagen() {
+            try {
+                return DatagenModLoader.isRunningDataGen();
+            } catch (Throwable e) {
+                return false;
+            }
         }
-    }
-    
-    public static boolean doesForgeExist(){
-        try{
-            return FMLLoader.getLoadingModList() != null;
-        } catch (Throwable e){
-            return false;
+        
+        public static boolean doesForgeExist() {
+            try {
+                return FMLLoader.getLoadingModList() != null;
+            } catch (Throwable e) {
+                return false;
+            }
         }
     }
 }

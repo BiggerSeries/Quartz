@@ -16,3 +16,5 @@ plugins {
 }
 
 include 'Phosphophyllite'
+
+startParameter.excludedTaskNames << ':Phosphophyllite:runClient'

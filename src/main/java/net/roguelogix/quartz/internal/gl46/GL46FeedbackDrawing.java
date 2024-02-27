@@ -3,10 +3,13 @@ package net.roguelogix.quartz.internal.gl46;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.renderer.RenderType;
+import net.roguelogix.phosphophyllite.util.Pair;
 import net.roguelogix.quartz.DrawBatch;
+import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.internal.*;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.gl46.batching.GL46DrawBatch;
+import net.roguelogix.quartz.internal.util.PointerWrapper;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 import org.joml.Matrix4f;
 
@@ -46,8 +49,8 @@ public class GL46FeedbackDrawing {
     private record FeedbackBuffer(int buffer, int size) {
         private FeedbackBuffer(int size) {
             this(glCreateBuffers(), roundUpPo2(size));
-            // no flags, only used on the server side
-            glNamedBufferStorage(buffer, this.size, 0);
+            // no flags, only used on the server side, unless testing
+            glNamedBufferStorage(buffer, this.size, QuartzCore.TESTING_ALLOWED ? GL_MAP_READ_BIT |  GL_MAP_PERSISTENT_BIT : 0);
         }
         
         void delete() {
@@ -63,7 +66,8 @@ public class GL46FeedbackDrawing {
         }
     }
     
-    private static final Object2ObjectMap<RenderType, FeedbackBuffer> renderTypeFeedbackBuffers = new Object2ObjectArrayMap<>();
+    private static final Reference2ObjectMap<RenderType, FeedbackBuffer> renderTypeFeedbackBuffers = new Reference2ObjectArrayMap<>();
+    private static final Reference2LongMap<RenderType> renderTypeFeedbackBufferMappings = new Reference2LongArrayMap<>();
     
     private static Buffer.CallbackHandle rebuildCallbackHandle;
     
@@ -274,6 +278,14 @@ public class GL46FeedbackDrawing {
             drawBatch.setFrameSync(frameSync);
         }
         prevousFrameSyncs[frameInFlight] = frameSync;
+        
+        if(QuartzCore.TESTING_ALLOWED && QuartzCore.isTestingRunning()){
+            var buffers = new Object2ObjectOpenHashMap<RenderType, Pair<PointerWrapper, Integer>>();
+            for (RenderType renderType : inUseRenderTypes) {
+                buffers.put(renderType, new Pair<>(null, 0));
+            }
+            Quartz.EVENT_BUS.post(new QuartzInternalEvent.FeedbackCollected(inUseRenderTypes, buffers));
+        }
     }
     
     private static Matrix4f projection;

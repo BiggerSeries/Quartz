@@ -29,14 +29,11 @@ import net.roguelogix.quartz.internal.vk.VKCore;
 import net.roguelogix.quartz.internal.world.WorldEngine;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
 import java.util.List;
-
-import static net.roguelogix.quartz.internal.QuartzDebug.doesForgeExist;
 
 @ClientOnly
 @NonnullDefault
@@ -44,7 +41,39 @@ public abstract class QuartzCore {
     
     public static final Logger LOGGER = LogManager.getLogger("Quartz");
     
-    @Nonnull
+    // this should help the JIT with removing the code used for testing, and the branch testing that goes along with it
+    public static final boolean TESTING_ALLOWED;
+    
+    static {
+        boolean testingAllowed = false;
+        try {
+            final var testingClass = QuartzCore.class.getClassLoader().loadClass("net.roguelogix.quartz.testing.QuartzTestingConfig");
+            final var instanceField = testingClass.getField("INSTANCE");
+            final var enabledField = testingClass.getField("Enabled");
+            final var isEnabled = enabledField.get(instanceField.get(null));
+            testingAllowed = (Boolean)isEnabled;
+        } catch (ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        TESTING_ALLOWED = testingAllowed;
+    }
+    
+    private static boolean TESTING_RUNNING = false;
+    
+    private static void onTestingStatusEvent(QuartzInternalEvent.TestingStatus testingStatus) {
+        if(!TESTING_ALLOWED){
+            return;
+        }
+        TESTING_RUNNING = testingStatus.running;
+    }
+    
+    public static boolean isTestingRunning() {
+        if(!TESTING_ALLOWED){
+            return false;
+        }
+        return TESTING_RUNNING;
+    }
+    
     public static final QuartzCore INSTANCE;
     public static final Cleaner CLEANER = Cleaner.create();
     public static final WorkQueue deletionQueue = new WorkQueue();
@@ -54,8 +83,9 @@ public abstract class QuartzCore {
     }
     
     static {
+        @Nullable
         QuartzCore instance = null;
-        if (!DatagenModLoader.isRunningDataGen() && doesForgeExist()) {
+        if (!DatagenModLoader.isRunningDataGen() && QuartzDebug.Util.doesForgeExist()) {
             if (!Thread.currentThread().getStackTrace()[2].getClassName().equals(EventListener.class.getName())) {
                 throw new IllegalStateException("Attempt to init quartz before it is ready");
             }
@@ -142,6 +172,7 @@ public abstract class QuartzCore {
     
     @OnModLoad
     private static void onModLoad() {
+        Quartz.EVENT_BUS.addListener(QuartzCore::onTestingStatusEvent);
         ModLoadingContext.get().getActiveContainer().getEventBus().addListener(QuartzCore::onModelRegisterEvent);
     }
     
@@ -215,6 +246,8 @@ public abstract class QuartzCore {
     public abstract void endTranslucent();
     
     public abstract void waitIdle();
+    
+    public abstract void fullSyncWait();
     
     public abstract int frameInFlight();
     

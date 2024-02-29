@@ -19,6 +19,7 @@ import net.minecraft.world.level.levelgen.WorldDimensions;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.levelgen.flat.FlatLevelGeneratorSettings;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.NeoForge;
@@ -39,7 +40,7 @@ public class AutomaticTesting {
         }
         NeoForge.EVENT_BUS.addListener(AutomaticTesting::onStartupEvent);
         NeoForge.EVENT_BUS.addListener(AutomaticTesting::onLogin);
-        Quartz.EVENT_BUS.addListener(AutomaticTesting::onTestingStatus);
+        Quartz.EVENT_BUS.addListener(EventPriority.LOWEST, AutomaticTesting::onTestingStatus);
     }
     
     private static boolean recursing = false;

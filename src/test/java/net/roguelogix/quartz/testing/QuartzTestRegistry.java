@@ -69,12 +69,13 @@ public class QuartzTestRegistry {
     }
     
     private static void onTestingStatusEvent(QuartzInternalEvent.TestingStatus testingStatus) {
+        final var suiteName = "Quartz " + QuartzCore.INSTANCE.getClass().getSimpleName();
         if (testingStatus.running) {
             failedTests.clear();
             savePlayerState();
-            System.out.println("##teamcity[testSuiteStarted name='Quartz']");
+            System.out.println("##teamcity[testSuiteStarted name='" + suiteName + "']");
         } else {
-            System.out.println("##teamcity[testSuiteFinished name='Quartz']");
+            System.out.println("##teamcity[testSuiteFinished name='" + suiteName + "']");
             restorePlayerState();
             sendChatMessage(failedTests.size() + " tests failed");
             for (QuartzTest failedTest : failedTests) {

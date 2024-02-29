@@ -3,13 +3,17 @@ package net.roguelogix.quartz.internal.gl33;
 import com.mojang.blaze3d.systems.RenderSystem;
 import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.renderer.RenderType;
+import net.roguelogix.phosphophyllite.util.Pair;
 import net.roguelogix.quartz.DrawBatch;
+import net.roguelogix.quartz.Quartz;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.QuartzCore;
+import net.roguelogix.quartz.internal.QuartzInternalEvent;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.gl33.batching.GL33DrawBatch;
 import net.roguelogix.quartz.internal.gl46.GL46FeedbackDrawing;
+import net.roguelogix.quartz.internal.util.PointerWrapper;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 import org.joml.Matrix4f;
 
@@ -258,6 +262,14 @@ public class GL33FeedbackDrawing {
             RenderSystem.bindTexture(0);
         }
         B3DStateHelper.bindVertexArray(0);
+        
+        if(QuartzCore.TESTING_ALLOWED && QuartzCore.isTestingRunning()){
+            var buffers = new Object2ObjectOpenHashMap<RenderType, Pair<PointerWrapper, Integer>>();
+            for (RenderType renderType : inUseRenderTypes) {
+                buffers.put(renderType, new Pair<>(null, 0));
+            }
+            Quartz.EVENT_BUS.post(new QuartzInternalEvent.FeedbackCollected(inUseRenderTypes, buffers));
+        }
     }
     
     private static Matrix4f projection;

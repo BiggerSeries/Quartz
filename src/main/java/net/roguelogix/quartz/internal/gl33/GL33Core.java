@@ -12,6 +12,8 @@ import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.roguelogix.phosphophyllite.util.NonnullDefault;
 import net.roguelogix.quartz.DrawBatch;
+import net.roguelogix.quartz.Quartz;
+import net.roguelogix.quartz.QuartzEvent;
 import net.roguelogix.quartz.internal.Buffer;
 import net.roguelogix.quartz.internal.IrisDetection;
 import net.roguelogix.quartz.internal.QuartzCore;
@@ -131,6 +133,8 @@ public class GL33Core extends QuartzCore {
         drawInfo.deltaNano = deltaNano;
         drawInfo.partialTicks = pPartialTicks;
         
+        Quartz.EVENT_BUS.post(new QuartzEvent.FrameStart());
+        
         GL33FeedbackDrawing.beginFrame();
         
         meshManager.vertexBuffer.as(GL33Buffer.class).flush();
@@ -203,7 +207,7 @@ public class GL33Core extends QuartzCore {
     
     @Override
     public void endTranslucent() {
-    
+        Quartz.EVENT_BUS.post(new QuartzEvent.FrameEnd());
     }
     
     @Override

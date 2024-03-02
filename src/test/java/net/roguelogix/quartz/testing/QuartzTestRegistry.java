@@ -69,7 +69,7 @@ public class QuartzTestRegistry {
     }
     
     private static void onTestingStatusEvent(QuartzInternalEvent.TestingStatus testingStatus) {
-        final var suiteName = "Quartz " + QuartzCore.INSTANCE.getClass().getSimpleName();
+        final var suiteName = QuartzCore.INSTANCE.getClass().getSimpleName();
         if (testingStatus.running) {
             failedTests.clear();
             savePlayerState();

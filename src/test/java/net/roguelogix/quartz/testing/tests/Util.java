@@ -2,6 +2,7 @@ package net.roguelogix.quartz.testing.tests;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.PrioritizeChunkUpdates;
 import net.minecraft.client.Screenshot;
 import net.minecraft.commands.arguments.EntityAnchorArgument;
 import net.minecraft.core.BlockPos;
@@ -57,6 +58,8 @@ public final class Util {
         windowWidth = minecraft.getWindow().getWidth();
         windowHeight = minecraft.getWindow().getHeight();
         minecraft.getWindow().updateVsync(false);
+        minecraft.getWindow().setFramerateLimit(300);
+        minecraft.options.prioritizeChunkUpdates().set(PrioritizeChunkUpdates.NEARBY);
     }
     
     public static void restorePlayerState() {
@@ -163,7 +166,8 @@ public final class Util {
     public static void setBlock(BlockPos pos, BlockState blockState) {
         var player = minecraft.player;
         assert player != null;
-        player.level().setBlockAndUpdate(pos, blockState);
+        // normal flags and modified by player, makes double sure that the renderchunk will get updated ASAP
+        player.level().setBlock(pos, blockState, 11);
     }
     
     public static void setVolume(BlockPos starting, BlockPos ending, Block block) {

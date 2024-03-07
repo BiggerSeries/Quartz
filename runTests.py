@@ -41,5 +41,5 @@ if __name__ == '__main__':
     testConfigFile.write(testConfig)
     testConfigFile.close()
 
-    subprocess.call(["./gradlew", ":runClient"])
+    subprocess.call(["bash", "-c", "./gradlew --console=plain :runClient"])
     pass

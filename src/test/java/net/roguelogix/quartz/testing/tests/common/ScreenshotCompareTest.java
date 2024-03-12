@@ -106,13 +106,13 @@ public abstract class ScreenshotCompareTest extends QuartzTest {
     private final List<Runnable> frameActions = new ReferenceArrayList<>();
     
     static {
-//        screenshotPositions.add(new Vector3i(-5, -5, -5));
-//        screenshotPositions.add(new Vector3i(-5, -5, +5));
-//        screenshotPositions.add(new Vector3i(-5, +5, -5));
-//        screenshotPositions.add(new Vector3i(-5, +5, +5));
-//        screenshotPositions.add(new Vector3i(+5, -5, -5));
-//        screenshotPositions.add(new Vector3i(+5, -5, +5));
-//        screenshotPositions.add(new Vector3i(+5, +5, -5));
+        screenshotPositions.add(new Vector3i(-5, -5, -5));
+        screenshotPositions.add(new Vector3i(-5, -5, +5));
+        screenshotPositions.add(new Vector3i(-5, +5, -5));
+        screenshotPositions.add(new Vector3i(-5, +5, +5));
+        screenshotPositions.add(new Vector3i(+5, -5, -5));
+        screenshotPositions.add(new Vector3i(+5, -5, +5));
+        screenshotPositions.add(new Vector3i(+5, +5, -5));
         screenshotPositions.add(new Vector3i(+5, +5, +5));
     }
     

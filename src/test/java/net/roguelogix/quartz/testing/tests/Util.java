@@ -1,6 +1,7 @@
 package net.roguelogix.quartz.testing.tests;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import net.minecraft.client.CloudStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.PrioritizeChunkUpdates;
 import net.minecraft.client.Screenshot;
@@ -52,6 +53,7 @@ public final class Util {
         savedYRot = minecraft.player.getYRot();
         savedFOV = minecraft.options.fov().get();
         savedHUDHidden = minecraft.options.hideGui;
+        minecraft.options.cloudStatus().set(CloudStatus.OFF);
         savedFlying = minecraft.player.getAbilities().flying;
         savedLevelID = minecraft.player.level().dimension();
         savedBob = minecraft.options.bobView().get();

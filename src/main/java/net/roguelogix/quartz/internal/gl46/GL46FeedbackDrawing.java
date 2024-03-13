@@ -261,7 +261,7 @@ public class GL46FeedbackDrawing {
                 buffer.delete();
                 if (QuartzCore.TESTING_ALLOWED) {
                     PointerWrapper.removeReadableLocation(new PointerWrapper(renderTypeFeedbackBufferMappings.getLong(renderType), buffer.size));
-                    glUnmapBuffer(buffer.buffer);
+                    glUnmapNamedBuffer(buffer.buffer);
                 }
                 buffer = new FeedbackBuffer(requiredVertices);
                 if (QuartzCore.TESTING_ALLOWED) {

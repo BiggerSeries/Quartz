@@ -112,18 +112,57 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
         }
     }
     
+    private static final ObjectArraySet<PointerWrapper> validReadLocations = new ObjectArraySet<>();
     private static final ObjectArraySet<PointerWrapper> validWriteLocations = new ObjectArraySet<>();
     
     public static void addAccessibleLocation(PointerWrapper wrapper) {
         if (!DEBUG) {
             return;
         }
+        
+        addReadableLocation(wrapper);
+        addWritableLocation(wrapper);
+    }
+    
+    public static void removeAccessibleLocation(PointerWrapper wrapper) {
+        if (!DEBUG) {
+            return;
+        }
+        removeReadableLocation(wrapper);
+        removeWritableLocation(wrapper);
+    }
+    
+    public static void addReadableLocation(PointerWrapper wrapper) {
+        if (!DEBUG) {
+            return;
+        }
+        
+        synchronized (validReadLocations) {
+            validReadLocations.add(wrapper);
+        }
+    }
+    
+    public static void removeReadableLocation(PointerWrapper wrapper) {
+        if (!DEBUG) {
+            return;
+        }
+        synchronized (validReadLocations) {
+            validReadLocations.remove(wrapper);
+        }
+    }
+    
+    
+    public static void addWritableLocation(PointerWrapper wrapper) {
+        if (!DEBUG) {
+            return;
+        }
+        
         synchronized (validWriteLocations) {
             validWriteLocations.add(wrapper);
         }
     }
     
-    public static void removeAccessibleLocation(PointerWrapper wrapper) {
+    public static void removeWritableLocation(PointerWrapper wrapper) {
         if (!DEBUG) {
             return;
         }
@@ -132,11 +171,12 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
         }
     }
     
-    public static void verifyCanAccessLocation(long ptr, long size) {
+    public static void verifyCanAccessLocation(long ptr, long size, boolean read) {
         if (!DEBUG) {
             return;
         }
-        for (final var value : validWriteLocations) {
+        final var validLocations = read ? validReadLocations : validWriteLocations;
+        for (final var value : validLocations) {
             // doesnt start in this range
             if (value.pointer > ptr || value.pointer + value.size <= ptr) {
                 continue;
@@ -147,7 +187,7 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
             // starts in a known range, and doesnt attempt to access past the end, its valid
             return;
         }
-        throw new NullPointerException("Unable to find a valid write location for attempted write");
+        throw new NullPointerException("Unable to find a valid location for attempted access " + (read ? "(reading)" : "(writing)"));
     }
     
     public void set(byte data) {
@@ -182,8 +222,8 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
             if (dstEndIndex > dst.size) {
                 throw new IllegalArgumentException("Attempt to copy pointer would read past end of destination. dest size: " + dst.size + ", dest offset: " + dstOffset + ", copy size: " + size);
             }
-            verifyCanAccessLocation(srcPtr, size);
-            verifyCanAccessLocation(dstPtr, size);
+            verifyCanAccessLocation(srcPtr, size, true);
+            verifyCanAccessLocation(dstPtr, size, false);
         }
         boolean overlaps = srcOffset == dstOffset;
         overlaps |= srcPtr < dstPtr && dstPtr < srcPtr + size;
@@ -223,11 +263,11 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
         copyTo(0, dst, 0, Math.min(size, dst.size));
     }
     
-    private void checkRange(long offset, long writeSize) {
-        checkRange(offset, writeSize, writeSize);
+    private void checkRange(long offset, long writeSize, boolean read) {
+        checkRange(offset, writeSize, writeSize, read);
     }
     
-    private void checkRange(long offset, long writeSize, long alignment) {
+    private void checkRange(long offset, long writeSize, long alignment, boolean read) {
         if (this.pointer == 0) {
             throw new IllegalStateException("Attempt to use NULLPTR");
         }
@@ -242,42 +282,42 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
             if ((dstPtr % alignment) != 0) {
                 throw new IllegalArgumentException("Attempt to access unaligned address");
             }
-            verifyCanAccessLocation(dstPtr, writeSize);
+            verifyCanAccessLocation(dstPtr, writeSize, read);
         }
     }
     
     public void putByte(long offset, byte val) {
-        checkRange(offset, 1);
+        checkRange(offset, 1, false);
         MemoryUtil.memPutByte(pointer + offset, val);
     }
     
     public void putShort(long offset, short val) {
-        checkRange(offset, 2);
+        checkRange(offset, 2, false);
         MemoryUtil.memPutShort(pointer + offset, val);
     }
     
     public void putInt(long offset, int val) {
-        checkRange(offset, 4);
+        checkRange(offset, 4, false);
         MemoryUtil.memPutInt(pointer + offset, val);
     }
     
     public void putLong(long offset, long val) {
-        checkRange(offset, 8);
+        checkRange(offset, 8, false);
         MemoryUtil.memPutLong(pointer + offset, val);
     }
     
     public void putFloat(long offset, float val) {
-        checkRange(offset, 4);
+        checkRange(offset, 4, false);
         MemoryUtil.memPutFloat(pointer + offset, val);
     }
     
     public void putDouble(long offset, double val) {
-        checkRange(offset, 8);
+        checkRange(offset, 8, false);
         MemoryUtil.memPutDouble(pointer + offset, val);
     }
     
     public void putVector3i(long offset, Vector3ic vector) {
-        checkRange(offset, 12, 16);
+        checkRange(offset, 12, 16, false);
         final var dstPtr = pointer + offset;
         if (JOML_UNSAFE_AVAILABLE) {
             vector.getToAddress(pointer + offset);
@@ -289,7 +329,7 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
     }
     
     public void putVector3f(long offset, Vector3fc vector) {
-        checkRange(offset, 12, 16);
+        checkRange(offset, 12, 16, false);
         final var dstPtr = pointer + offset;
         if(JOML_UNSAFE_AVAILABLE){
             vector.getToAddress(pointer + offset);
@@ -301,7 +341,7 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
     }
     
     public void putVector4i(long offset, Vector4ic vector) {
-        checkRange(offset, 16);
+        checkRange(offset, 16, false);
         final var dstPtr = pointer + offset;
         if (JOML_UNSAFE_AVAILABLE) {
             vector.getToAddress(pointer + offset);
@@ -314,7 +354,7 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
     }
     
     public void putVector4f(long offset, Vector4fc vector) {
-        checkRange(offset, 16);
+        checkRange(offset, 16, false);
         final var dstPtr = pointer + offset;
         if (JOML_UNSAFE_AVAILABLE) {
             vector.getToAddress(pointer + offset);
@@ -327,7 +367,7 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
     }
     
     public void putMatrix4f(long offset, Matrix4fc matrix) {
-        checkRange(offset, 64, 16);
+        checkRange(offset, 64, 16, false);
         final var dstPtr = pointer + offset;
         if (JOML_UNSAFE_AVAILABLE) {
             matrix.getToAddress(dstPtr);
@@ -352,7 +392,7 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
     }
     
     public void putMatrix3x4f(long offset, Matrix4fc matrix) {
-        checkRange(offset, 48, 16);
+        checkRange(offset, 48, 16, false);
         // TODO: check new JOML for getToAddress3x4, or an open issue for it
         final var dstPtr = pointer + offset;
         MemoryUtil.memPutFloat(dstPtr, matrix.m00());
@@ -406,47 +446,47 @@ public record PointerWrapper(long pointer, long size) implements Comparable<Poin
     }
     
     public byte getByte(long offset) {
-        checkRange(offset, 1);
+        checkRange(offset, 1, true);
         return MemoryUtil.memGetByte(pointer + offset);
     }
     
     public short getShort(long offset) {
-        checkRange(offset, 2);
+        checkRange(offset, 2, true);
         return MemoryUtil.memGetShort(pointer + offset);
     }
     
     public int getInt(long offset) {
-        checkRange(offset, 4);
+        checkRange(offset, 4, true);
         return MemoryUtil.memGetInt(pointer + offset);
     }
     
     public long getLong(long offset) {
-        checkRange(offset, 8);
+        checkRange(offset, 8, true);
         return MemoryUtil.memGetLong(pointer + offset);
     }
     
     public float getFloat(long offset) {
-        checkRange(offset, 4);
+        checkRange(offset, 4, true);
         return MemoryUtil.memGetFloat(pointer + offset);
     }
     
     public double getDouble(long offset) {
-        checkRange(offset, 8);
+        checkRange(offset, 8, true);
         return MemoryUtil.memGetDouble(pointer + offset);
     }
     
     public void getMatrix4f(long offset, Matrix4f matrix) {
-        checkRange(offset, 64, 16);
+        checkRange(offset, 64, 16, true);
         matrix.setFromAddress(pointer + offset);
     }
     
     public void getMatrix3x4f(long offset, Matrix4f matrix) {
-        checkRange(offset, 64, 16);
+        checkRange(offset, 64, 16, true);
         matrix.setFromAddress(pointer + offset);
     }
     
     public void getVector3i(long offset, Vector3i vector) {
-        checkRange(offset, 12, 16);
+        checkRange(offset, 12, 16, true);
         vector.setFromAddress(pointer + offset);
     }
     

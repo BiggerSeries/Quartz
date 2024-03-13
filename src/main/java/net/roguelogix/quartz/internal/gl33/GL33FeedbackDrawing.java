@@ -12,7 +12,6 @@ import net.roguelogix.quartz.internal.QuartzCore;
 import net.roguelogix.quartz.internal.QuartzInternalEvent;
 import net.roguelogix.quartz.internal.common.B3DStateHelper;
 import net.roguelogix.quartz.internal.gl33.batching.GL33DrawBatch;
-import net.roguelogix.quartz.internal.gl46.GL46FeedbackDrawing;
 import net.roguelogix.quartz.internal.util.PointerWrapper;
 import net.roguelogix.quartz.internal.util.VertexFormatOutput;
 import org.joml.Matrix4f;
@@ -263,12 +262,29 @@ public class GL33FeedbackDrawing {
         }
         B3DStateHelper.bindVertexArray(0);
         
-        if(QuartzCore.TESTING_ALLOWED && QuartzCore.isTestingRunning()){
+        if (QuartzCore.TESTING_ALLOWED && QuartzCore.isTestingRunning()) {
+            long totalSize = 0;
+            for (FeedbackBuffer value : renderTypeFeedbackBuffers.values()) {
+                totalSize += value.size;
+            }
+            var ptr = PointerWrapper.alloc(totalSize);
+            long currentOffset = 0;
             var buffers = new Object2ObjectOpenHashMap<RenderType, Pair<PointerWrapper, Integer>>();
             for (RenderType renderType : inUseRenderTypes) {
-                buffers.put(renderType, new Pair<>(null, 0));
+                final var feedbackBuffer = renderTypeFeedbackBuffers.get(renderType);
+                final var drawBuffer = renderTypeDrawBuffer.getInt(renderType);
+                final var drawnVertices = renderTypeDrawnVertices.getInt(renderType);
+                
+                final var bufferPtr = ptr.slice(currentOffset, feedbackBuffer.size);
+                currentOffset += bufferPtr.size();
+                B3DStateHelper.bindArrayBuffer(drawBuffer);
+                nglGetBufferSubData(GL_ARRAY_BUFFER, 0, feedbackBuffer.size, bufferPtr.pointer());
+                
+                buffers.put(renderType, new Pair<>(bufferPtr, drawnVertices));
             }
+            B3DStateHelper.bindArrayBuffer(0);
             Quartz.EVENT_BUS.post(new QuartzInternalEvent.FeedbackCollected(inUseRenderTypes, buffers));
+            ptr.free();
         }
     }
     

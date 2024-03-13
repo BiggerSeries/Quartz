@@ -50,7 +50,7 @@ public class GL46FeedbackDrawing {
         private FeedbackBuffer(int size) {
             this(glCreateBuffers(), roundUpPo2(size));
             // no flags, only used on the server side, unless testing
-            glNamedBufferStorage(buffer, this.size, QuartzCore.TESTING_ALLOWED ? GL_MAP_READ_BIT |  GL_MAP_PERSISTENT_BIT : 0);
+            glNamedBufferStorage(buffer, this.size, QuartzCore.TESTING_ALLOWED ? GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT: 0);
         }
         
         void delete() {
@@ -137,7 +137,14 @@ public class GL46FeedbackDrawing {
     
     public static void shutdown() {
         glDeleteVertexArrays(feedbackVAO);
-        renderTypeFeedbackBuffers.values().forEach(FeedbackBuffer::delete);
+        renderTypeFeedbackBuffers.forEach((renderType, feedbackBuffer) -> {
+            if (QuartzCore.TESTING_ALLOWED) {
+                PointerWrapper.removeReadableLocation(new PointerWrapper(renderTypeFeedbackBufferMappings.getLong(renderType), feedbackBuffer.size));
+                glUnmapNamedBuffer(feedbackBuffer.buffer);
+            }
+            feedbackBuffer.delete();
+        });
+        renderTypeFeedbackBufferMappings.clear();
         rebuildCallbackHandle.delete();
         rebuildCallbackHandle = null;
     }
@@ -241,10 +248,27 @@ public class GL46FeedbackDrawing {
             
             requiredVertices *= outputFormat.vertexSize();
             
-            var buffer = renderTypeFeedbackBuffers.computeIfAbsent(renderType, e -> new FeedbackBuffer(requiredVertices));
+            var buffer = renderTypeFeedbackBuffers.computeIfAbsent(renderType, e -> {
+                var feedbackBuffer = new FeedbackBuffer(requiredVertices);
+                if (QuartzCore.TESTING_ALLOWED) {
+                    final long mappedPtr = nglMapNamedBufferRange(feedbackBuffer.buffer, 0, feedbackBuffer.size, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+                    PointerWrapper.addReadableLocation(new PointerWrapper(mappedPtr, feedbackBuffer.size));
+                    renderTypeFeedbackBufferMappings.put(renderType, mappedPtr);
+                }
+                return feedbackBuffer;
+            });
             if (buffer.size < requiredVertices) {
                 buffer.delete();
+                if (QuartzCore.TESTING_ALLOWED) {
+                    PointerWrapper.removeReadableLocation(new PointerWrapper(renderTypeFeedbackBufferMappings.getLong(renderType), buffer.size));
+                    glUnmapBuffer(buffer.buffer);
+                }
                 buffer = new FeedbackBuffer(requiredVertices);
+                if (QuartzCore.TESTING_ALLOWED) {
+                    final long mappedPtr = nglMapNamedBufferRange(buffer.buffer, 0, buffer.size, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+                    PointerWrapper.addReadableLocation(new PointerWrapper(mappedPtr, buffer.size));
+                    renderTypeFeedbackBufferMappings.put(renderType, mappedPtr);
+                }
                 renderTypeFeedbackBuffers.put(renderType, buffer);
             }
             
@@ -279,11 +303,17 @@ public class GL46FeedbackDrawing {
         }
         prevousFrameSyncs[frameInFlight] = frameSync;
         
-        if(QuartzCore.TESTING_ALLOWED && QuartzCore.isTestingRunning()){
+        if (QuartzCore.TESTING_ALLOWED && QuartzCore.isTestingRunning()) {
             var buffers = new Object2ObjectOpenHashMap<RenderType, Pair<PointerWrapper, Integer>>();
             for (RenderType renderType : inUseRenderTypes) {
-                buffers.put(renderType, new Pair<>(null, 0));
+                final var feedbackBuffer = renderTypeFeedbackBuffers.get(renderType);
+                final var feedbackBufferMapping = renderTypeFeedbackBufferMappings.getLong(renderType);
+                final var drawnVertices = renderTypeDrawnVertices.getInt(renderType);
+                final var ptr = new PointerWrapper(feedbackBufferMapping, feedbackBuffer.size);
+                
+                buffers.put(renderType, new Pair<>(ptr, drawnVertices));
             }
+            glFinish();
             Quartz.EVENT_BUS.post(new QuartzInternalEvent.FeedbackCollected(inUseRenderTypes, buffers));
         }
     }

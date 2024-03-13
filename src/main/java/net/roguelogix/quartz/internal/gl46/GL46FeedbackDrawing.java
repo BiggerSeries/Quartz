@@ -258,11 +258,11 @@ public class GL46FeedbackDrawing {
                 return feedbackBuffer;
             });
             if (buffer.size < requiredVertices) {
-                buffer.delete();
                 if (QuartzCore.TESTING_ALLOWED) {
                     PointerWrapper.removeReadableLocation(new PointerWrapper(renderTypeFeedbackBufferMappings.getLong(renderType), buffer.size));
                     glUnmapNamedBuffer(buffer.buffer);
                 }
+                buffer.delete();
                 buffer = new FeedbackBuffer(requiredVertices);
                 if (QuartzCore.TESTING_ALLOWED) {
                     final long mappedPtr = nglMapNamedBufferRange(buffer.buffer, 0, buffer.size, GL_MAP_READ_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);

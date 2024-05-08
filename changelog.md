@@ -1,3 +1,8 @@
+# 1.19.2-0.1.0-beta.2.3
+ - fix #12
+ - "fix" #23
+ - better handling of missing phos, see #20
+
 # 1.19.2-0.1.0-beta.2.2
  - update phos
 
